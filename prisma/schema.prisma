@@ -120,7 +120,7 @@ model Form {
   emailSubject        String?    @default("Submission Received") // Subject for respondent email
   emailBody           String?    @db.Text // Custom message body for respondent email
   thankYouTitle       String?    @default("Thank You!")
-  thankYouMessage     String?    @db.Text @default("Your response has been successfully recorded.")
+  thankYouMessage     String?    @db.Text
   redirectUrl         String?    // Optional redirect after submit
 
   slug        String     @unique // Public URL identifier e.g. /forms/my-survey
