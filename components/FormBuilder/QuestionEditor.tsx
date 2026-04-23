@@ -85,8 +85,10 @@ export default function QuestionEditor({
 
   const handleLogicChange = async (rule: VisibilityRule | null) => {
       setVisibilityRule(rule);
-      const newLogic = { ...logic, visibility: rule };
-      if (!rule) delete newLogic.visibility;
+      const newLogic: { visibility?: VisibilityRule } = rule ? { ...logic, visibility: rule } : { ...logic };
+      if (!rule) {
+        newLogic.visibility = undefined;
+      }
 
       try {
         onSaveStart?.();
