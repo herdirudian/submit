@@ -51,9 +51,12 @@ export default function FormSettings({ form, isOpen, onClose }: { form: Form; is
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  if (!isOpen) return null;
-
   useEffect(() => {
+    if (!isOpen) {
+      setSlugState({ state: "idle", message: "" });
+      return;
+    }
+
     let cancelled = false;
     const value = slug.trim();
     if (!value) {
@@ -83,7 +86,9 @@ export default function FormSettings({ form, isOpen, onClose }: { form: Form; is
       cancelled = true;
       clearTimeout(t);
     };
-  }, [form.id, slug]);
+  }, [form.id, isOpen, slug]);
+
+  if (!isOpen) return null;
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
