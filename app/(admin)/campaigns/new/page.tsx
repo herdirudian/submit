@@ -123,10 +123,19 @@ export default function NewCampaignPage() {
                                 onChange={(e) => setFormData(p => ({ ...p, content: e.target.value }))}
                                 className="w-full px-4 py-4 rounded-xl border border-slate-200 focus:ring-4 focus:ring-primary-50 focus:border-primary-500 outline-none transition-all min-h-[400px] font-mono text-sm leading-relaxed"
                             />
-                            <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 flex gap-3 items-start">
-                                <Info size={18} className="text-primary-600 mt-0.5 shrink-0" />
-                                <div className="text-xs text-slate-500 leading-relaxed">
-                                    Gunakan <code className="bg-white px-1 border border-slate-200 rounded text-primary-700 font-bold">{"{{name}}"}</code> untuk menyapa penerima dengan nama mereka. Anda juga bisa memasukkan tag HTML untuk styling.
+                            <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 flex flex-col gap-3">
+                                <div className="flex gap-3 items-start">
+                                    <Info size={18} className="text-primary-600 mt-0.5 shrink-0" />
+                                    <div className="text-xs text-slate-500 leading-relaxed">
+                                        <p className="font-bold text-slate-700 mb-1">Tips Konten Menarik:</p>
+                                        <ul className="list-disc ml-4 space-y-1">
+                                            <li>Gunakan <code className="bg-white px-1 border border-slate-200 rounded text-primary-700 font-bold">{"{{name}}"}</code> untuk menyapa nama.</li>
+                                            <li><strong>Gambar:</strong> Gunakan tag HTML <code className="bg-white px-1 border border-slate-200 rounded text-primary-700">{"<img src='URL_GAMBAR'>"}</code>.</li>
+                                            <li><strong>Tombol:</strong> Gunakan class <code className="bg-white px-1 border border-slate-200 rounded text-primary-700">btn</code>, contoh: <br/>
+                                                <code className="bg-white px-1 border border-slate-200 rounded text-primary-700">{"<a href='...' class='btn'>Klik Di Sini</a>"}</code>
+                                            </li>
+                                        </ul>
+                                    </div>
                                 </div>
                             </div>
                         </div>

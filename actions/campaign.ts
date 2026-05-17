@@ -55,10 +55,13 @@ export async function sendCampaignNow(id: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) throw new Error("Unauthorized");
 
-  const campaign = await prisma.campaign.findUnique({
-    where: { id },
-    include: { contactList: { include: { members: { include: { contact: true } } } } }
-  });
+  const [campaign, settings] = await Promise.all([
+    prisma.campaign.findUnique({
+      where: { id },
+      include: { contactList: { include: { members: { include: { contact: true } } } } }
+    }),
+    prisma.appSettings.findUnique({ where: { id: "singleton" } })
+  ]);
 
   if (!campaign) throw new Error("Campaign not found");
   if (!campaign.contactList) throw new Error("No contact list selected");
@@ -66,39 +69,83 @@ export async function sendCampaignNow(id: string) {
   const contacts = campaign.contactList.members.map(m => m.contact);
   if (contacts.length === 0) throw new Error("Contact list is empty");
 
+  const brandName = settings?.brandName || "The Lodge Group";
+  const brandLogo = settings?.brandLogoUrl || `${process.env.NEXTAUTH_URL}/logotlm.png`;
+
   // Update status to SENDING
   await prisma.campaign.update({
     where: { id },
     data: { status: 'SENDING' }
   });
 
-  // In a real app, this would be a background job. 
-  // For now, we'll do it synchronously or in a simple loop
-  // (Note: This might timeout for very large lists)
-  
   // Logic for sending
   for (const contact of contacts) {
     try {
       // 1. Personalization
-      let personalizedContent = campaign.content;
-      personalizedContent = personalizedContent.replace(/{{name}}/g, contact.name || "Sobat");
-      personalizedContent = personalizedContent.replace(/{{email}}/g, contact.email);
-      personalizedContent = personalizedContent.replace(/{{company}}/g, contact.company || "");
+      let bodyContent = campaign.content;
+      bodyContent = bodyContent.replace(/{{name}}/g, contact.name || "Sobat");
+      bodyContent = bodyContent.replace(/{{email}}/g, contact.email);
+      bodyContent = bodyContent.replace(/{{company}}/g, contact.company || "");
 
-      // 2. Unsubscribe Link (Simple version for demo)
+      // 2. Unsubscribe Link
       const unsubscribeUrl = `${process.env.NEXTAUTH_URL}/api/blast/unsubscribe?id=${contact.id}`;
-      personalizedContent += `<br/><br/><hr/><p style="font-size: 12px; color: #94a3b8;">
-        Anda menerima email ini karena terdaftar di list kami. 
-        <a href="${unsubscribeUrl}">Berhenti berlangganan</a></p>`;
+      
+      // 3. Wrap with Template
+      const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f4f7fa; color: #334155; }
+            .wrapper { width: 100%; table-layout: fixed; background-color: #f4f7fa; padding-bottom: 40px; }
+            .main { background-color: #ffffff; margin: 0 auto; width: 100%; max-width: 600px; border-spacing: 0; font-family: sans-serif; color: #334155; border-radius: 8px; overflow: hidden; margin-top: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+            .header { padding: 30px; text-align: center; background-color: #ffffff; border-bottom: 1px solid #f1f5f9; }
+            .content { padding: 40px; line-height: 1.6; font-size: 16px; }
+            .footer { padding: 30px; text-align: center; font-size: 12px; color: #94a3b8; line-height: 1.5; }
+            .logo { max-height: 60px; width: auto; }
+            img { max-width: 100%; height: auto; display: block; margin: 20px 0; border-radius: 8px; }
+            .btn { display: inline-block; padding: 12px 24px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 20px 0; }
+            a { color: #2563eb; text-decoration: underline; }
+            .unsubscribe { color: #94a3b8; text-decoration: underline; }
+          </style>
+        </head>
+        <body>
+          <center class="wrapper">
+            <table class="main" width="100%">
+              <tr>
+                <td class="header">
+                  <img src="${brandLogo}" alt="${brandName}" class="logo" style="margin: 0 auto;">
+                </td>
+              </tr>
+              <tr>
+                <td class="content">
+                  ${bodyContent}
+                </td>
+              </tr>
+              <tr>
+                <td class="footer">
+                  <p style="margin: 0 0 10px 0;"><strong>${brandName}</strong></p>
+                  <p style="margin: 0 0 20px 0;">Email ini dikirimkan secara otomatis oleh sistem ${brandName}.</p>
+                  <p style="margin: 0;">
+                    <a href="${unsubscribeUrl}" class="unsubscribe">Berhenti berlangganan</a>
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </center>
+        </body>
+        </html>
+      `;
 
-      // 3. Send Email
+      // 4. Send Email
       await sendEmail({
         to: contact.email,
         subject: campaign.subject,
-        html: personalizedContent,
+        html: html,
       });
 
-      // 4. Log the success
+      // 5. Log the success
       await prisma.emailLog.create({
         data: {
           campaignId: id,
