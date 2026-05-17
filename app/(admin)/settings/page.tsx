@@ -27,6 +27,7 @@ export default function SettingsPage() {
   const [twitterUrl, setTwitterUrl] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
+  const [tiktokUrl, setTiktokUrl] = useState("");
 
   const canSave = useMemo(() => !isLoading && !!snapshot?.user, [isLoading, snapshot?.user]);
 
@@ -49,6 +50,7 @@ export default function SettingsPage() {
         setTwitterUrl(data.appSettings.twitterUrl ?? "");
         setLinkedinUrl(data.appSettings.linkedinUrl ?? "");
         setWebsiteUrl(data.appSettings.websiteUrl ?? "");
+        setTiktokUrl(data.appSettings.tiktokUrl ?? "");
       })
       .catch(() => {
         if (cancelled) return;
@@ -103,6 +105,7 @@ export default function SettingsPage() {
           twitterUrl,
           linkedinUrl,
           websiteUrl,
+          tiktokUrl,
         });
         toast.success("Settings branding & footer tersimpan");
       } catch {
@@ -328,6 +331,15 @@ export default function SettingsPage() {
                     onChange={(e) => setWebsiteUrl(e.target.value)}
                     className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-300 text-sm"
                     placeholder="https://..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">TikTok URL</label>
+                  <input
+                    value={tiktokUrl}
+                    onChange={(e) => setTiktokUrl(e.target.value)}
+                    className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-300 text-sm"
+                    placeholder="https://tiktok.com/@..."
                   />
                 </div>
               </div>

@@ -151,7 +151,8 @@ model AppSettings {
   twitterUrl            String?
   linkedinUrl           String?
   websiteUrl            String?
-
+  tiktokUrl             String?
+  
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 

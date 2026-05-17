@@ -65,6 +65,7 @@ export async function updateAppSettings(data: {
   twitterUrl?: string;
   linkedinUrl?: string;
   websiteUrl?: string;
+  tiktokUrl?: string;
 }) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
@@ -81,6 +82,7 @@ export async function updateAppSettings(data: {
   const twitterUrl = (data.twitterUrl ?? "").trim();
   const linkedinUrl = (data.linkedinUrl ?? "").trim();
   const websiteUrl = (data.websiteUrl ?? "").trim();
+  const tiktokUrl = (data.tiktokUrl ?? "").trim();
 
   if (notificationFromEmail && !isValidEmail(notificationFromEmail)) {
     throw new Error("From Email tidak valid");
@@ -100,6 +102,7 @@ export async function updateAppSettings(data: {
       twitterUrl: twitterUrl || null,
       linkedinUrl: linkedinUrl || null,
       websiteUrl: websiteUrl || null,
+      tiktokUrl: tiktokUrl || null,
     },
     update: {
       brandName: brandName || null,
@@ -112,6 +115,7 @@ export async function updateAppSettings(data: {
       twitterUrl: twitterUrl || null,
       linkedinUrl: linkedinUrl || null,
       websiteUrl: websiteUrl || null,
+      tiktokUrl: tiktokUrl || null,
     },
   });
 

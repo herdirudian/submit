@@ -241,6 +241,7 @@ export async function sendCampaignNow(id: string) {
                     ${settings?.facebookUrl ? `<a href="${settings.facebookUrl}"><img src="https://img.icons8.com/material-outlined/24/666666/facebook-new.png" class="social-icon"></a>` : ""}
                     ${settings?.twitterUrl ? `<a href="${settings.twitterUrl}"><img src="https://img.icons8.com/material-outlined/24/666666/twitter.png" class="social-icon"></a>` : ""}
                     ${settings?.linkedinUrl ? `<a href="${settings.linkedinUrl}"><img src="https://img.icons8.com/material-outlined/24/666666/linkedin.png" class="social-icon"></a>` : ""}
+                    ${settings?.tiktokUrl ? `<a href="${settings.tiktokUrl}"><img src="https://img.icons8.com/material-outlined/24/666666/tiktok.png" class="social-icon"></a>` : ""}
                     ${settings?.websiteUrl ? `<a href="${settings.websiteUrl}"><img src="https://img.icons8.com/material-outlined/24/666666/globe.png" class="social-icon"></a>` : ""}
                   </div>
 
@@ -398,6 +399,7 @@ export async function renderCampaignPreview(data: {
                 ${settings?.facebookUrl ? `<a href="${settings.facebookUrl}"><img src="https://img.icons8.com/material-outlined/24/666666/facebook-new.png" class="social-icon"></a>` : ""}
                 ${settings?.twitterUrl ? `<a href="${settings.twitterUrl}"><img src="https://img.icons8.com/material-outlined/24/666666/twitter.png" class="social-icon"></a>` : ""}
                 ${settings?.linkedinUrl ? `<a href="${settings.linkedinUrl}"><img src="https://img.icons8.com/material-outlined/24/666666/linkedin.png" class="social-icon"></a>` : ""}
+                ${settings?.tiktokUrl ? `<a href="${settings.tiktokUrl}"><img src="https://img.icons8.com/material-outlined/24/666666/tiktok.png" class="social-icon"></a>` : ""}
                 ${settings?.websiteUrl ? `<a href="${settings.websiteUrl}"><img src="https://img.icons8.com/material-outlined/24/666666/globe.png" class="social-icon"></a>` : ""}
               </div>
 
