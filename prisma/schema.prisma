@@ -306,6 +306,8 @@ model Campaign {
   subject         String
   previewText     String?
   content         String         @db.LongText
+  headerImageUrl  String?        @db.Text
+  footerImageUrl  String?        @db.Text
   status          CampaignStatus @default(DRAFT)
   scheduledAt     DateTime?
   sentAt          DateTime?

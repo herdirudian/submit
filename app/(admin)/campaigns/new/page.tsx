@@ -4,16 +4,19 @@ import React, { useState, useEffect } from "react";
 import { 
     Megaphone, Send, Save, ArrowLeft, 
     Layout, Users, Type, Eye, Loader2,
-    CheckCircle, AlertTriangle, Info
+    CheckCircle, AlertTriangle, Info, Upload, X, Image as ImageIcon
 } from "lucide-react";
 import { createCampaign } from "@/actions/campaign";
 import { getContactLists } from "@/actions/contact";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function NewCampaignPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+    const [uploadingHeader, setUploadingHeader] = useState(false);
+    const [uploadingFooter, setUploadingFooter] = useState(false);
     const [fetchingLists, setFetchingLists] = useState(true);
     const [contactLists, setContactLists] = useState<any[]>([]);
     
@@ -22,12 +25,26 @@ export default function NewCampaignPage() {
         subject: "",
         previewText: "",
         content: "",
-        contactListId: ""
+        contactListId: "",
+        headerImageUrl: "",
+        footerImageUrl: ""
     });
 
     useEffect(() => {
         loadContactLists();
     }, []);
+
+    const handleUpload = async (file: File) => {
+        const data = new FormData();
+        data.append("file", file);
+
+        const res = await fetch("/api/upload", { method: "POST", body: data });
+        const result = await res.json();
+        if (!result?.success || !result?.url) {
+            throw new Error("Upload failed");
+        }
+        return String(result.url);
+    };
 
     async function loadContactLists() {
         try {
@@ -184,6 +201,114 @@ export default function NewCampaignPage() {
                                     </select>
                                 )}
                                 <p className="text-[10px] text-slate-400">Pilih segmen audiens yang akan menerima email ini.</p>
+                            </div>
+
+                            <hr className="border-slate-50" />
+
+                            {/* Header Image Upload */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-slate-700 flex items-center justify-between">
+                                    <span>Gambar Header</span>
+                                    {formData.headerImageUrl && (
+                                        <button 
+                                            type="button" 
+                                            onClick={() => setFormData(p => ({ ...p, headerImageUrl: "" }))}
+                                            className="text-xs text-red-500 hover:underline flex items-center gap-1"
+                                        >
+                                            <X size={12} /> Hapus
+                                        </button>
+                                    )}
+                                </label>
+                                
+                                {formData.headerImageUrl ? (
+                                    <div className="relative aspect-[3/1] rounded-xl border border-slate-200 overflow-hidden bg-slate-50">
+                                        <img src={formData.headerImageUrl} alt="Header" className="w-full h-full object-contain" />
+                                    </div>
+                                ) : (
+                                    <label className="flex flex-col items-center justify-center aspect-[3/1] rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-primary-300 transition-all cursor-pointer group">
+                                        {uploadingHeader ? (
+                                            <Loader2 size={24} className="animate-spin text-primary-600" />
+                                        ) : (
+                                            <>
+                                                <Upload size={24} className="text-slate-400 group-hover:text-primary-600" />
+                                                <span className="text-[10px] font-bold text-slate-500 mt-1 uppercase tracking-wider">Upload Header</span>
+                                            </>
+                                        )}
+                                        <input 
+                                            type="file" 
+                                            accept="image/*" 
+                                            className="hidden" 
+                                            onChange={async (e) => {
+                                                const f = e.target.files?.[0];
+                                                if (!f) return;
+                                                setUploadingHeader(true);
+                                                try {
+                                                    const url = await handleUpload(f);
+                                                    setFormData(p => ({ ...p, headerImageUrl: url }));
+                                                    toast.success("Header image uploaded");
+                                                } catch {
+                                                    toast.error("Gagal upload header");
+                                                } finally {
+                                                    setUploadingHeader(false);
+                                                }
+                                            }}
+                                        />
+                                    </label>
+                                )}
+                                <p className="text-[10px] text-slate-400 italic">Menggantikan logo default di bagian atas email.</p>
+                            </div>
+
+                            {/* Footer Image Upload */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-slate-700 flex items-center justify-between">
+                                    <span>Gambar Footer</span>
+                                    {formData.footerImageUrl && (
+                                        <button 
+                                            type="button" 
+                                            onClick={() => setFormData(p => ({ ...p, footerImageUrl: "" }))}
+                                            className="text-xs text-red-500 hover:underline flex items-center gap-1"
+                                        >
+                                            <X size={12} /> Hapus
+                                        </button>
+                                    )}
+                                </label>
+                                
+                                {formData.footerImageUrl ? (
+                                    <div className="relative aspect-[3/1] rounded-xl border border-slate-200 overflow-hidden bg-slate-50">
+                                        <img src={formData.footerImageUrl} alt="Footer" className="w-full h-full object-contain" />
+                                    </div>
+                                ) : (
+                                    <label className="flex flex-col items-center justify-center aspect-[3/1] rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-primary-300 transition-all cursor-pointer group">
+                                        {uploadingFooter ? (
+                                            <Loader2 size={24} className="animate-spin text-primary-600" />
+                                        ) : (
+                                            <>
+                                                <Upload size={24} className="text-slate-400 group-hover:text-primary-600" />
+                                                <span className="text-[10px] font-bold text-slate-500 mt-1 uppercase tracking-wider">Upload Footer</span>
+                                            </>
+                                        )}
+                                        <input 
+                                            type="file" 
+                                            accept="image/*" 
+                                            className="hidden" 
+                                            onChange={async (e) => {
+                                                const f = e.target.files?.[0];
+                                                if (!f) return;
+                                                setUploadingFooter(true);
+                                                try {
+                                                    const url = await handleUpload(f);
+                                                    setFormData(p => ({ ...p, footerImageUrl: url }));
+                                                    toast.success("Footer image uploaded");
+                                                } catch {
+                                                    toast.error("Gagal upload footer");
+                                                } finally {
+                                                    setUploadingFooter(false);
+                                                }
+                                            }}
+                                        />
+                                    </label>
+                                )}
+                                <p className="text-[10px] text-slate-400 italic">Muncul di bagian bawah email, di atas informasi perusahaan.</p>
                             </div>
                         </div>
 

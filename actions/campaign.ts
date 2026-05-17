@@ -27,6 +27,8 @@ export async function createCampaign(data: {
   previewText?: string;
   contactListId?: string;
   templateId?: string;
+  headerImageUrl?: string;
+  footerImageUrl?: string;
 }) {
   const session = await getServerSession(authOptions);
   if (!session?.user) throw new Error("Unauthorized");
@@ -70,7 +72,8 @@ export async function sendCampaignNow(id: string) {
   if (contacts.length === 0) throw new Error("Contact list is empty");
 
   const brandName = settings?.brandName || "The Lodge Group";
-  const brandLogo = settings?.brandLogoUrl || `${process.env.NEXTAUTH_URL}/logotlm.png`;
+  const brandLogo = campaign.headerImageUrl || settings?.brandLogoUrl || `${process.env.NEXTAUTH_URL}/logotlm.png`;
+  const footerImage = campaign.footerImageUrl;
 
   // Update status to SENDING
   await prisma.campaign.update({
@@ -103,7 +106,8 @@ export async function sendCampaignNow(id: string) {
             .header { padding: 30px; text-align: center; background-color: #ffffff; border-bottom: 1px solid #f1f5f9; }
             .content { padding: 40px; line-height: 1.6; font-size: 16px; }
             .footer { padding: 30px; text-align: center; font-size: 12px; color: #94a3b8; line-height: 1.5; }
-            .logo { max-height: 60px; width: auto; }
+            .logo { max-height: 100px; width: auto; max-width: 100%; }
+            .footer-img { max-height: 150px; width: auto; max-width: 100%; margin: 0 auto 20px; border-radius: 4px; }
             img { max-width: 100%; height: auto; display: block; margin: 20px 0; border-radius: 8px; }
             .btn { display: inline-block; padding: 12px 24px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 20px 0; }
             a { color: #2563eb; text-decoration: underline; }
@@ -125,6 +129,7 @@ export async function sendCampaignNow(id: string) {
               </tr>
               <tr>
                 <td class="footer">
+                  ${footerImage ? `<img src="${footerImage}" alt="Footer" class="footer-img" style="margin: 0 auto 20px;">` : ""}
                   <p style="margin: 0 0 10px 0;"><strong>${brandName}</strong></p>
                   <p style="margin: 0 0 20px 0;">Email ini dikirimkan secara otomatis oleh sistem ${brandName}.</p>
                   <p style="margin: 0;">
