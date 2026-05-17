@@ -276,8 +276,13 @@ export default function NewCampaignPage() {
                                 </label>
                                 
                                 {formData.headerImageUrl ? (
-                                    <div className="relative aspect-[3/1] rounded-xl border border-slate-200 overflow-hidden bg-slate-50">
-                                        <img src={formData.headerImageUrl} alt="Header" className="w-full h-full object-contain" />
+                                    <div className="space-y-2">
+                                        <div className="relative aspect-[3/1] rounded-xl border border-slate-200 overflow-hidden bg-slate-50">
+                                            <img src={formData.headerImageUrl} alt="Header" className="w-full h-full object-contain" />
+                                        </div>
+                                        <div className="text-[10px] text-slate-400 break-all bg-slate-50 p-2 rounded border border-slate-100">
+                                            URL: {formData.headerImageUrl}
+                                        </div>
                                     </div>
                                 ) : (
                                     <label className="flex flex-col items-center justify-center aspect-[3/1] rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-primary-300 transition-all cursor-pointer group">
@@ -329,8 +334,13 @@ export default function NewCampaignPage() {
                                 </label>
                                 
                                 {formData.footerImageUrl ? (
-                                    <div className="relative aspect-[3/1] rounded-xl border border-slate-200 overflow-hidden bg-slate-50">
-                                        <img src={formData.footerImageUrl} alt="Footer" className="w-full h-full object-contain" />
+                                    <div className="space-y-2">
+                                        <div className="relative aspect-[3/1] rounded-xl border border-slate-200 overflow-hidden bg-slate-50">
+                                            <img src={formData.footerImageUrl} alt="Footer" className="w-full h-full object-contain" />
+                                        </div>
+                                        <div className="text-[10px] text-slate-400 break-all bg-slate-50 p-2 rounded border border-slate-100">
+                                            URL: {formData.footerImageUrl}
+                                        </div>
                                     </div>
                                 ) : (
                                     <label className="flex flex-col items-center justify-center aspect-[3/1] rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-primary-300 transition-all cursor-pointer group">
