@@ -139,9 +139,12 @@ export default function CampaignsPage() {
                                             <Send size={16} />
                                         </button>
                                     )}
-                                    <button className="p-2 text-slate-400 hover:text-primary-600 transition-colors">
+                                    <Link 
+                                        href={`/campaigns/${campaign.id}`}
+                                        className="p-2 text-slate-400 hover:text-primary-600 transition-colors"
+                                    >
                                         <Edit2 size={16} />
-                                    </button>
+                                    </Link>
                                     <button 
                                         onClick={() => handleDelete(campaign.id)}
                                         className="p-2 text-slate-400 hover:text-red-600 transition-colors"

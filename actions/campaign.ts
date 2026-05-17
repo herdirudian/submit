@@ -55,6 +55,41 @@ export async function createCampaign(data: {
   return campaign;
 }
 
+export async function getCampaign(id: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Unauthorized");
+
+  return await prisma.campaign.findUnique({
+    where: { id },
+    include: { contactList: true }
+  });
+}
+
+export async function updateCampaign(id: string, data: {
+  name?: string;
+  subject?: string;
+  content?: string;
+  previewText?: string;
+  contactListId?: string;
+  templateId?: string;
+  headerImageUrl?: string;
+  footerImageUrl?: string;
+  ctaText?: string;
+  ctaUrl?: string;
+}) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Unauthorized");
+
+  const campaign = await prisma.campaign.update({
+    where: { id },
+    data
+  });
+
+  revalidatePath("/campaigns");
+  revalidatePath(`/campaigns/${id}`);
+  return campaign;
+}
+
 export async function deleteCampaign(id: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) throw new Error("Unauthorized");
