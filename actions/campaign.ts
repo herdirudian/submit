@@ -99,6 +99,39 @@ export async function deleteCampaign(id: string) {
   revalidatePath("/campaigns");
 }
 
+export async function getEmailLogs(params: {
+  page?: number;
+  pageSize?: number;
+  campaignId?: string;
+  status?: string;
+} = {}) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Unauthorized");
+
+  const { page = 1, pageSize = 50, campaignId, status } = params;
+  const skip = (page - 1) * pageSize;
+
+  const where: any = {};
+  if (campaignId) where.campaignId = campaignId;
+  if (status) where.status = status;
+
+  const [logs, total] = await Promise.all([
+    prisma.emailLog.findMany({
+      where,
+      skip,
+      take: pageSize,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        contact: { select: { email: true, name: true } },
+        campaign: { select: { name: true, subject: true } }
+      }
+    }),
+    prisma.emailLog.count({ where })
+  ]);
+
+  return { logs, total };
+}
+
 export async function sendCampaignNow(id: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) throw new Error("Unauthorized");

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { LayoutDashboard, Settings, Search, LogOut, FileText, BarChart3, Users, Inbox, Mail, Megaphone, Contact2 } from 'lucide-react';
+import { LayoutDashboard, Settings, Search, LogOut, FileText, BarChart3, Users, Inbox, Mail, Megaphone, Contact2, History } from 'lucide-react';
 import { signOut, useSession } from "next-auth/react";
 import NotificationDropdown from "@/components/NotificationDropdown";
 import { usePathname } from "next/navigation";
@@ -22,11 +22,24 @@ export default function AdminLayout({
     if (path === "/users" || path.startsWith("/users/")) return "users";
     if (path === "/blast-email" || path.startsWith("/blast-email")) return "blast-email";
     if (path === "/contacts" || path.startsWith("/contacts")) return "contacts";
+    if (path === "/campaigns/logs" || path.startsWith("/campaigns/logs")) return "email-logs";
     if (path === "/campaigns" || path.startsWith("/campaigns")) return "campaigns";
     if (path === "/settings" || path.startsWith("/settings/")) return "settings";
     return null;
   };
   const activeKey = getActiveKey(pathname);
+
+  const sidebarLinks = [
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, id: 'dashboard' },
+    { name: 'My Forms', href: '/forms', icon: FileText, id: 'forms' },
+    { name: 'Responses', href: '/responses', icon: Inbox, id: 'responses' },
+    { name: 'Analytics', href: '/analytics', icon: BarChart3, id: 'analytics' },
+    { name: 'Users', href: '/users', icon: Users, id: 'users' },
+    { name: 'Blast Dashboard', href: '/blast-email', icon: Mail, id: 'blast-email' },
+    { name: 'Contacts', href: '/contacts', icon: Contact2, id: 'contacts' },
+    { name: 'Campaigns', href: '/campaigns', icon: Megaphone, id: 'campaigns' },
+    { name: 'Histori Email', href: '/campaigns/logs', icon: History, id: 'email-logs' },
+  ];
 
   const navItemClassName = (key: string) =>
     `flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-colors ${
@@ -61,62 +74,16 @@ export default function AdminLayout({
         <div className="px-4 py-2">
             <p className="text-xs font-semibold text-slate-400 px-4 mb-2 uppercase tracking-wider">Main Menu</p>
             <nav className="space-y-1">
-            <Link
-              href="/dashboard"
-              className={navItemClassName("dashboard")}
-            >
-              <LayoutDashboard size={20} />
-              <span>Dashboard</span>
-            </Link>
-            <Link
-              href="/forms"
-              className={navItemClassName("forms")}
-            >
-              <FileText size={20} />
-              <span>My Forms</span>
-            </Link>
-            <Link
-              href="/responses"
-              className={navItemClassName("responses")}
-            >
-              <Inbox size={20} />
-              <span>Responses</span>
-            </Link>
-            <Link
-              href="/analytics"
-              className={navItemClassName("analytics")}
-            >
-              <BarChart3 size={20} />
-              <span>Analytics</span>
-            </Link>
-            <Link
-              href="/users"
-              className={navItemClassName("users")}
-            >
-              <Users size={20} />
-              <span>Users</span>
-            </Link>
-            <Link
-              href="/blast-email"
-              className={navItemClassName("blast-email")}
-            >
-              <LayoutDashboard size={20} />
-              <span>Blast Dashboard</span>
-            </Link>
-            <Link
-              href="/contacts"
-              className={navItemClassName("contacts")}
-            >
-              <Contact2 size={20} />
-              <span>Contacts</span>
-            </Link>
-            <Link
-              href="/campaigns"
-              className={navItemClassName("campaigns")}
-            >
-              <Megaphone size={20} />
-              <span>Campaigns</span>
-            </Link>
+              {sidebarLinks.map((item) => (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  className={navItemClassName(item.id)}
+                >
+                  <item.icon size={20} />
+                  <span>{item.name}</span>
+                </Link>
+              ))}
             </nav>
         </div>
 
