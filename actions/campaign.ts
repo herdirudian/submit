@@ -130,8 +130,14 @@ export async function sendCampaignNow(id: string) {
   // Logic for sending
   for (const contact of contacts) {
     try {
-      // 1. Personalization
+      // 1. Personalization & Newline handling
       let bodyContent = campaign.content;
+      
+      // Convert plain newlines to <br/> if not already HTML
+      if (!bodyContent.includes('<p>') && !bodyContent.includes('</div>')) {
+        bodyContent = bodyContent.replace(/\n/g, '<br />');
+      }
+
       bodyContent = bodyContent.replace(/{{name}}/g, contact.name || "Sobat");
       bodyContent = bodyContent.replace(/{{email}}/g, contact.email);
       bodyContent = bodyContent.replace(/{{company}}/g, contact.company || "");
@@ -300,6 +306,12 @@ export async function renderCampaignPreview(data: {
   const footerImage = data.footerImageUrl;
   
   let bodyContent = data.content;
+
+  // Convert plain newlines to <br/> if not already HTML
+  if (!bodyContent.includes('<p>') && !bodyContent.includes('</div>')) {
+    bodyContent = bodyContent.replace(/\n/g, '<br />');
+  }
+
   bodyContent = bodyContent.replace(/{{name}}/g, "Sobat");
   bodyContent = bodyContent.replace(/{{email}}/g, "sobat@example.com");
   bodyContent = bodyContent.replace(/{{company}}/g, "Perusahaan Sobat");
