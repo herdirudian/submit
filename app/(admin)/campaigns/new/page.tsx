@@ -68,9 +68,9 @@ export default function NewCampaignPage() {
         try {
             await createCampaign(formData);
             router.push("/campaigns");
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            alert("Gagal membuat campaign.");
+            alert("Gagal membuat campaign: " + (error.message || "Unknown error"));
         } finally {
             setLoading(false);
         }

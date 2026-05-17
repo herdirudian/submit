@@ -37,7 +37,16 @@ export async function createCampaign(data: {
 
   const campaign = await prisma.campaign.create({
     data: {
-      ...data,
+      name: data.name,
+      subject: data.subject,
+      content: data.content,
+      previewText: data.previewText,
+      contactListId: data.contactListId,
+      templateId: data.templateId,
+      headerImageUrl: data.headerImageUrl,
+      footerImageUrl: data.footerImageUrl,
+      ctaText: data.ctaText,
+      ctaUrl: data.ctaUrl,
       status: 'DRAFT'
     }
   });
