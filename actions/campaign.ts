@@ -169,7 +169,7 @@ export async function sendCampaignNow(id: string) {
             li { margin-bottom: 8px; }
             
             .cta-container { text-align: center; padding: 20px 0; }
-            .btn { display: inline-block; padding: 14px 30px; background-color: #e31937; color: #ffffff !important; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(227, 25, 55, 0.2); }
+            .btn { display: inline-block; padding: 14px 30px; background-color: #0f4d39; color: #ffffff !important; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(15, 77, 57, 0.2); }
             
             .contact-section { margin-top: 30px; padding-top: 20px; border-top: 1px dashed #dddddd; text-align: center; }
             .social-icons { margin: 20px 0; }
@@ -337,7 +337,7 @@ export async function renderCampaignPreview(data: {
         h1, h2, h3 { color: #222222; text-align: center; margin-bottom: 20px; line-height: 1.3; }
         p { margin-bottom: 15px; }
         .cta-container { text-align: center; padding: 20px 0; }
-        .btn { display: inline-block; padding: 14px 30px; background-color: #e31937; color: #ffffff !important; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(227, 25, 55, 0.2); }
+        .btn { display: inline-block; padding: 14px 30px; background-color: #0f4d39; color: #ffffff !important; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(15, 77, 57, 0.2); }
         .contact-section { margin-top: 30px; padding-top: 20px; border-top: 1px dashed #dddddd; text-align: center; }
         .address { font-size: 11px; color: #999999; margin-top: 20px; line-height: 1.4; }
         .unsubscribe { color: #999999; text-decoration: underline; font-size: 11px; }
