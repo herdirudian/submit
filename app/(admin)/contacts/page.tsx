@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { ContactStatus } from "@prisma/client";
 import Link from "next/link";
-import { getContacts, deleteContact, getContactLists, createContact, importContacts, createContactList, deleteContactList, removeContactFromList } from "@/actions/contact";
+import { getContacts, deleteContact, getContactLists, createContact, importContacts, createContactList, deleteContactList, removeContactFromList, addContactsToList } from "@/actions/contact";
 import ContactExportButton from "@/components/ContactExportButton";
 
 export default function ContactsPage() {
