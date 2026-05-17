@@ -29,6 +29,8 @@ export async function createCampaign(data: {
   templateId?: string;
   headerImageUrl?: string;
   footerImageUrl?: string;
+  ctaText?: string;
+  ctaUrl?: string;
 }) {
   const session = await getServerSession(authOptions);
   if (!session?.user) throw new Error("Unauthorized");
@@ -99,42 +101,96 @@ export async function sendCampaignNow(id: string) {
         <html>
         <head>
           <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <style>
-            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f4f7fa; color: #334155; }
-            .wrapper { width: 100%; table-layout: fixed; background-color: #f4f7fa; padding-bottom: 40px; }
-            .main { background-color: #ffffff; margin: 0 auto; width: 100%; max-width: 600px; border-spacing: 0; font-family: sans-serif; color: #334155; border-radius: 8px; overflow: hidden; margin-top: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-            .header { padding: 30px; text-align: center; background-color: #ffffff; border-bottom: 1px solid #f1f5f9; }
-            .content { padding: 40px; line-height: 1.6; font-size: 16px; }
-            .footer { padding: 30px; text-align: center; font-size: 12px; color: #94a3b8; line-height: 1.5; }
-            .logo { max-height: 100px; width: auto; max-width: 100%; }
-            .footer-img { max-height: 150px; width: auto; max-width: 100%; margin: 0 auto 20px; border-radius: 4px; }
-            img { max-width: 100%; height: auto; display: block; margin: 20px 0; border-radius: 8px; }
-            .btn { display: inline-block; padding: 12px 24px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 20px 0; }
-            a { color: #2563eb; text-decoration: underline; }
-            .unsubscribe { color: #94a3b8; text-decoration: underline; }
+            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #f8f9fa; color: #333333; }
+            .wrapper { width: 100%; table-layout: fixed; background-color: #f8f9fa; padding: 20px 0; }
+            .main { background-color: #ffffff; margin: 0 auto; width: 100%; max-width: 600px; border-spacing: 0; font-family: sans-serif; color: #333333; }
+            .header { padding: 20px 30px; text-align: left; background-color: #ffffff; border-bottom: 1px solid #eeeeee; }
+            .hero-img { width: 100% !important; height: auto !important; display: block; }
+            .content { padding: 40px 30px; line-height: 1.6; font-size: 16px; text-align: left; }
+            .footer { padding: 40px 30px; text-align: center; font-size: 12px; color: #666666; background-color: #ffffff; border-top: 1px solid #eeeeee; }
+            .logo { max-height: 50px; width: auto; }
+            .footer-img { max-width: 100%; height: auto; margin-bottom: 20px; border-radius: 4px; }
+            
+            h1, h2, h3 { color: #222222; text-align: center; margin-bottom: 20px; line-height: 1.3; }
+            p { margin-bottom: 15px; }
+            ul { margin-bottom: 15px; padding-left: 20px; }
+            li { margin-bottom: 8px; }
+            
+            .cta-container { text-align: center; padding: 20px 0; }
+            .btn { display: inline-block; padding: 14px 30px; background-color: #e31937; color: #ffffff !important; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(227, 25, 55, 0.2); }
+            
+            .contact-section { margin-top: 30px; padding-top: 20px; border-top: 1px dashed #dddddd; text-align: center; }
+            .social-icons { margin: 20px 0; }
+            .social-icons a { margin: 0 8px; display: inline-block; }
+            .address { font-size: 11px; color: #999999; margin-top: 20px; line-height: 1.4; }
+            .unsubscribe { color: #999999; text-decoration: underline; font-size: 11px; }
+            
+            @media screen and (max-width: 600px) {
+              .main { width: 100% !important; }
+              .content { padding: 30px 20px !important; }
+            }
           </style>
         </head>
         <body>
           <center class="wrapper">
-            <table class="main" width="100%">
+            <table class="main" width="100%" cellpadding="0" cellspacing="0">
+              <!-- Header -->
               <tr>
                 <td class="header">
-                  <img src="${brandLogo}" alt="${brandName}" class="logo" style="margin: 0 auto;">
+                  <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td align="left">
+                        <img src="${brandLogo}" alt="${brandName}" class="logo">
+                      </td>
+                    </tr>
+                  </table>
                 </td>
               </tr>
+              
+              <!-- Hero Image (optional header image) -->
+              ${campaign.headerImageUrl ? `
+              <tr>
+                <td>
+                  <img src="${campaign.headerImageUrl}" alt="Hero" class="hero-img">
+                </td>
+              </tr>
+              ` : ""}
+
+              <!-- Content Body -->
               <tr>
                 <td class="content">
                   ${bodyContent}
+                  
+                  ${campaign.ctaText && campaign.ctaUrl ? `
+                  <div class="cta-container">
+                    <a href="${campaign.ctaUrl}" class="btn">${campaign.ctaText}</a>
+                  </div>
+                  ` : ""}
                 </td>
               </tr>
+
+              <!-- Footer -->
               <tr>
                 <td class="footer">
-                  ${footerImage ? `<img src="${footerImage}" alt="Footer" class="footer-img" style="margin: 0 auto 20px;">` : ""}
-                  <p style="margin: 0 0 10px 0;"><strong>${brandName}</strong></p>
-                  <p style="margin: 0 0 20px 0;">Email ini dikirimkan secara otomatis oleh sistem ${brandName}.</p>
-                  <p style="margin: 0;">
-                    <a href="${unsubscribeUrl}" class="unsubscribe">Berhenti berlangganan</a>
-                  </p>
+                  ${footerImage ? `<img src="${footerImage}" alt="Footer Banner" class="footer-img">` : ""}
+                  
+                  <div class="contact-section">
+                    <p style="font-weight: bold; font-size: 14px; margin-bottom: 10px;">Punya Pertanyaan?</p>
+                    <p style="font-size: 13px; margin-bottom: 5px;">Hubungi kami di:</p>
+                    <p style="font-size: 13px; font-weight: bold; color: #222222;">
+                      ${settings?.notificationFromEmail || "cs@thelodgegroup.id"}
+                    </p>
+                  </div>
+
+                  <div class="address">
+                    <p style="margin-bottom: 5px;"><strong>${brandName}</strong></p>
+                    <p style="margin: 0;">Email ini dikirimkan secara otomatis oleh sistem ${brandName}.</p>
+                    <p style="margin-top: 15px;">
+                      <a href="${unsubscribeUrl}" class="unsubscribe">Berhenti berlangganan</a>
+                    </p>
+                  </div>
                 </td>
               </tr>
             </table>

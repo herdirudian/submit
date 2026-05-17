@@ -27,7 +27,9 @@ export default function NewCampaignPage() {
         content: "",
         contactListId: "",
         headerImageUrl: "",
-        footerImageUrl: ""
+        footerImageUrl: "",
+        ctaText: "",
+        ctaUrl: ""
     });
 
     useEffect(() => {
@@ -107,6 +109,30 @@ export default function NewCampaignPage() {
                                     className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-4 focus:ring-primary-50 focus:border-primary-500 outline-none transition-all font-medium text-slate-800"
                                 />
                             </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-700">Tombol CTA (Optional)</label>
+                                    <input 
+                                        type="text"
+                                        placeholder="Contoh: Pelajari Selengkapnya"
+                                        value={formData.ctaText}
+                                        onChange={(e) => setFormData(p => ({ ...p, ctaText: e.target.value }))}
+                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary-500 outline-none transition-all text-sm"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-700">Link Tombol (URL)</label>
+                                    <input 
+                                        type="text"
+                                        placeholder="https://..."
+                                        value={formData.ctaUrl}
+                                        onChange={(e) => setFormData(p => ({ ...p, ctaUrl: e.target.value }))}
+                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary-500 outline-none transition-all text-sm"
+                                    />
+                                </div>
+                            </div>
+
                             <div className="space-y-2">
                                 <label className="text-sm font-bold text-slate-700">Preview Text (Optional)</label>
                                 <input 

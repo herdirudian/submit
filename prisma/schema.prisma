@@ -308,6 +308,8 @@ model Campaign {
   content         String         @db.LongText
   headerImageUrl  String?        @db.Text
   footerImageUrl  String?        @db.Text
+  ctaText         String?
+  ctaUrl          String?
   status          CampaignStatus @default(DRAFT)
   scheduledAt     DateTime?
   sentAt          DateTime?
