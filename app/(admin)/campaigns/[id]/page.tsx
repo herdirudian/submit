@@ -87,12 +87,7 @@ export default function EditCampaignPage() {
             throw new Error("Upload failed");
         }
         
-        // Ensure absolute URL for preview
-        const url = String(result.url);
-        if (url.startsWith('/')) {
-            return window.location.origin + url;
-        }
-        return url;
+        return String(result.url);
     };
 
     const handlePreview = async () => {

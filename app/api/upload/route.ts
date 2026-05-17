@@ -24,16 +24,14 @@ export async function POST(request: NextRequest) {
     const filePath = path.join(uploadDir, filename);
     await writeFile(filePath, buffer);
 
-    // Get base URL from request or env
-    const baseUrl = process.env.NEXTAUTH_URL || new URL(request.url).origin;
-    const url = `${baseUrl}/uploads/${filename}`;
+    // Return relative URL for browser consistency
+    const url = `/uploads/${filename}`;
 
     console.log(`File uploaded to: ${filePath}`);
-    console.log(`Accessible at: ${url}`);
 
     return NextResponse.json({ 
       success: true, 
-      url: url, 
+      url: url,
       filename 
     });
   } catch (error: any) {
