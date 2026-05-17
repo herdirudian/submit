@@ -12,11 +12,12 @@ export async function getContacts(params: {
   search?: string;
   status?: ContactStatus;
   tag?: string;
+  listId?: string;
 } = {}) {
   const session = await getServerSession(authOptions);
   if (!session?.user) throw new Error("Unauthorized");
 
-  const { page = 1, pageSize = 20, search, status, tag } = params;
+  const { page = 1, pageSize = 20, search, status, tag, listId } = params;
   const skip = (page - 1) * pageSize;
 
   const where: any = {};
@@ -29,6 +30,13 @@ export async function getContacts(params: {
   }
   if (status) where.status = status;
   if (tag) where.tags = { contains: tag };
+  if (listId) {
+    where.lists = {
+      some: {
+        contactListId: listId
+      }
+    };
+  }
 
   const [contacts, total] = await Promise.all([
     prisma.contact.findMany({
@@ -217,4 +225,24 @@ export async function addContactsToList(listId: string, contactIds: string[]) {
   });
 
   revalidatePath("/contacts");
+  revalidatePath("/campaigns/new");
+  revalidatePath("/campaigns");
+}
+
+export async function removeContactFromList(listId: string, contactId: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Unauthorized");
+
+  await prisma.contactListMember.delete({
+    where: {
+      contactId_contactListId: {
+        contactId,
+        contactListId: listId
+      }
+    }
+  });
+
+  revalidatePath("/contacts");
+  revalidatePath("/campaigns/new");
+  revalidatePath("/campaigns");
 }

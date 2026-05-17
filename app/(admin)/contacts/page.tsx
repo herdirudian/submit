@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { ContactStatus } from "@prisma/client";
 import Link from "next/link";
-import { getContacts, deleteContact, getContactLists, createContact, importContacts, createContactList, deleteContactList } from "@/actions/contact";
+import { getContacts, deleteContact, getContactLists, createContact, importContacts, createContactList, deleteContactList, removeContactFromList } from "@/actions/contact";
 import ContactExportButton from "@/components/ContactExportButton";
 
 export default function ContactsPage() {
@@ -30,6 +30,8 @@ export default function ContactsPage() {
     const [importTargetListId, setImportTargetListId] = useState<string>("");
     const [importNewListName, setImportNewListName] = useState<string>("");
     const [newList, setNewList] = useState<{ name: string; description: string }>({ name: "", description: "" });
+    const [selectedListId, setSelectedListId] = useState<string | undefined>();
+    const [selectedListName, setSelectedListName] = useState<string | undefined>();
 
     const [newContact, setNewContact] = useState({
         email: "",
@@ -42,7 +44,7 @@ export default function ContactsPage() {
     useEffect(() => {
         loadContacts();
         loadLists();
-    }, [page, status]);
+    }, [page, status, selectedListId]);
 
     async function loadLists() {
         const lists = await getContactLists();
@@ -52,7 +54,7 @@ export default function ContactsPage() {
     async function loadContacts() {
         setLoading(true);
         try {
-            const data = await getContacts({ page, search, status });
+            const data = await getContacts({ page, search, status, listId: selectedListId });
             setContacts(data.contacts);
             setTotal(data.total);
         } catch (error) {
@@ -146,6 +148,23 @@ export default function ContactsPage() {
         if (!confirm("Hapus list ini? Anggota list juga akan terhapus dari list (kontaknya tetap ada).")) return;
         try {
             await deleteContactList(id);
+            if (selectedListId === id) {
+                setSelectedListId(undefined);
+                setSelectedListName(undefined);
+            }
+            loadLists();
+        } catch (error: any) {
+            alert(error.message);
+        }
+    };
+
+    const handleRemoveFromList = async (contactId: string) => {
+        if (!selectedListId) return;
+        if (!confirm("Keluarkan kontak ini dari list?")) return;
+        
+        try {
+            await removeContactFromList(selectedListId, contactId);
+            loadContacts();
             loadLists();
         } catch (error: any) {
             alert(error.message);
@@ -212,29 +231,46 @@ export default function ContactsPage() {
             {activeTab === 'contacts' ? (
                 <>
                 {/* Filters & Search */}
-                <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4 items-center">
-                    <form onSubmit={handleSearch} className="relative flex-1 w-full">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                        <input 
-                            type="text"
-                            placeholder="Cari email, nama, atau perusahaan..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
-                        />
-                    </form>
-                    <div className="flex gap-3 w-full md:w-auto">
-                        <select 
-                            value={status || ""}
-                            onChange={(e) => setStatus(e.target.value as ContactStatus || undefined)}
-                            className="flex-1 md:w-40 px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all bg-white"
-                        >
-                            <option value="">Semua Status</option>
-                            <option value="ACTIVE">Aktif</option>
-                            <option value="UNSUBSCRIBED">Unsubscribed</option>
-                            <option value="BOUNCED">Bounced</option>
-                            <option value="BLACKLISTED">Blacklisted</option>
-                        </select>
+                <div className="space-y-4">
+                    {selectedListId && (
+                        <div className="flex items-center gap-2 bg-primary-50 text-primary-700 px-4 py-2 rounded-xl border border-primary-100 w-fit">
+                            <Users size={16} />
+                            <span className="text-sm font-bold">Menampilkan Anggota List: {selectedListName}</span>
+                            <button 
+                                onClick={() => {
+                                    setSelectedListId(undefined);
+                                    setSelectedListName(undefined);
+                                }}
+                                className="ml-2 p-1 hover:bg-primary-100 rounded-full transition-colors"
+                            >
+                                <X size={14} />
+                            </button>
+                        </div>
+                    )}
+                    
+                    <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4 items-center">
+                        <form onSubmit={handleSearch} className="relative flex-1 w-full">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                            <input 
+                                type="text"
+                                placeholder="Cari email, nama, atau perusahaan..."
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+                            />
+                        </form>
+                        <div className="flex gap-3 w-full md:w-auto">
+                            <select 
+                                value={status || ""}
+                                onChange={(e) => setStatus(e.target.value as ContactStatus || undefined)}
+                                className="px-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-primary-500 bg-white text-sm"
+                            >
+                                <option value="">Semua Status</option>
+                                <option value="ACTIVE">Active</option>
+                                <option value="UNSUBSCRIBED">Unsubscribed</option>
+                                <option value="BOUNCED">Bounced</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -329,12 +365,23 @@ export default function ContactsPage() {
                                                     <button className="p-2 text-slate-400 hover:text-primary-600 transition-colors">
                                                         <Edit2 size={16} />
                                                     </button>
-                                                    <button 
-                                                        onClick={() => handleDelete(contact.id)}
-                                                        className="p-2 text-slate-400 hover:text-red-600 transition-colors"
-                                                    >
-                                                        <Trash2 size={16} />
-                                                    </button>
+                                                    {selectedListId ? (
+                                                        <button 
+                                                            onClick={() => handleRemoveFromList(contact.id)}
+                                                            className="p-2 text-slate-400 hover:text-orange-600 transition-colors"
+                                                            title="Keluarkan dari list"
+                                                        >
+                                                            <X size={16} />
+                                                        </button>
+                                                    ) : (
+                                                        <button 
+                                                            onClick={() => handleDelete(contact.id)}
+                                                            className="p-2 text-slate-400 hover:text-red-600 transition-colors"
+                                                            title="Hapus kontak permanen"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>
@@ -388,7 +435,14 @@ export default function ContactsPage() {
                                 <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                                     {list._count.members} Anggota
                                 </span>
-                                <button className="text-xs font-bold text-primary-600 hover:underline">
+                                <button 
+                                    onClick={() => {
+                                        setSelectedListId(list.id);
+                                        setSelectedListName(list.name);
+                                        setActiveTab('contacts');
+                                    }}
+                                    className="text-xs font-bold text-primary-600 hover:underline"
+                                >
                                     Kelola Anggota
                                 </button>
                             </div>
