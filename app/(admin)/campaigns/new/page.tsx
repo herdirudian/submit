@@ -1,0 +1,224 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { 
+    Megaphone, Send, Save, ArrowLeft, 
+    Layout, Users, Type, Eye, Loader2,
+    CheckCircle, AlertTriangle, Info
+} from "lucide-react";
+import { createCampaign } from "@/actions/campaign";
+import { getContactLists } from "@/actions/contact";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+
+export default function NewCampaignPage() {
+    const router = useRouter();
+    const [loading, setLoading] = useState(false);
+    const [fetchingLists, setFetchingLists] = useState(true);
+    const [contactLists, setContactLists] = useState<any[]>([]);
+    
+    const [formData, setFormData] = useState({
+        name: "",
+        subject: "",
+        previewText: "",
+        content: "",
+        contactListId: ""
+    });
+
+    useEffect(() => {
+        loadContactLists();
+    }, []);
+
+    async function loadContactLists() {
+        try {
+            const data = await getContactLists();
+            setContactLists(data);
+            if (data.length > 0) {
+                setFormData(prev => ({ ...prev, contactListId: data[0].id }));
+            }
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setFetchingLists(false);
+        }
+    }
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            await createCampaign(formData);
+            router.push("/campaigns");
+        } catch (error) {
+            console.error(error);
+            alert("Gagal membuat campaign.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="max-w-5xl mx-auto space-y-6 pb-20">
+            <div className="flex justify-between items-center">
+                <div className="flex items-center gap-4">
+                    <Link href="/campaigns" className="p-2 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-primary-600 transition-all shadow-sm">
+                        <ArrowLeft size={20} />
+                    </Link>
+                    <div>
+                        <h1 className="text-2xl font-bold text-slate-800">Buat Campaign Baru</h1>
+                        <p className="text-slate-500 text-sm">Rancang pesan blast email Anda.</p>
+                    </div>
+                </div>
+            </div>
+
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Main Editor */}
+                <div className="lg:col-span-2 space-y-6">
+                    <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-6">
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                                    <Type size={16} className="text-primary-600" />
+                                    Subjek Email
+                                </label>
+                                <input 
+                                    type="text"
+                                    required
+                                    placeholder="Contoh: Penawaran Spesial Akhir Bulan!"
+                                    value={formData.subject}
+                                    onChange={(e) => setFormData(p => ({ ...p, subject: e.target.value }))}
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-4 focus:ring-primary-50 focus:border-primary-500 outline-none transition-all font-medium text-slate-800"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-slate-700">Preview Text (Optional)</label>
+                                <input 
+                                    type="text"
+                                    placeholder="Teks singkat yang muncul setelah subjek di inbox"
+                                    value={formData.previewText}
+                                    onChange={(e) => setFormData(p => ({ ...p, previewText: e.target.value }))}
+                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-4 focus:ring-primary-50 focus:border-primary-500 outline-none transition-all text-sm text-slate-600"
+                                />
+                            </div>
+                        </div>
+
+                        <hr className="border-slate-50" />
+
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                                    <Layout size={16} className="text-primary-600" />
+                                    Isi Email (HTML / Text)
+                                </label>
+                                <div className="flex gap-2">
+                                    <button type="button" className="text-xs font-bold text-primary-600 hover:bg-primary-50 px-2 py-1 rounded transition-colors">
+                                        Template
+                                    </button>
+                                </div>
+                            </div>
+                            <textarea 
+                                required
+                                placeholder="Tulis konten email Anda di sini..."
+                                value={formData.content}
+                                onChange={(e) => setFormData(p => ({ ...p, content: e.target.value }))}
+                                className="w-full px-4 py-4 rounded-xl border border-slate-200 focus:ring-4 focus:ring-primary-50 focus:border-primary-500 outline-none transition-all min-h-[400px] font-mono text-sm leading-relaxed"
+                            />
+                            <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 flex gap-3 items-start">
+                                <Info size={18} className="text-primary-600 mt-0.5 shrink-0" />
+                                <div className="text-xs text-slate-500 leading-relaxed">
+                                    Gunakan <code className="bg-white px-1 border border-slate-200 rounded text-primary-700 font-bold">{"{{name}}"}</code> untuk menyapa penerima dengan nama mereka. Anda juga bisa memasukkan tag HTML untuk styling.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Sidebar Settings */}
+                <div className="space-y-6">
+                    <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-6">
+                        <h3 className="font-bold text-slate-800 border-b border-slate-50 pb-4">Pengaturan Campaign</h3>
+                        
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-slate-700">Nama Campaign</label>
+                                <input 
+                                    type="text"
+                                    required
+                                    placeholder="Internal: Promo Mei 2024"
+                                    value={formData.name}
+                                    onChange={(e) => setFormData(p => ({ ...p, name: e.target.value }))}
+                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary-500 outline-none transition-all text-sm"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                                    <Users size={16} className="text-primary-600" />
+                                    Target Penerima (List)
+                                </label>
+                                {fetchingLists ? (
+                                    <div className="flex items-center gap-2 text-slate-400 text-xs py-2">
+                                        <Loader2 size={14} className="animate-spin" />
+                                        Memuat daftar kontak...
+                                    </div>
+                                ) : (
+                                    <select 
+                                        required
+                                        value={formData.contactListId}
+                                        onChange={(e) => setFormData(p => ({ ...p, contactListId: e.target.value }))}
+                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary-500 outline-none transition-all text-sm bg-white"
+                                    >
+                                        <option value="">Pilih List Kontak...</option>
+                                        {contactLists.map(list => (
+                                            <option key={list.id} value={list.id}>{list.name} ({list._count.members} kontak)</option>
+                                        ))}
+                                    </select>
+                                )}
+                                <p className="text-[10px] text-slate-400">Pilih segmen audiens yang akan menerima email ini.</p>
+                            </div>
+                        </div>
+
+                        <div className="pt-4 space-y-3">
+                            <button 
+                                type="submit"
+                                disabled={loading}
+                                className="w-full py-3 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary-100"
+                            >
+                                {loading ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
+                                Simpan Draft
+                            </button>
+                            <button 
+                                type="button"
+                                className="w-full py-3 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                            >
+                                <Eye size={20} />
+                                Preview Email
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="bg-slate-800 text-white p-6 rounded-2xl shadow-sm">
+                        <h4 className="font-bold text-sm mb-3 flex items-center gap-2 text-primary-400">
+                            <AlertTriangle size={16} />
+                            Checklist Sebelum Kirim
+                        </h4>
+                        <ul className="space-y-3 text-xs text-slate-400">
+                            <li className="flex gap-2">
+                                <div className="w-4 h-4 rounded-full border border-slate-600 flex items-center justify-center text-[8px] font-bold shrink-0">✓</div>
+                                <span>Pastikan subjek email menarik</span>
+                            </li>
+                            <li className="flex gap-2">
+                                <div className="w-4 h-4 rounded-full border border-slate-600 flex items-center justify-center text-[8px] font-bold shrink-0">✓</div>
+                                <span>Cek link di dalam email</span>
+                            </li>
+                            <li className="flex gap-2">
+                                <div className="w-4 h-4 rounded-full border border-slate-600 flex items-center justify-center text-[8px] font-bold shrink-0">✓</div>
+                                <span>Kirim email testing ke diri sendiri</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </form>
+        </div>
+    );
+}

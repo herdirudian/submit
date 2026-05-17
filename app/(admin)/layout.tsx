@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { LayoutDashboard, Settings, Search, LogOut, FileText, BarChart3, Users, Inbox } from 'lucide-react';
+import { LayoutDashboard, Settings, Search, LogOut, FileText, BarChart3, Users, Inbox, Mail, Megaphone, Contact2 } from 'lucide-react';
 import { signOut, useSession } from "next-auth/react";
 import NotificationDropdown from "@/components/NotificationDropdown";
 import { usePathname } from "next/navigation";
@@ -20,6 +20,9 @@ export default function AdminLayout({
     if (path === "/responses" || path.startsWith("/responses/")) return "responses";
     if (path === "/analytics" || path.startsWith("/analytics/")) return "analytics";
     if (path === "/users" || path.startsWith("/users/")) return "users";
+    if (path === "/blast-email" || path.startsWith("/blast-email")) return "blast-email";
+    if (path === "/contacts" || path.startsWith("/contacts")) return "contacts";
+    if (path === "/campaigns" || path.startsWith("/campaigns")) return "campaigns";
     if (path === "/settings" || path.startsWith("/settings/")) return "settings";
     return null;
   };
@@ -92,6 +95,27 @@ export default function AdminLayout({
             >
               <Users size={20} />
               <span>Users</span>
+            </Link>
+            <Link
+              href="/blast-email"
+              className={navItemClassName("blast-email")}
+            >
+              <LayoutDashboard size={20} />
+              <span>Blast Dashboard</span>
+            </Link>
+            <Link
+              href="/contacts"
+              className={navItemClassName("contacts")}
+            >
+              <Contact2 size={20} />
+              <span>Contacts</span>
+            </Link>
+            <Link
+              href="/campaigns"
+              className={navItemClassName("campaigns")}
+            >
+              <Megaphone size={20} />
+              <span>Campaigns</span>
             </Link>
             </nav>
         </div>

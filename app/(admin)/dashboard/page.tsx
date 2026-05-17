@@ -2,7 +2,7 @@ import { getDashboardStats, getForms } from "@/actions/form";
 import CreateFormButton from "@/components/CreateFormButton";
 import Link from "next/link";
 import { formatDistance } from "date-fns";
-import { FileText, Eye, Edit, Calendar, Clock, BarChart } from "lucide-react";
+import { FileText, Eye, Edit, Calendar, Clock, BarChart, Mail } from "lucide-react";
 import DeleteFormButton from "@/components/DeleteFormButton";
 
 export default async function DashboardPage() {
@@ -19,7 +19,16 @@ export default async function DashboardPage() {
             <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
             <p className="text-slate-500 mt-1">Ringkasan aktivitas dan form terbaru.</p>
         </div>
-        <CreateFormButton />
+        <div className="flex gap-2">
+            <Link 
+                href="/blast-email" 
+                className="flex items-center gap-2 bg-white text-slate-700 hover:text-primary-700 border border-slate-200 hover:border-primary-200 px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm"
+            >
+                <Mail size={18} />
+                Blast Email
+            </Link>
+            <CreateFormButton />
+        </div>
       </div>
 
       {/* Stats Cards (Mockup) */}

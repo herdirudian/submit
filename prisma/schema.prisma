@@ -233,3 +233,132 @@ model Answer {
   @@index([questionId])
   @@map("answers")
 }
+
+// --- Blast Email Feature Models ---
+
+model Contact {
+  id           String         @id @default(cuid())
+  email        String         @unique
+  name         String?
+  company      String?
+  city         String?
+  tags         String?        @db.Text // Comma separated tags
+  customFields String?        @db.Text // JSON for additional fields
+  status       ContactStatus  @default(ACTIVE)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  
+  lists        ContactListMember[]
+  logs         EmailLog[]
+
+  @@map("contacts")
+}
+
+enum ContactStatus {
+  ACTIVE
+  UNSUBSCRIBED
+  BOUNCED
+  BLACKLISTED
+}
+
+model ContactList {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  members     ContactListMember[]
+  campaigns   Campaign[]
+
+  @@map("contact_lists")
+}
+
+model ContactListMember {
+  id            String      @id @default(cuid())
+  contactId     String
+  contactListId String
+  
+  contact       Contact     @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  list          ContactList @relation(fields: [contactListId], references: [id], onDelete: Cascade)
+
+  @@unique([contactId, contactListId])
+  @@map("contact_list_members")
+}
+
+model EmailTemplate {
+  id        String   @id @default(cuid())
+  name      String
+  subject   String?
+  content   String   @db.LongText // HTML content
+  thumbnail String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  campaigns Campaign[]
+
+  @@map("email_templates")
+}
+
+model Campaign {
+  id              String         @id @default(cuid())
+  name            String
+  subject         String
+  previewText     String?
+  content         String         @db.LongText
+  status          CampaignStatus @default(DRAFT)
+  scheduledAt     DateTime?
+  sentAt          DateTime?
+  
+  templateId      String?
+  contactListId   String?
+  
+  template        EmailTemplate? @relation(fields: [templateId], references: [id])
+  contactList     ContactList?   @relation(fields: [contactListId], references: [id])
+  logs            EmailLog[]
+
+  // Stats (cached for performance)
+  totalSent       Int            @default(0)
+  totalOpened     Int            @default(0)
+  totalClicked    Int            @default(0)
+  totalBounced    Int            @default(0)
+  totalUnsubscribed Int          @default(0)
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@map("campaigns")
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  SENT
+  FAILED
+}
+
+model EmailLog {
+  id           String    @id @default(cuid())
+  campaignId   String
+  contactId    String
+  status       LogStatus
+  openedAt     DateTime?
+  clickedAt    DateTime?
+  errorMessage String?   @db.Text
+  createdAt    DateTime  @default(now())
+
+  campaign     Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  contact      Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId])
+  @@index([contactId])
+  @@map("email_logs")
+}
+
+enum LogStatus {
+  SENT
+  DELIVERED
+  BOUNCED
+  FAILED
+}
