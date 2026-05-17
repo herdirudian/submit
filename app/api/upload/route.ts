@@ -14,8 +14,15 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Create unique filename
-    const filename = `${Date.now()}-${file.name.replace(/\s+/g, "-")}`;
+    // Create a very safe filename (alphanumeric, dots, and hyphens only)
+    const safeName = file.name
+      .split('.')[0] // Get name without extension
+      .replace(/[^a-zA-Z0-9]/g, "-") // Replace everything not alphanumeric with hyphen
+      .replace(/-+/g, "-") // Replace multiple hyphens with single hyphen
+      .substring(0, 50); // Limit length to 50 chars for stability
+
+    const extension = path.extname(file.name).toLowerCase();
+    const filename = `${Date.now()}-${safeName}${extension}`;
     const uploadDir = path.join(process.cwd(), "public", "uploads");
     
     // Ensure directory exists
