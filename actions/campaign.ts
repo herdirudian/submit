@@ -159,7 +159,8 @@ export async function sendCampaignNow(id: string) {
     return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
   };
 
-  const brandLogo = makeAbsolute(campaign.headerImageUrl || settings?.brandLogoUrl || "/logotlm.png");
+  const brandLogo = makeAbsolute(settings?.brandLogoUrl || "/logotlm.png");
+  const heroImage = makeAbsolute(campaign.headerImageUrl);
   const footerImage = makeAbsolute(campaign.footerImageUrl);
 
   // Update status to SENDING
@@ -200,11 +201,11 @@ export async function sendCampaignNow(id: string) {
             body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #f8f9fa; color: #333333; }
             .wrapper { width: 100%; table-layout: fixed; background-color: #f8f9fa; padding: 20px 0; }
             .main { background-color: #ffffff; margin: 0 auto; width: 100%; max-width: 600px; border-spacing: 0; font-family: sans-serif; color: #333333; }
-            .header { padding: 20px 30px; text-align: left; background-color: #ffffff; border-bottom: 1px solid #eeeeee; }
+            .header { padding: 20px 30px; text-align: center; background-color: #ffffff; border-bottom: 1px solid #eeeeee; }
             .hero-img { width: 100% !important; height: auto !important; display: block; }
             .content { padding: 40px 30px; line-height: 1.6; font-size: 16px; text-align: left; }
             .footer { padding: 40px 30px; text-align: center; font-size: 12px; color: #666666; background-color: #ffffff; border-top: 1px solid #eeeeee; }
-            .logo { max-height: 50px; width: auto; }
+            .logo { max-height: 60px; width: auto; display: inline-block; }
             .footer-img { max-width: 100%; height: auto; margin-bottom: 20px; border-radius: 4px; }
             
             h1, h2, h3 { color: #222222; text-align: center; margin-bottom: 20px; line-height: 1.3; }
@@ -237,7 +238,7 @@ export async function sendCampaignNow(id: string) {
                 <td class="header">
                   <table width="100%" cellpadding="0" cellspacing="0">
                     <tr>
-                      <td align="left">
+                      <td align="center">
                         <img src="${brandLogo}" alt="${brandName}" class="logo">
                       </td>
                     </tr>
@@ -246,10 +247,10 @@ export async function sendCampaignNow(id: string) {
               </tr>
               
               <!-- Hero Image (optional header image) -->
-              ${campaign.headerImageUrl ? `
+              ${heroImage ? `
               <tr>
                 <td>
-                  <img src="${campaign.headerImageUrl}" alt="Hero" class="hero-img">
+                  <img src="${heroImage}" alt="Hero" class="hero-img">
                 </td>
               </tr>
               ` : ""}
@@ -382,7 +383,8 @@ export async function renderCampaignPreview(data: {
     return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
   };
 
-  const brandLogo = makeAbsolute(data.headerImageUrl || settings?.brandLogoUrl || "/logotlm.png");
+  const brandLogo = makeAbsolute(settings?.brandLogoUrl || "/logotlm.png");
+  const heroImage = makeAbsolute(data.headerImageUrl);
   const footerImage = makeAbsolute(data.footerImageUrl);
   
   let bodyContent = data.content;
@@ -408,11 +410,11 @@ export async function renderCampaignPreview(data: {
         body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #f8f9fa; color: #333333; }
         .wrapper { width: 100%; table-layout: fixed; background-color: #f8f9fa; padding: 20px 0; }
         .main { background-color: #ffffff; margin: 0 auto; width: 100%; max-width: 600px; border-spacing: 0; font-family: sans-serif; color: #333333; }
-        .header { padding: 20px 30px; text-align: left; background-color: #ffffff; border-bottom: 1px solid #eeeeee; }
+        .header { padding: 20px 30px; text-align: center; background-color: #ffffff; border-bottom: 1px solid #eeeeee; }
         .hero-img { width: 100% !important; height: auto !important; display: block; }
         .content { padding: 40px 30px; line-height: 1.6; font-size: 16px; text-align: left; }
         .footer { padding: 40px 30px; text-align: center; font-size: 12px; color: #666666; background-color: #ffffff; border-top: 1px solid #eeeeee; }
-        .logo { max-height: 50px; width: auto; }
+        .logo { max-height: 60px; width: auto; display: inline-block; }
         .footer-img { max-width: 100%; height: auto; margin-bottom: 20px; border-radius: 4px; }
         h1, h2, h3 { color: #222222; text-align: center; margin-bottom: 20px; line-height: 1.3; }
         p { margin-bottom: 15px; }
@@ -434,10 +436,10 @@ export async function renderCampaignPreview(data: {
               <img src="${brandLogo}" alt="${brandName}" class="logo">
             </td>
           </tr>
-          ${data.headerImageUrl ? `
+          ${heroImage ? `
           <tr>
             <td>
-              <img src="${data.headerImageUrl}" alt="Hero" class="hero-img">
+              <img src="${heroImage}" alt="Hero" class="hero-img">
             </td>
           </tr>
           ` : ""}
