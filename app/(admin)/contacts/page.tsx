@@ -32,18 +32,26 @@ export default function ContactsPage() {
     const [newList, setNewList] = useState<{ name: string; description: string }>({ name: "", description: "" });
     const [selectedListId, setSelectedListId] = useState<string | undefined>();
     const [selectedListName, setSelectedListName] = useState<string | undefined>();
+    const [selectedContactIds, setSelectedContactIds] = useState<string[]>([]);
+    const [showBulkAddModal, setShowBulkAddModal] = useState(false);
+    const [bulkTargetListId, setBulkTargetListId] = useState("");
+    const [bulkLoading, setBulkLoading] = useState(false);
 
     const [newContact, setNewContact] = useState({
         email: "",
         name: "",
         company: "",
         city: "",
-        tags: ""
+        tags: "",
+        listId: ""
     });
 
     useEffect(() => {
         loadContacts();
         loadLists();
+        if (selectedListId) {
+            setNewContact(p => ({ ...p, listId: selectedListId }));
+        }
     }, [page, status, selectedListId]);
 
     async function loadLists() {
@@ -83,8 +91,9 @@ export default function ContactsPage() {
         try {
             await createContact(newContact);
             setShowCreateModal(false);
-            setNewContact({ email: "", name: "", company: "", city: "", tags: "" });
+            setNewContact({ email: "", name: "", company: "", city: "", tags: "", listId: selectedListId || "" });
             loadContacts();
+            loadLists();
         } catch (error: any) {
             alert(error.message);
         } finally {
@@ -169,6 +178,38 @@ export default function ContactsPage() {
         } catch (error: any) {
             alert(error.message);
         }
+    };
+
+    const handleBulkAddToList = async () => {
+        if (!bulkTargetListId || selectedContactIds.length === 0) return;
+        setBulkLoading(true);
+        try {
+            await addContactsToList(bulkTargetListId, selectedContactIds);
+            alert(`${selectedContactIds.length} kontak berhasil ditambahkan ke list.`);
+            setShowBulkAddModal(false);
+            setSelectedContactIds([]);
+            setBulkTargetListId("");
+            loadLists();
+            loadContacts();
+        } catch (error: any) {
+            alert(error.message);
+        } finally {
+            setBulkLoading(false);
+        }
+    };
+
+    const toggleSelectAll = () => {
+        if (selectedContactIds.length === contacts.length) {
+            setSelectedContactIds([]);
+        } else {
+            setSelectedContactIds(contacts.map(c => c.id));
+        }
+    };
+
+    const toggleSelectContact = (id: string) => {
+        setSelectedContactIds(prev => 
+            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        );
     };
 
     const handleCreateList = async (e: React.FormEvent) => {
@@ -260,6 +301,15 @@ export default function ContactsPage() {
                             />
                         </form>
                         <div className="flex gap-3 w-full md:w-auto">
+                            {selectedContactIds.length > 0 && (
+                                <button 
+                                    onClick={() => setShowBulkAddModal(true)}
+                                    className="px-4 py-2 bg-primary-50 text-primary-700 rounded-xl border border-primary-200 font-bold text-sm hover:bg-primary-100 transition-all flex items-center gap-2"
+                                >
+                                    <Plus size={16} />
+                                    Tambah ke List ({selectedContactIds.length})
+                                </button>
+                            )}
                             <select 
                                 value={status || ""}
                                 onChange={(e) => setStatus(e.target.value as ContactStatus || undefined)}
@@ -277,10 +327,18 @@ export default function ContactsPage() {
                 {/* Table */}
                 <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left">
+                        <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className="bg-slate-50 border-b border-slate-100">
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Kontak</th>
+                                <tr className="border-b border-slate-50">
+                                    <th className="px-6 py-4">
+                                        <input 
+                                            type="checkbox" 
+                                            className="rounded border-slate-300 text-primary-600 focus:ring-primary-500"
+                                            checked={contacts.length > 0 && selectedContactIds.length === contacts.length}
+                                            onChange={toggleSelectAll}
+                                        />
+                                    </th>
+                                    <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Kontak</th>
                                     <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Perusahaan / Kota</th>
                                     <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
                                     <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Tags</th>
@@ -310,6 +368,14 @@ export default function ContactsPage() {
                                 ) : (
                                     contacts.map((contact) => (
                                         <tr key={contact.id} className="hover:bg-slate-50 transition-colors">
+                                            <td className="px-6 py-4">
+                                                <input 
+                                                    type="checkbox" 
+                                                    className="rounded border-slate-300 text-primary-600 focus:ring-primary-500"
+                                                    checked={selectedContactIds.includes(contact.id)}
+                                                    onChange={() => toggleSelectContact(contact.id)}
+                                                />
+                                            </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-10 h-10 rounded-full bg-primary-50 text-primary-600 flex items-center justify-center font-bold">
@@ -595,6 +661,19 @@ export default function ContactsPage() {
                                     className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-primary-500"
                                 />
                             </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-slate-700">Tambahkan ke List (opsional)</label>
+                                <select
+                                    value={newContact.listId}
+                                    onChange={e => setNewContact(p => ({ ...p, listId: e.target.value }))}
+                                    className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+                                >
+                                    <option value="">Pilih List...</option>
+                                    {contactLists.map(l => (
+                                        <option key={l.id} value={l.id}>{l.name} ({l._count.members} anggota)</option>
+                                    ))}
+                                </select>
+                            </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-slate-700">Nama</label>
@@ -654,6 +733,54 @@ export default function ContactsPage() {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Bulk Add to List Modal */}
+            {showBulkAddModal && (
+                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+                            <h3 className="text-lg font-bold text-slate-800">Tambahkan ke List</h3>
+                            <button onClick={() => setShowBulkAddModal(false)} className="text-slate-400 hover:text-slate-600">
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <p className="text-sm text-slate-500">
+                                Anda akan menambahkan <span className="font-bold text-slate-800">{selectedContactIds.length} kontak</span> ke dalam list.
+                            </p>
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-slate-700">Pilih List Tujuan</label>
+                                <select
+                                    value={bulkTargetListId}
+                                    onChange={e => setBulkTargetListId(e.target.value)}
+                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+                                >
+                                    <option value="">Pilih List...</option>
+                                    {contactLists.map(l => (
+                                        <option key={l.id} value={l.id}>{l.name} ({l._count.members} anggota)</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="pt-4 flex gap-3">
+                                <button 
+                                    onClick={() => setShowBulkAddModal(false)}
+                                    className="flex-1 px-4 py-2 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50 transition-all"
+                                >
+                                    Batal
+                                </button>
+                                <button 
+                                    onClick={handleBulkAddToList}
+                                    disabled={bulkLoading || !bulkTargetListId}
+                                    className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {bulkLoading ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle size={18} />}
+                                    Tambahkan
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

@@ -63,14 +63,24 @@ export async function createContact(data: {
   city?: string;
   tags?: string;
   customFields?: string;
+  listId?: string;
 }) {
   const session = await getServerSession(authOptions);
   if (!session?.user) throw new Error("Unauthorized");
 
+  const { listId, ...contactData } = data;
+
   const contact = await prisma.contact.create({
     data: {
-      ...data,
-      email: data.email.toLowerCase().trim(),
+      ...contactData,
+      email: contactData.email.toLowerCase().trim(),
+      ...(listId ? {
+        lists: {
+          create: {
+            contactListId: listId
+          }
+        }
+      } : {})
     },
   });
 
