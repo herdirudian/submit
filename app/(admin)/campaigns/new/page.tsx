@@ -6,7 +6,7 @@ import {
     Layout, Users, Type, Eye, Loader2,
     CheckCircle, AlertTriangle, Info, Upload, X, Image as ImageIcon
 } from "lucide-react";
-import { createCampaign } from "@/actions/campaign";
+import { createCampaign, renderCampaignPreview } from "@/actions/campaign";
 import { getContactLists } from "@/actions/contact";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -19,6 +19,9 @@ export default function NewCampaignPage() {
     const [uploadingFooter, setUploadingFooter] = useState(false);
     const [fetchingLists, setFetchingLists] = useState(true);
     const [contactLists, setContactLists] = useState<any[]>([]);
+    const [showPreview, setShowPreview] = useState(false);
+    const [previewHtml, setPreviewHtml] = useState("");
+    const [previewLoading, setPreviewLoading] = useState(false);
     
     const [formData, setFormData] = useState({
         name: "",
@@ -61,6 +64,31 @@ export default function NewCampaignPage() {
             setFetchingLists(false);
         }
     }
+
+    const handlePreview = async () => {
+        if (!formData.content) {
+            toast.error("Isi email masih kosong");
+            return;
+        }
+        setPreviewLoading(true);
+        setShowPreview(true);
+        try {
+            const html = await renderCampaignPreview({
+                content: formData.content,
+                headerImageUrl: formData.headerImageUrl,
+                footerImageUrl: formData.footerImageUrl,
+                ctaText: formData.ctaText,
+                ctaUrl: formData.ctaUrl
+            });
+            setPreviewHtml(html);
+        } catch (error) {
+            console.error(error);
+            toast.error("Gagal merender preview");
+            setShowPreview(false);
+        } finally {
+            setPreviewLoading(false);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -349,9 +377,11 @@ export default function NewCampaignPage() {
                             </button>
                             <button 
                                 type="button"
+                                onClick={handlePreview}
+                                disabled={previewLoading}
                                 className="w-full py-3 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
                             >
-                                <Eye size={20} />
+                                {previewLoading ? <Loader2 size={20} className="animate-spin" /> : <Eye size={20} />}
                                 Preview Email
                             </button>
                         </div>
@@ -379,6 +409,53 @@ export default function NewCampaignPage() {
                     </div>
                 </div>
             </form>
+
+            {/* Preview Modal */}
+            {showPreview && (
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-300">
+                        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                            <div>
+                                <h3 className="text-xl font-bold text-slate-800">Preview Email Blast</h3>
+                                <p className="text-xs text-slate-500">Tampilan yang akan diterima oleh pelanggan Anda.</p>
+                            </div>
+                            <button 
+                                onClick={() => setShowPreview(false)}
+                                className="p-2 hover:bg-white rounded-xl text-slate-400 hover:text-slate-600 transition-all border border-transparent hover:border-slate-200"
+                            >
+                                <X size={24} />
+                            </button>
+                        </div>
+                        
+                        <div className="flex-1 overflow-y-auto bg-slate-100 p-4 md:p-8">
+                            {previewLoading ? (
+                                <div className="h-full flex flex-col items-center justify-center gap-4 text-slate-400">
+                                    <Loader2 size={40} className="animate-spin text-primary-600" />
+                                    <p className="font-medium animate-pulse">Menyiapkan tampilan preview...</p>
+                                </div>
+                            ) : (
+                                <div className="max-w-[600px] mx-auto shadow-2xl rounded-xl overflow-hidden bg-white">
+                                    <iframe 
+                                        srcDoc={previewHtml}
+                                        title="Email Preview"
+                                        className="w-full min-h-[600px] border-none"
+                                        style={{ height: 'calc(90vh - 150px)' }}
+                                    />
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="p-4 border-t border-slate-100 bg-white flex justify-end gap-3">
+                            <button 
+                                onClick={() => setShowPreview(false)}
+                                className="px-6 py-2.5 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition-all"
+                            >
+                                Tutup Preview
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
