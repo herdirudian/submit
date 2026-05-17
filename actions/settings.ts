@@ -75,6 +75,12 @@ export async function updateAppSettings(data: {
   const brandLogoUrl = (data.brandLogoUrl ?? "").trim();
   const notificationFromName = (data.notificationFromName ?? "").trim();
   const notificationFromEmail = (data.notificationFromEmail ?? "").trim();
+  const address = (data.address ?? "").trim();
+  const instagramUrl = (data.instagramUrl ?? "").trim();
+  const facebookUrl = (data.facebookUrl ?? "").trim();
+  const twitterUrl = (data.twitterUrl ?? "").trim();
+  const linkedinUrl = (data.linkedinUrl ?? "").trim();
+  const websiteUrl = (data.websiteUrl ?? "").trim();
 
   if (notificationFromEmail && !isValidEmail(notificationFromEmail)) {
     throw new Error("From Email tidak valid");
@@ -88,12 +94,24 @@ export async function updateAppSettings(data: {
       brandLogoUrl: brandLogoUrl || null,
       notificationFromName: notificationFromName || null,
       notificationFromEmail: notificationFromEmail || null,
+      address: address || null,
+      instagramUrl: instagramUrl || null,
+      facebookUrl: facebookUrl || null,
+      twitterUrl: twitterUrl || null,
+      linkedinUrl: linkedinUrl || null,
+      websiteUrl: websiteUrl || null,
     },
     update: {
       brandName: brandName || null,
       brandLogoUrl: brandLogoUrl || null,
       notificationFromName: notificationFromName || null,
       notificationFromEmail: notificationFromEmail || null,
+      address: address || null,
+      instagramUrl: instagramUrl || null,
+      facebookUrl: facebookUrl || null,
+      twitterUrl: twitterUrl || null,
+      linkedinUrl: linkedinUrl || null,
+      websiteUrl: websiteUrl || null,
     },
   });
 
