@@ -118,8 +118,16 @@ export async function sendCampaignNow(id: string) {
   if (contacts.length === 0) throw new Error("Contact list is empty");
 
   const brandName = settings?.brandName || "The Lodge Group";
-  const brandLogo = campaign.headerImageUrl || settings?.brandLogoUrl || `${process.env.NEXTAUTH_URL}/logotlm.png`;
-  const footerImage = campaign.footerImageUrl;
+  const baseUrl = process.env.NEXTAUTH_URL || "";
+
+  const makeAbsolute = (url?: string | null) => {
+    if (!url) return "";
+    if (url.startsWith('http')) return url;
+    return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+  };
+
+  const brandLogo = makeAbsolute(campaign.headerImageUrl || settings?.brandLogoUrl || "/logotlm.png");
+  const footerImage = makeAbsolute(campaign.footerImageUrl);
 
   // Update status to SENDING
   await prisma.campaign.update({
@@ -314,8 +322,16 @@ export async function renderCampaignPreview(data: {
   const settings = await prisma.appSettings.findUnique({ where: { id: "singleton" } });
   
   const brandName = settings?.brandName || "The Lodge Group";
-  const brandLogo = data.headerImageUrl || settings?.brandLogoUrl || `${process.env.NEXTAUTH_URL}/logotlm.png`;
-  const footerImage = data.footerImageUrl;
+  const baseUrl = process.env.NEXTAUTH_URL || "";
+
+  const makeAbsolute = (url?: string | null) => {
+    if (!url) return "";
+    if (url.startsWith('http')) return url;
+    return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+  };
+
+  const brandLogo = makeAbsolute(data.headerImageUrl || settings?.brandLogoUrl || "/logotlm.png");
+  const footerImage = makeAbsolute(data.footerImageUrl);
   
   let bodyContent = data.content;
 
