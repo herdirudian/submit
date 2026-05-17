@@ -143,6 +143,15 @@ model AppSettings {
   brandLogoUrl          String?
   notificationFromName  String?
   notificationFromEmail String?
+
+  // Social Media & Footer
+  address               String? @db.Text
+  instagramUrl          String?
+  facebookUrl           String?
+  twitterUrl            String?
+  linkedinUrl           String?
+  websiteUrl            String?
+
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 

@@ -171,10 +171,12 @@ export async function sendCampaignNow(id: string) {
             .cta-container { text-align: center; padding: 20px 0; }
             .btn { display: inline-block; padding: 14px 30px; background-color: #0f4d39; color: #ffffff !important; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(15, 77, 57, 0.2); }
             
+            .social-icons { margin: 20px 0; text-align: center; }
+            .social-icons a { margin: 0 8px; text-decoration: none; display: inline-block; }
+            .social-icon { width: 24px; height: 24px; }
+
             .contact-section { margin-top: 30px; padding-top: 20px; border-top: 1px dashed #dddddd; text-align: center; }
-            .social-icons { margin: 20px 0; }
-            .social-icons a { margin: 0 8px; display: inline-block; }
-            .address { font-size: 11px; color: #999999; margin-top: 20px; line-height: 1.4; }
+            .address { font-size: 11px; color: #999999; margin-top: 20px; line-height: 1.4; text-align: center; }
             .unsubscribe { color: #999999; text-decoration: underline; font-size: 11px; }
             
             @media screen and (max-width: 600px) {
@@ -234,8 +236,17 @@ export async function sendCampaignNow(id: string) {
                     </p>
                   </div>
 
+                  <div class="social-icons">
+                    ${settings?.instagramUrl ? `<a href="${settings.instagramUrl}"><img src="https://img.icons8.com/material-outlined/24/666666/instagram-new.png" class="social-icon"></a>` : ""}
+                    ${settings?.facebookUrl ? `<a href="${settings.facebookUrl}"><img src="https://img.icons8.com/material-outlined/24/666666/facebook-new.png" class="social-icon"></a>` : ""}
+                    ${settings?.twitterUrl ? `<a href="${settings.twitterUrl}"><img src="https://img.icons8.com/material-outlined/24/666666/twitter.png" class="social-icon"></a>` : ""}
+                    ${settings?.linkedinUrl ? `<a href="${settings.linkedinUrl}"><img src="https://img.icons8.com/material-outlined/24/666666/linkedin.png" class="social-icon"></a>` : ""}
+                    ${settings?.websiteUrl ? `<a href="${settings.websiteUrl}"><img src="https://img.icons8.com/material-outlined/24/666666/globe.png" class="social-icon"></a>` : ""}
+                  </div>
+
                   <div class="address">
                     <p style="margin-bottom: 5px;"><strong>${brandName}</strong></p>
+                    ${settings?.address ? `<p style="margin-bottom: 5px;">${settings.address.replace(/\n/g, '<br/>')}</p>` : ""}
                     <p style="margin: 0;">Email ini dikirimkan secara otomatis oleh sistem ${brandName}.</p>
                     <p style="margin-top: 15px;">
                       <a href="${unsubscribeUrl}" class="unsubscribe">Berhenti berlangganan</a>
@@ -338,8 +349,11 @@ export async function renderCampaignPreview(data: {
         p { margin-bottom: 15px; }
         .cta-container { text-align: center; padding: 20px 0; }
         .btn { display: inline-block; padding: 14px 30px; background-color: #0f4d39; color: #ffffff !important; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(15, 77, 57, 0.2); }
+        .social-icons { margin: 20px 0; text-align: center; }
+        .social-icons a { margin: 0 8px; text-decoration: none; display: inline-block; }
+        .social-icon { width: 24px; height: 24px; }
         .contact-section { margin-top: 30px; padding-top: 20px; border-top: 1px dashed #dddddd; text-align: center; }
-        .address { font-size: 11px; color: #999999; margin-top: 20px; line-height: 1.4; }
+        .address { font-size: 11px; color: #999999; margin-top: 20px; line-height: 1.4; text-align: center; }
         .unsubscribe { color: #999999; text-decoration: underline; font-size: 11px; }
       </style>
     </head>
@@ -378,8 +392,18 @@ export async function renderCampaignPreview(data: {
                   ${settings?.notificationFromEmail || "cs@thelodgegroup.id"}
                 </p>
               </div>
+
+              <div class="social-icons">
+                ${settings?.instagramUrl ? `<a href="${settings.instagramUrl}"><img src="https://img.icons8.com/material-outlined/24/666666/instagram-new.png" class="social-icon"></a>` : ""}
+                ${settings?.facebookUrl ? `<a href="${settings.facebookUrl}"><img src="https://img.icons8.com/material-outlined/24/666666/facebook-new.png" class="social-icon"></a>` : ""}
+                ${settings?.twitterUrl ? `<a href="${settings.twitterUrl}"><img src="https://img.icons8.com/material-outlined/24/666666/twitter.png" class="social-icon"></a>` : ""}
+                ${settings?.linkedinUrl ? `<a href="${settings.linkedinUrl}"><img src="https://img.icons8.com/material-outlined/24/666666/linkedin.png" class="social-icon"></a>` : ""}
+                ${settings?.websiteUrl ? `<a href="${settings.websiteUrl}"><img src="https://img.icons8.com/material-outlined/24/666666/globe.png" class="social-icon"></a>` : ""}
+              </div>
+
               <div class="address">
                 <p style="margin-bottom: 5px;"><strong>${brandName}</strong></p>
+                ${settings?.address ? `<p style="margin-bottom: 5px;">${settings.address.replace(/\n/g, '<br/>')}</p>` : ""}
                 <p style="margin: 0;">Email ini dikirimkan secara otomatis oleh sistem ${brandName}.</p>
                 <p style="margin-top: 15px;">
                   <a href="${unsubscribeUrl}" class="unsubscribe">Berhenti berlangganan</a>

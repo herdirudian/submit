@@ -21,6 +21,13 @@ export default function SettingsPage() {
   const [fromName, setFromName] = useState("");
   const [fromEmail, setFromEmail] = useState("");
 
+  const [address, setAddress] = useState("");
+  const [instagramUrl, setInstagramUrl] = useState("");
+  const [facebookUrl, setFacebookUrl] = useState("");
+  const [twitterUrl, setTwitterUrl] = useState("");
+  const [linkedinUrl, setLinkedinUrl] = useState("");
+  const [websiteUrl, setWebsiteUrl] = useState("");
+
   const canSave = useMemo(() => !isLoading && !!snapshot?.user, [isLoading, snapshot?.user]);
 
   useEffect(() => {
@@ -36,6 +43,12 @@ export default function SettingsPage() {
         setBrandLogoUrl(data.appSettings.brandLogoUrl ?? "");
         setFromName(data.appSettings.notificationFromName ?? "");
         setFromEmail(data.appSettings.notificationFromEmail ?? "");
+        setAddress(data.appSettings.address ?? "");
+        setInstagramUrl(data.appSettings.instagramUrl ?? "");
+        setFacebookUrl(data.appSettings.facebookUrl ?? "");
+        setTwitterUrl(data.appSettings.twitterUrl ?? "");
+        setLinkedinUrl(data.appSettings.linkedinUrl ?? "");
+        setWebsiteUrl(data.appSettings.websiteUrl ?? "");
       })
       .catch(() => {
         if (cancelled) return;
@@ -84,8 +97,14 @@ export default function SettingsPage() {
           brandLogoUrl,
           notificationFromName: fromName,
           notificationFromEmail: fromEmail,
+          address,
+          instagramUrl,
+          facebookUrl,
+          twitterUrl,
+          linkedinUrl,
+          websiteUrl,
         });
-        toast.success("Branding & email pengirim tersimpan");
+        toast.success("Settings branding & footer tersimpan");
       } catch {
         toast.error("Gagal menyimpan branding");
       }
@@ -229,30 +248,91 @@ export default function SettingsPage() {
 
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-              <div className="text-lg font-bold text-slate-800">Email Pengirim Notifikasi</div>
-              <div className="text-sm text-slate-500">Dipakai sebagai “From” untuk email notifikasi.</div>
+              <div className="text-lg font-bold text-slate-800">Email & Footer Info</div>
+              <div className="text-sm text-slate-500">Info pengirim email dan detail footer (alamat & sosmed).</div>
             </div>
-            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">From Name</label>
-                <input
-                  value={fromName}
-                  onChange={(e) => setFromName(e.target.value)}
-                  className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-300"
-                  placeholder="Nama pengirim"
-                />
+            <div className="p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">From Name</label>
+                  <input
+                    value={fromName}
+                    onChange={(e) => setFromName(e.target.value)}
+                    className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-300"
+                    placeholder="Nama pengirim"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">From Email</label>
+                  <input
+                    value={fromEmail}
+                    onChange={(e) => setFromEmail(e.target.value)}
+                    className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-300"
+                    placeholder="no-reply@domain.com"
+                  />
+                </div>
               </div>
+
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">From Email</label>
-                <input
-                  value={fromEmail}
-                  onChange={(e) => setFromEmail(e.target.value)}
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Alamat Perusahaan (Muncul di Footer)</label>
+                <textarea
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  rows={3}
                   className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-300"
-                  placeholder="no-reply@domain.com"
+                  placeholder="Contoh: Jl. Maribaya No. 149, Lembang, Bandung Barat"
                 />
               </div>
 
-              <div className="md:col-span-2 flex justify-end">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Instagram URL</label>
+                  <input
+                    value={instagramUrl}
+                    onChange={(e) => setInstagramUrl(e.target.value)}
+                    className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-300 text-sm"
+                    placeholder="https://instagram.com/..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Facebook URL</label>
+                  <input
+                    value={facebookUrl}
+                    onChange={(e) => setFacebookUrl(e.target.value)}
+                    className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-300 text-sm"
+                    placeholder="https://facebook.com/..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Twitter / X URL</label>
+                  <input
+                    value={twitterUrl}
+                    onChange={(e) => setTwitterUrl(e.target.value)}
+                    className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-300 text-sm"
+                    placeholder="https://x.com/..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">LinkedIn URL</label>
+                  <input
+                    value={linkedinUrl}
+                    onChange={(e) => setLinkedinUrl(e.target.value)}
+                    className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-300 text-sm"
+                    placeholder="https://linkedin.com/company/..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Website URL</label>
+                  <input
+                    value={websiteUrl}
+                    onChange={(e) => setWebsiteUrl(e.target.value)}
+                    className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-300 text-sm"
+                    placeholder="https://..."
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-4">
                 <button
                   type="button"
                   onClick={saveBranding}
@@ -260,7 +340,7 @@ export default function SettingsPage() {
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary-600 text-white font-semibold hover:bg-primary-700 transition-colors disabled:opacity-60"
                 >
                   {isPending ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
-                  Simpan Branding & Email
+                  Simpan Branding & Footer
                 </button>
               </div>
             </div>

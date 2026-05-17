@@ -59,6 +59,12 @@ export async function updateAppSettings(data: {
   brandLogoUrl?: string;
   notificationFromName?: string;
   notificationFromEmail?: string;
+  address?: string;
+  instagramUrl?: string;
+  facebookUrl?: string;
+  twitterUrl?: string;
+  linkedinUrl?: string;
+  websiteUrl?: string;
 }) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
