@@ -168,6 +168,9 @@ export async function sendCampaignNow(id: string) {
     data: { status: 'SENDING' }
   });
 
+  let successCount = 0;
+  let failCount = 0;
+
   // Logic for sending
   for (const contact of contacts) {
     try {
@@ -301,23 +304,39 @@ export async function sendCampaignNow(id: string) {
         </body>
         </html>
       `;
-
+      
       // 4. Send Email
-      await sendEmail({
+      const result = await sendEmail({
         to: contact.email,
         subject: campaign.subject,
         html: html,
+        fromName: settings?.notificationFromName || brandName,
+        fromEmail: settings?.notificationFromEmail,
       });
 
-      // 5. Log the success
-      await prisma.emailLog.create({
-        data: {
-          campaignId: id,
-          contactId: contact.id,
-          status: 'SENT',
-        }
-      });
+      // 5. Log the result
+      if (result.success) {
+        successCount++;
+        await prisma.emailLog.create({
+          data: {
+            campaignId: id,
+            contactId: contact.id,
+            status: 'SENT',
+          }
+        });
+      } else {
+        failCount++;
+        await prisma.emailLog.create({
+          data: {
+            campaignId: id,
+            contactId: contact.id,
+            status: 'FAILED',
+            errorMessage: typeof result.error === 'string' ? result.error : (result.error as any)?.message || "Unknown error"
+          }
+        });
+      }
     } catch (error: any) {
+      failCount++;
       await prisma.emailLog.create({
         data: {
           campaignId: id,
@@ -332,9 +351,9 @@ export async function sendCampaignNow(id: string) {
   await prisma.campaign.update({
     where: { id },
     data: { 
-      status: 'SENT',
+      status: failCount === contacts.length ? 'FAILED' : 'SENT',
       sentAt: new Date(),
-      totalSent: contacts.length
+      totalSent: successCount
     }
   });
 
