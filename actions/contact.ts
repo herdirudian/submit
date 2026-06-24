@@ -25,6 +25,7 @@ export async function getContacts(params: {
     where.OR = [
       { email: { contains: search } },
       { name: { contains: search } },
+      { phone: { contains: search } },
       { company: { contains: search } },
     ];
   }
@@ -59,6 +60,7 @@ export async function getContacts(params: {
 export async function createContact(data: {
   email: string;
   name?: string;
+  phone?: string;
   company?: string;
   city?: string;
   tags?: string;
@@ -151,6 +153,7 @@ export async function importContacts(
         where: { email: contact.email.toLowerCase().trim() },
         update: {
           name: contact.name,
+          phone: contact.phone,
           company: contact.company,
           city: contact.city,
           tags: contact.tags,
@@ -159,6 +162,7 @@ export async function importContacts(
         create: {
           email: contact.email.toLowerCase().trim(),
           name: contact.name,
+          phone: contact.phone,
           company: contact.company,
           city: contact.city,
           tags: contact.tags,

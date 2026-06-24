@@ -250,6 +250,7 @@ model Contact {
   id           String         @id @default(cuid())
   email        String         @unique
   name         String?
+  phone        String?
   company      String?
   city         String?
   tags         String?        @db.Text // Comma separated tags

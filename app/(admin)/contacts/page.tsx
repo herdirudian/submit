@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { 
     Search, Plus, Filter, Download, Upload, MoreHorizontal, 
     Mail, User, Users, Building, MapPin, Tag, Trash2, Edit2, Loader2,
-    CheckCircle, AlertTriangle, X
+    CheckCircle, AlertTriangle, X, Phone
 } from "lucide-react";
 import { ContactStatus } from "@prisma/client";
 import Link from "next/link";
@@ -40,6 +40,7 @@ export default function ContactsPage() {
     const [newContact, setNewContact] = useState({
         email: "",
         name: "",
+        phone: "",
         company: "",
         city: "",
         tags: "",
@@ -91,7 +92,7 @@ export default function ContactsPage() {
         try {
             await createContact(newContact);
             setShowCreateModal(false);
-            setNewContact({ email: "", name: "", company: "", city: "", tags: "", listId: selectedListId || "" });
+            setNewContact({ email: "", name: "", phone: "", company: "", city: "", tags: "", listId: selectedListId || "" });
             loadContacts();
             loadLists();
         } catch (error: any) {
@@ -383,9 +384,17 @@ export default function ContactsPage() {
                                                     </div>
                                                     <div>
                                                         <div className="font-bold text-slate-800">{contact.name || "Unknown"}</div>
-                                                        <div className="text-xs text-slate-500 flex items-center gap-1">
-                                                            <Mail size={12} />
-                                                            {contact.email}
+                                                        <div className="text-[11px] text-slate-500 flex flex-col gap-0.5">
+                                                            <div className="flex items-center gap-1">
+                                                                <Mail size={10} className="text-slate-400" />
+                                                                {contact.email}
+                                                            </div>
+                                                            {contact.phone && (
+                                                                <div className="flex items-center gap-1">
+                                                                    <Phone size={10} className="text-slate-400" />
+                                                                    {contact.phone}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -536,7 +545,7 @@ export default function ContactsPage() {
                         </div>
                         <div className="p-6 space-y-4">
                             <div className="text-sm text-slate-500">
-                                Format header minimal: <span className="font-semibold">email</span>. Opsional: name, company, city, tags
+                                Format header minimal: <span className="font-semibold">email</span>. Opsional: name, phone, company, city, tags
                             </div>
 
                             <div className="space-y-2">
@@ -685,6 +694,18 @@ export default function ContactsPage() {
                                     />
                                 </div>
                                 <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-700">Nomor HP</label>
+                                    <input 
+                                        type="text"
+                                        placeholder="0812..."
+                                        value={newContact.phone}
+                                        onChange={e => setNewContact(p => ({ ...p, phone: e.target.value }))}
+                                        className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-primary-500"
+                                    />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
                                     <label className="text-sm font-bold text-slate-700">Perusahaan</label>
                                     <input 
                                         type="text"
@@ -693,8 +714,6 @@ export default function ContactsPage() {
                                         className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-primary-500"
                                     />
                                 </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-slate-700">Kota</label>
                                     <input 
@@ -704,16 +723,16 @@ export default function ContactsPage() {
                                         className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-primary-500"
                                     />
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-700">Tags (koma)</label>
-                                    <input 
-                                        type="text"
-                                        placeholder="customer, vip"
-                                        value={newContact.tags}
-                                        onChange={e => setNewContact(p => ({ ...p, tags: e.target.value }))}
-                                        className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-primary-500"
-                                    />
-                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-slate-700">Tags (koma)</label>
+                                <input 
+                                    type="text"
+                                    placeholder="customer, vip"
+                                    value={newContact.tags}
+                                    onChange={e => setNewContact(p => ({ ...p, tags: e.target.value }))}
+                                    className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-primary-500"
+                                />
                             </div>
                             <div className="pt-4 flex gap-3">
                                 <button 
