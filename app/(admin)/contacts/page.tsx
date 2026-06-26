@@ -41,6 +41,9 @@ export default function ContactsPage() {
         email: "",
         name: "",
         phone: "",
+        waNumber: "",
+        visitors: 1,
+        infoSource: "",
         company: "",
         city: "",
         tags: "",
@@ -92,7 +95,11 @@ export default function ContactsPage() {
         try {
             await createContact(newContact);
             setShowCreateModal(false);
-            setNewContact({ email: "", name: "", phone: "", company: "", city: "", tags: "", listId: selectedListId || "" });
+            setNewContact({ 
+                email: "", name: "", phone: "", waNumber: "", 
+                visitors: 1, infoSource: "", company: "", 
+                city: "", tags: "", listId: selectedListId || "" 
+            });
             loadContacts();
             loadLists();
         } catch (error: any) {
@@ -545,7 +552,7 @@ export default function ContactsPage() {
                         </div>
                         <div className="p-6 space-y-4">
                             <div className="text-sm text-slate-500">
-                                Format header minimal: <span className="font-semibold">email</span>. Opsional: name, phone, company, city, tags
+                                Format header minimal: <span className="font-semibold">email</span>. Opsional: name, phone, waNumber, visitors, infoSource, company, city, tags
                             </div>
 
                             <div className="space-y-2">
@@ -660,16 +667,95 @@ export default function ContactsPage() {
                                 <X size={20} />
                             </button>
                         </div>
-                        <form onSubmit={handleCreate} className="p-6 space-y-4">
-                            <div className="space-y-2">
-                                <label className="text-sm font-bold text-slate-700">Email</label>
-                                <input 
-                                    type="email" required
-                                    value={newContact.email}
-                                    onChange={e => setNewContact(p => ({ ...p, email: e.target.value }))}
-                                    className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-primary-500"
-                                />
+                        <form onSubmit={handleCreate} className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-700">Email</label>
+                                    <input 
+                                        type="email" required
+                                        value={newContact.email}
+                                        onChange={e => setNewContact(p => ({ ...p, email: e.target.value }))}
+                                        className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-primary-500"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-700">Nama Customer</label>
+                                    <input 
+                                        type="text" required
+                                        value={newContact.name}
+                                        onChange={e => setNewContact(p => ({ ...p, name: e.target.value }))}
+                                        className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-primary-500"
+                                    />
+                                </div>
                             </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-700">Nomor WA</label>
+                                    <input 
+                                        type="text"
+                                        placeholder="0812..."
+                                        value={newContact.waNumber}
+                                        onChange={e => setNewContact(p => ({ ...p, waNumber: e.target.value }))}
+                                        className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-primary-500"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-700">Kabupaten/Kota Asal</label>
+                                    <input 
+                                        list="city-list"
+                                        type="text"
+                                        placeholder="Cari Kota..."
+                                        value={newContact.city}
+                                        onChange={e => setNewContact(p => ({ ...p, city: e.target.value }))}
+                                        className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-primary-500"
+                                    />
+                                    <datalist id="city-list">
+                                        <option value="Bandung" />
+                                        <option value="Jakarta" />
+                                        <option value="Surabaya" />
+                                        <option value="Medan" />
+                                        <option value="Semarang" />
+                                        <option value="Makassar" />
+                                        <option value="Palembang" />
+                                        <option value="Tangerang" />
+                                        <option value="Bekasi" />
+                                        <option value="Depok" />
+                                    </datalist>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-700">Jumlah Pengunjung</label>
+                                    <input 
+                                        type="number"
+                                        min="1"
+                                        value={newContact.visitors}
+                                        onChange={e => setNewContact(p => ({ ...p, visitors: parseInt(e.target.value) }))}
+                                        className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-primary-500"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-700">Sumber Informasi</label>
+                                    <select
+                                        value={newContact.infoSource}
+                                        onChange={e => setNewContact(p => ({ ...p, infoSource: e.target.value }))}
+                                        className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+                                    >
+                                        <option value="">Pilih Sumber...</option>
+                                        <option value="Instagram">Instagram</option>
+                                        <option value="TikTok">TikTok</option>
+                                        <option value="Google">Google</option>
+                                        <option value="Teman/Keluarga">Teman/Keluarga</option>
+                                        <option value="Travel Agent">Travel Agent</option>
+                                        <option value="KOL/Influencer">KOL/Influencer</option>
+                                        <option value="Pernah datang sebelumnya">Pernah datang sebelumnya</option>
+                                        <option value="Lainnya">Lainnya</option>
+                                    </select>
+                                </div>
+                            </div>
+
                             <div className="space-y-2">
                                 <label className="text-sm font-bold text-slate-700">Tambahkan ke List (opsional)</label>
                                 <select
@@ -683,27 +769,7 @@ export default function ContactsPage() {
                                     ))}
                                 </select>
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-700">Nama</label>
-                                    <input 
-                                        type="text"
-                                        value={newContact.name}
-                                        onChange={e => setNewContact(p => ({ ...p, name: e.target.value }))}
-                                        className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-primary-500"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-700">Nomor HP</label>
-                                    <input 
-                                        type="text"
-                                        placeholder="0812..."
-                                        value={newContact.phone}
-                                        onChange={e => setNewContact(p => ({ ...p, phone: e.target.value }))}
-                                        className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-primary-500"
-                                    />
-                                </div>
-                            </div>
+
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-slate-700">Perusahaan</label>
@@ -715,24 +781,15 @@ export default function ContactsPage() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-700">Kota</label>
+                                    <label className="text-sm font-bold text-slate-700">Tags (koma)</label>
                                     <input 
                                         type="text"
-                                        value={newContact.city}
-                                        onChange={e => setNewContact(p => ({ ...p, city: e.target.value }))}
+                                        placeholder="customer, vip"
+                                        value={newContact.tags}
+                                        onChange={e => setNewContact(p => ({ ...p, tags: e.target.value }))}
                                         className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-primary-500"
                                     />
                                 </div>
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-bold text-slate-700">Tags (koma)</label>
-                                <input 
-                                    type="text"
-                                    placeholder="customer, vip"
-                                    value={newContact.tags}
-                                    onChange={e => setNewContact(p => ({ ...p, tags: e.target.value }))}
-                                    className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-primary-500"
-                                />
                             </div>
                             <div className="pt-4 flex gap-3">
                                 <button 

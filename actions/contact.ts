@@ -26,6 +26,7 @@ export async function getContacts(params: {
       { email: { contains: search } },
       { name: { contains: search } },
       { phone: { contains: search } },
+      { waNumber: { contains: search } },
       { company: { contains: search } },
     ];
   }
@@ -61,6 +62,9 @@ export async function createContact(data: {
   email: string;
   name?: string;
   phone?: string;
+  waNumber?: string;
+  visitors?: number;
+  infoSource?: string;
   company?: string;
   city?: string;
   tags?: string;
@@ -154,6 +158,9 @@ export async function importContacts(
         update: {
           name: contact.name,
           phone: contact.phone,
+          waNumber: contact.waNumber,
+          visitors: contact.visitors,
+          infoSource: contact.infoSource,
           company: contact.company,
           city: contact.city,
           tags: contact.tags,
@@ -163,6 +170,9 @@ export async function importContacts(
           email: contact.email.toLowerCase().trim(),
           name: contact.name,
           phone: contact.phone,
+          waNumber: contact.waNumber,
+          visitors: contact.visitors,
+          infoSource: contact.infoSource,
           company: contact.company,
           city: contact.city,
           tags: contact.tags,

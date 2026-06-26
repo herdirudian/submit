@@ -251,6 +251,9 @@ model Contact {
   email        String         @unique
   name         String?
   phone        String?
+  waNumber     String?
+  visitors     Int            @default(1)
+  infoSource   String?
   company      String?
   city         String?
   tags         String?        @db.Text // Comma separated tags
