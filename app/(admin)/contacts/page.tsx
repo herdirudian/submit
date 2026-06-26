@@ -110,6 +110,10 @@ export default function ContactsPage() {
             alert("Silakan pilih Negara/Kabupaten/Kota dari daftar yang tersedia agar data konsisten.");
             return;
         }
+        if (!newContact.listId) {
+            toast.error("Silakan pilih List tujuan terlebih dahulu.");
+            return;
+        }
         setCreateLoading(true);
         try {
             await createContact(newContact);
@@ -808,8 +812,9 @@ export default function ContactsPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-sm font-bold text-slate-700">Tambahkan ke List (opsional)</label>
+                                <label className="text-sm font-bold text-slate-700">Tambahkan ke List</label>
                                 <select
+                                    required
                                     value={newContact.listId}
                                     onChange={e => setNewContact(p => ({ ...p, listId: e.target.value }))}
                                     className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-primary-500 bg-white"
