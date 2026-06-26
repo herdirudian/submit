@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { 
     Search, Plus, Filter, Download, Upload, MoreHorizontal, 
     Mail, User, Users, Building, MapPin, Tag, Trash2, Edit2, Loader2,
@@ -64,20 +64,12 @@ export default function ContactsPage() {
         setShowCitySuggestions(false);
     };
 
-    useEffect(() => {
-        loadContacts();
-        loadLists();
-        if (selectedListId) {
-            setNewContact(p => ({ ...p, listId: selectedListId }));
-        }
-    }, [page, status, selectedListId]);
-
-    async function loadLists() {
+    const loadLists = useCallback(async () => {
         const lists = await getContactLists();
         setContactLists(lists);
-    }
+    }, []);
 
-    async function loadContacts() {
+    const loadContacts = useCallback(async () => {
         setLoading(true);
         try {
             const data = await getContacts({ page, search, status, listId: selectedListId });
@@ -88,7 +80,15 @@ export default function ContactsPage() {
         } finally {
             setLoading(false);
         }
-    }
+    }, [page, search, status, selectedListId]);
+
+    useEffect(() => {
+        loadContacts();
+        loadLists();
+        if (selectedListId) {
+            setNewContact(p => ({ ...p, listId: selectedListId }));
+        }
+    }, [loadContacts, loadLists, selectedListId]);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();

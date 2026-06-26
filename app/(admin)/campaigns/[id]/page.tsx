@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { 
     Megaphone, Send, Save, ArrowLeft, 
     Layout, Users, Type, Eye, Loader2,
@@ -39,11 +39,7 @@ export default function EditCampaignPage() {
         ctaUrl: ""
     });
 
-    useEffect(() => {
-        loadData();
-    }, [id]);
-
-    async function loadData() {
+    const loadData = useCallback(async () => {
         try {
             const [campaign, lists] = await Promise.all([
                 getCampaign(id),
@@ -75,7 +71,11 @@ export default function EditCampaignPage() {
             setFetchingData(false);
             setFetchingLists(false);
         }
-    }
+    }, [id, router]);
+
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
 
     const handleUpload = async (file: File) => {
         const data = new FormData();

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { 
     History, Mail, CheckCircle, XCircle, 
     Calendar, User, Megaphone, Loader2,
@@ -18,11 +18,7 @@ export default function EmailLogsPage() {
     const [status, setStatus] = useState("");
     const pageSize = 50;
 
-    useEffect(() => {
-        loadLogs();
-    }, [page, status]);
-
-    async function loadLogs() {
+    const loadLogs = useCallback(async () => {
         setLoading(true);
         try {
             const data = await getEmailLogs({ page, pageSize, status });
@@ -33,7 +29,11 @@ export default function EmailLogsPage() {
         } finally {
             setLoading(false);
         }
-    }
+    }, [page, status]);
+
+    useEffect(() => {
+        loadLogs();
+    }, [loadLogs]);
 
     const totalPages = Math.ceil(total / pageSize);
 

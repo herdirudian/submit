@@ -174,6 +174,19 @@ export async function sendCampaignNow(id: string) {
 
   // Logic for sending
   for (const contact of contacts) {
+    if (!contact.email) {
+      failCount++;
+      await prisma.emailLog.create({
+        data: {
+          campaignId: id,
+          contactId: contact.id,
+          status: 'FAILED',
+          errorMessage: "Kontak tidak memiliki alamat email"
+        }
+      });
+      continue;
+    }
+
     try {
       // 1. Personalization & Newline handling
       let bodyContent = campaign.content;
@@ -184,7 +197,7 @@ export async function sendCampaignNow(id: string) {
       }
 
       bodyContent = bodyContent.replace(/{{name}}/g, contact.name || "Sobat");
-      bodyContent = bodyContent.replace(/{{email}}/g, contact.email);
+      bodyContent = bodyContent.replace(/{{email}}/g, contact.email || "");
       bodyContent = bodyContent.replace(/{{company}}/g, contact.company || "");
 
       // 2. Unsubscribe Link
