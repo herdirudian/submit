@@ -10,6 +10,7 @@ import { ContactStatus } from "@prisma/client";
 import Link from "next/link";
 import { getContacts, deleteContact, getContactLists, createContact, importContacts, createContactList, deleteContactList, removeContactFromList, addContactsToList } from "@/actions/contact";
 import ContactExportButton from "@/components/ContactExportButton";
+import { INDONESIA_CITIES, WORLD_COUNTRIES } from "@/lib/cities";
 
 export default function ContactsPage() {
     const [contacts, setContacts] = useState<any[]>([]);
@@ -711,17 +712,13 @@ export default function ContactsPage() {
                                         className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-primary-500"
                                     />
                                     <datalist id="city-list">
-                                        <option value="Bandung" />
-                                        <option value="Jakarta" />
-                                        <option value="Surabaya" />
-                                        <option value="Medan" />
-                                        <option value="Semarang" />
-                                        <option value="Makassar" />
-                                        <option value="Palembang" />
-                                        <option value="Tangerang" />
-                                        <option value="Bekasi" />
-                                        <option value="Depok" />
-                                    </datalist>
+                                         {INDONESIA_CITIES.map((city) => (
+                                             <option key={`city-${city}`} value={city} />
+                                         ))}
+                                         {WORLD_COUNTRIES.map((country) => (
+                                             <option key={`country-${country}`} value={country} />
+                                         ))}
+                                     </datalist>
                                 </div>
                             </div>
 
