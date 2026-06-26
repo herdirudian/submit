@@ -51,6 +51,19 @@ export default function ContactsPage() {
         listId: ""
     });
 
+    const [citySearch, setCityCitySearch] = useState("");
+    const [showCitySuggestions, setShowCitySuggestions] = useState(false);
+    const ALL_LOCATIONS = [...INDONESIA_CITIES, ...WORLD_COUNTRIES];
+    const filteredLocations = citySearch.length > 0 
+        ? ALL_LOCATIONS.filter(loc => loc.toLowerCase().includes(citySearch.toLowerCase())).slice(0, 100)
+        : [];
+
+    const handleCitySelect = (city: string) => {
+        setNewContact(p => ({ ...p, city }));
+        setCityCitySearch(city);
+        setShowCitySuggestions(false);
+    };
+
     useEffect(() => {
         loadContacts();
         loadLists();
@@ -92,6 +105,10 @@ export default function ContactsPage() {
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!newContact.city && citySearch) {
+            alert("Silakan pilih Kabupaten/Kota dari daftar yang tersedia agar data konsisten.");
+            return;
+        }
         setCreateLoading(true);
         try {
             await createContact(newContact);
@@ -101,6 +118,7 @@ export default function ContactsPage() {
                 visitors: 1, infoSource: "", company: "", 
                 city: "", tags: "", listId: selectedListId || "" 
             });
+            setCityCitySearch("");
             loadContacts();
             loadLists();
         } catch (error: any) {
@@ -701,24 +719,46 @@ export default function ContactsPage() {
                                         className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-primary-500"
                                     />
                                 </div>
-                                <div className="space-y-2">
+                                <div className="space-y-2 relative">
                                     <label className="text-sm font-bold text-slate-700">Kabupaten/Kota Asal</label>
-                                    <input 
-                                        list="city-list"
-                                        type="text"
-                                        placeholder="Cari Kota..."
-                                        value={newContact.city}
-                                        onChange={e => setNewContact(p => ({ ...p, city: e.target.value }))}
-                                        className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-primary-500"
-                                    />
-                                    <datalist id="city-list">
-                                         {INDONESIA_CITIES.map((city) => (
-                                             <option key={`city-${city}`} value={city} />
-                                         ))}
-                                         {WORLD_COUNTRIES.map((country) => (
-                                             <option key={`country-${country}`} value={country} />
-                                         ))}
-                                     </datalist>
+                                    <div className="relative">
+                                        <input 
+                                            type="text"
+                                            placeholder="Cari Kota atau Negara..."
+                                            value={citySearch}
+                                            onChange={e => {
+                                                setCityCitySearch(e.target.value);
+                                                setShowCitySuggestions(true);
+                                                // Reset actual city if user types something else
+                                                if (newContact.city) setNewContact(p => ({ ...p, city: "" }));
+                                            }}
+                                            onFocus={() => setShowCitySuggestions(true)}
+                                            className={`w-full px-4 py-2 rounded-xl border outline-none focus:ring-2 focus:ring-primary-500 ${!newContact.city && citySearch ? 'border-amber-500' : 'border-slate-200'}`}
+                                        />
+                                        {newContact.city && (
+                                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                                <CheckCircle size={16} className="text-green-500" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    
+                                    {showCitySuggestions && filteredLocations.length > 0 && (
+                                        <div className="absolute z-[60] w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-60 overflow-y-auto">
+                                            {filteredLocations.map((loc) => (
+                                                <button
+                                                    key={loc}
+                                                    type="button"
+                                                    onClick={() => handleCitySelect(loc)}
+                                                    className="w-full text-left px-4 py-2 hover:bg-slate-50 text-sm border-b border-slate-50 last:border-0"
+                                                >
+                                                    {loc}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                    {!newContact.city && citySearch && (
+                                        <p className="text-[10px] text-amber-600 mt-1 italic">Silakan pilih dari daftar yang muncul</p>
+                                    )}
                                 </div>
                             </div>
 
