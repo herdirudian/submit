@@ -250,7 +250,7 @@ model Answer {
 
 model Contact {
   id           String         @id @default(cuid())
-  email        String         @unique
+  email        String?        @unique
   name         String?
   phone        String?
   waNumber     String?

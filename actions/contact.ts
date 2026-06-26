@@ -65,7 +65,7 @@ export async function getContacts(params: {
 }
 
 export async function createContact(data: {
-  email: string;
+  email?: string;
   name?: string;
   phone?: string;
   waNumber?: string;
@@ -85,7 +85,7 @@ export async function createContact(data: {
   const contact = await prisma.contact.create({
     data: {
       ...contactData,
-      email: contactData.email.toLowerCase().trim(),
+      email: contactData.email ? contactData.email.toLowerCase().trim() : null,
       createdById: session.user.id,
       updatedById: session.user.id,
       ...(listId ? {
@@ -112,7 +112,7 @@ export async function updateContact(id: string, data: any) {
     where: { id },
     data: {
       ...data,
-      email: data.email?.toLowerCase().trim(),
+      email: data.email ? data.email.toLowerCase().trim() : (data.email === "" ? null : undefined),
       updatedById: session.user.id,
     },
   });
@@ -163,7 +163,7 @@ export async function importContacts(
   for (const contact of contacts) {
     try {
       const saved = await prisma.contact.upsert({
-        where: { email: contact.email.toLowerCase().trim() },
+        where: { email: contact.email ? contact.email.toLowerCase().trim() : `no-email-${Date.now()}-${Math.random()}` },
         update: {
           name: contact.name,
           phone: contact.phone,
@@ -177,7 +177,7 @@ export async function importContacts(
           updatedById: session.user.id,
         },
         create: {
-          email: contact.email.toLowerCase().trim(),
+          email: contact.email ? contact.email.toLowerCase().trim() : null,
           name: contact.name,
           phone: contact.phone,
           waNumber: contact.waNumber,

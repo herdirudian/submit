@@ -701,9 +701,9 @@ export default function ContactsPage() {
                         <form onSubmit={handleCreate} className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-700">Email</label>
+                                    <label className="text-sm font-bold text-slate-700">Email (opsional)</label>
                                     <input 
-                                        type="email" required
+                                        type="email"
                                         value={newContact.email}
                                         onChange={e => setNewContact(p => ({ ...p, email: e.target.value }))}
                                         className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-primary-500"
@@ -821,7 +821,7 @@ export default function ContactsPage() {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-700">Perusahaan</label>
+                                    <label className="text-sm font-bold text-slate-700">Perusahaan (opsional)</label>
                                     <input 
                                         type="text"
                                         value={newContact.company}
@@ -830,7 +830,7 @@ export default function ContactsPage() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-700">Tags (koma)</label>
+                                    <label className="text-sm font-bold text-slate-700">Tags (koma) (opsional)</label>
                                     <input 
                                         type="text"
                                         placeholder="customer, vip"
