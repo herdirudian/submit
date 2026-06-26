@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { ContactStatus } from "@prisma/client";
 import Link from "next/link";
+import { toast } from "sonner";
 import { getContacts, deleteContact, getContactLists, createContact, importContacts, createContactList, deleteContactList, removeContactFromList, addContactsToList } from "@/actions/contact";
 import ContactExportButton from "@/components/ContactExportButton";
 import { INDONESIA_CITIES, WORLD_COUNTRIES } from "@/lib/cities";
@@ -112,17 +113,18 @@ export default function ContactsPage() {
         setCreateLoading(true);
         try {
             await createContact(newContact);
-            setShowCreateModal(false);
+            const currentListId = newContact.listId;
             setNewContact({ 
                 email: "", name: "", phone: "", waNumber: "", 
                 visitors: 1, infoSource: "", company: "", 
-                city: "", tags: "", listId: selectedListId || "" 
+                city: "", tags: "", listId: currentListId
             });
             setCityCitySearch("");
+            toast.success("Kontak berhasil disimpan! Silakan input kontak berikutnya.");
             loadContacts();
             loadLists();
         } catch (error: any) {
-            alert(error.message);
+            toast.error(error.message);
         } finally {
             setCreateLoading(false);
         }
