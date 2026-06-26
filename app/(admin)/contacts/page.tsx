@@ -415,12 +415,24 @@ export default function ContactsPage() {
                                                                 <Mail size={10} className="text-slate-400" />
                                                                 {contact.email}
                                                             </div>
-                                                            {contact.phone && (
+                                                            {(contact.phone || contact.waNumber) && (
                                                                 <div className="flex items-center gap-1">
                                                                     <Phone size={10} className="text-slate-400" />
-                                                                    {contact.phone}
+                                                                    {contact.waNumber || contact.phone}
                                                                 </div>
                                                             )}
+                                                            <div className="mt-1 flex flex-col gap-0.5 border-t border-slate-50 pt-1">
+                                                                <div className="flex items-center gap-1 text-[9px] text-primary-600 font-medium">
+                                                                    <User size={10} />
+                                                                    Input: {(contact as any).createdBy?.name || "System"}
+                                                                </div>
+                                                                {(contact as any).updatedBy?.name && (contact as any).updatedBy?.id !== (contact as any).createdById && (
+                                                                    <div className="flex items-center gap-1 text-[9px] text-slate-400 font-medium">
+                                                                        <Edit2 size={10} />
+                                                                        Update: {(contact as any).updatedBy?.name}
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>

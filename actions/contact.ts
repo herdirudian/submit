@@ -49,6 +49,12 @@ export async function getContacts(params: {
       include: {
         lists: {
           include: { list: true }
+        },
+        createdBy: {
+          select: { id: true, name: true, email: true }
+        },
+        updatedBy: {
+          select: { id: true, name: true, email: true }
         }
       }
     }),
@@ -80,6 +86,8 @@ export async function createContact(data: {
     data: {
       ...contactData,
       email: contactData.email.toLowerCase().trim(),
+      createdById: session.user.id,
+      updatedById: session.user.id,
       ...(listId ? {
         lists: {
           create: {
@@ -105,6 +113,7 @@ export async function updateContact(id: string, data: any) {
     data: {
       ...data,
       email: data.email?.toLowerCase().trim(),
+      updatedById: session.user.id,
     },
   });
 
@@ -165,6 +174,7 @@ export async function importContacts(
           city: contact.city,
           tags: contact.tags,
           customFields: contact.customFields ? JSON.stringify(contact.customFields) : undefined,
+          updatedById: session.user.id,
         },
         create: {
           email: contact.email.toLowerCase().trim(),
@@ -177,6 +187,8 @@ export async function importContacts(
           city: contact.city,
           tags: contact.tags,
           customFields: contact.customFields ? JSON.stringify(contact.customFields) : undefined,
+          createdById: session.user.id,
+          updatedById: session.user.id,
         },
         select: { id: true },
       });
