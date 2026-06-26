@@ -106,7 +106,7 @@ export default function ContactsPage() {
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newContact.city && citySearch) {
-            alert("Silakan pilih Kabupaten/Kota dari daftar yang tersedia agar data konsisten.");
+            alert("Silakan pilih Negara/Kabupaten/Kota dari daftar yang tersedia agar data konsisten.");
             return;
         }
         setCreateLoading(true);
@@ -732,7 +732,7 @@ export default function ContactsPage() {
                                     />
                                 </div>
                                 <div className="space-y-2 relative">
-                                    <label className="text-sm font-bold text-slate-700">Kabupaten/Kota Asal</label>
+                                    <label className="text-sm font-bold text-slate-700">Negara/Kabupaten/Kota Asal</label>
                                     <div className="relative">
                                         <input 
                                             type="text"
