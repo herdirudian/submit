@@ -13,11 +13,13 @@ export async function getContacts(params: {
   status?: ContactStatus;
   tag?: string;
   listId?: string;
+  startDate?: string;
+  endDate?: string;
 } = {}) {
   const session = await getServerSession(authOptions);
   if (!session?.user) throw new Error("Unauthorized");
 
-  const { page = 1, pageSize = 20, search, status, tag, listId } = params;
+  const { page = 1, pageSize = 20, search, status, tag, listId, startDate, endDate } = params;
   const skip = (page - 1) * pageSize;
 
   const where: any = {};
@@ -38,6 +40,20 @@ export async function getContacts(params: {
         contactListId: listId
       }
     };
+  }
+
+  if (startDate || endDate) {
+    where.createdAt = {};
+    if (startDate) {
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      where.createdAt.gte = start;
+    }
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      where.createdAt.lte = end;
+    }
   }
 
   const [contacts, total] = await Promise.all([

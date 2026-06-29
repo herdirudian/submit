@@ -20,6 +20,8 @@ export default function ContactsPage() {
     const [page, setPage] = useState(1);
     const [search, setSearch] = useState("");
     const [status, setStatus] = useState<ContactStatus | undefined>();
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
     const [activeTab, setActiveTab] = useState<'contacts' | 'lists'>('contacts');
     const [contactLists, setContactLists] = useState<any[]>([]);
     
@@ -73,7 +75,14 @@ export default function ContactsPage() {
     const loadContacts = useCallback(async () => {
         setLoading(true);
         try {
-            const data = await getContacts({ page, search, status, listId: selectedListId });
+            const data = await getContacts({ 
+                page, 
+                search, 
+                status, 
+                listId: selectedListId,
+                startDate,
+                endDate
+            });
             setContacts(data.contacts);
             setTotal(data.total);
         } catch (error) {
@@ -81,7 +90,7 @@ export default function ContactsPage() {
         } finally {
             setLoading(false);
         }
-    }, [page, search, status, selectedListId]);
+    }, [page, search, status, selectedListId, startDate, endDate]);
 
     useEffect(() => {
         loadContacts();
@@ -333,7 +342,7 @@ export default function ContactsPage() {
                                 className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
                             />
                         </form>
-                        <div className="flex gap-3 w-full md:w-auto">
+                        <div className="flex flex-wrap gap-3 w-full md:w-auto">
                             {selectedContactIds.length > 0 && (
                                 <button 
                                     onClick={() => setShowBulkAddModal(true)}
@@ -343,6 +352,32 @@ export default function ContactsPage() {
                                     Tambah ke List ({selectedContactIds.length})
                                 </button>
                             )}
+                            
+                            <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
+                                <span className="text-[11px] font-bold text-slate-400 uppercase">Range:</span>
+                                <input 
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) => { setStartDate(e.target.value); setPage(1); }}
+                                    className="bg-transparent text-sm outline-none text-slate-600"
+                                />
+                                <span className="text-slate-300">-</span>
+                                <input 
+                                    type="date"
+                                    value={endDate}
+                                    onChange={(e) => { setEndDate(e.target.value); setPage(1); }}
+                                    className="bg-transparent text-sm outline-none text-slate-600"
+                                />
+                                {(startDate || endDate) && (
+                                    <button 
+                                        onClick={() => { setStartDate(""); setEndDate(""); setPage(1); }}
+                                        className="p-1 hover:bg-slate-200 rounded-full text-slate-400"
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                )}
+                            </div>
+
                             <select 
                                 value={status || ""}
                                 onChange={(e) => setStatus(e.target.value as ContactStatus || undefined)}
