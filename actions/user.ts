@@ -17,7 +17,7 @@ export async function getUsers() {
     });
 }
 
-export async function createUser(data: { name: string; email: string; password: string }) {
+export async function createUser(data: { name: string; email: string; password: string; role?: "ADMIN" | "CASHIER" }) {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
         throw new Error("Unauthorized");
@@ -38,12 +38,56 @@ export async function createUser(data: { name: string; email: string; password: 
         data: {
             name: data.name,
             email: data.email,
-            password: hashedPassword
+            password: hashedPassword,
+            role: data.role || "ADMIN"
         }
     });
 
     revalidatePath("/users");
     return user;
+}
+
+export async function updateUser(id: string, data: { name?: string; email?: string; password?: string; role?: "ADMIN" | "CASHIER" }) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+        throw new Error("Unauthorized");
+    }
+
+    const updateData: any = {
+        name: data.name,
+        email: data.email,
+        role: data.role
+    };
+
+    if (data.password) {
+        updateData.password = await bcrypt.hash(data.password, 10);
+    }
+
+    const user = await prisma.user.update({
+        where: { id },
+        data: updateData
+    });
+
+    revalidatePath("/users");
+    return user;
+}
+
+export async function getUserById(id: string) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+        throw new Error("Unauthorized");
+    }
+
+    return await prisma.user.findUnique({
+        where: { id },
+        select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            image: true
+        }
+    });
 }
 
 export async function deleteUser(id: string) {

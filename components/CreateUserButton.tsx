@@ -6,12 +6,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { createUser } from "@/actions/user";
 import { toast } from "sonner";
-import { Loader2, Plus, X, User, Mail, Lock } from "lucide-react";
+import { Loader2, Plus, X, User, Mail, Lock, Shield } from "lucide-react";
 
 const userSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
+  role: z.enum(["ADMIN", "CASHIER"]),
 });
 
 type UserValues = z.infer<typeof userSchema>;
@@ -26,6 +27,9 @@ export default function CreateUserButton() {
     reset,
   } = useForm<UserValues>({
     resolver: zodResolver(userSchema),
+    defaultValues: {
+        role: "ADMIN"
+    }
   });
 
   const onSubmit = async (data: UserValues) => {
@@ -89,6 +93,21 @@ export default function CreateUserButton() {
                     />
                 </div>
                 {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Role</label>
+                <div className="relative">
+                    <Shield className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <select
+                    {...register("role")}
+                    className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 outline-none transition-all appearance-none bg-white"
+                    >
+                        <option value="ADMIN">Admin (Full Access)</option>
+                        <option value="CASHIER">Cashier (Contact Only)</option>
+                    </select>
+                </div>
+                {errors.role && <p className="text-red-500 text-xs mt-1">{errors.role.message}</p>}
               </div>
 
               <div>

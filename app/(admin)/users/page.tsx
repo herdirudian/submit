@@ -68,7 +68,7 @@ export default async function UsersPage() {
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-full w-fit">
                                                 <Shield size={12} />
-                                                Admin
+                                                {user.role === "CASHIER" ? "Cashier" : "Admin"}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
@@ -83,7 +83,7 @@ export default async function UsersPage() {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right">
-                                            <UserListActions userId={user.id} />
+                                            <UserListActions user={user} />
                                         </td>
                                     </tr>
                                 ))
