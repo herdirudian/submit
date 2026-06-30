@@ -142,6 +142,7 @@ export async function updateContact(id: string, data: any) {
 export async function deleteContact(id: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) throw new Error("Unauthorized");
+  if ((session.user as any).role === 'CASHIER') throw new Error("Akses ditolak: Cashier tidak dapat menghapus kontak.");
 
   await prisma.contact.delete({ where: { id } });
 
@@ -256,6 +257,7 @@ export async function createContactList(data: { name: string; description?: stri
 export async function deleteContactList(id: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) throw new Error("Unauthorized");
+  if ((session.user as any).role === 'CASHIER') throw new Error("Akses ditolak: Cashier tidak dapat menghapus list.");
 
   await prisma.contactList.delete({ where: { id } });
 
@@ -284,6 +286,7 @@ export async function addContactsToList(listId: string, contactIds: string[]) {
 export async function removeContactFromList(listId: string, contactId: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) throw new Error("Unauthorized");
+  if ((session.user as any).role === 'CASHIER') throw new Error("Akses ditolak: Cashier tidak dapat mengeluarkan kontak dari list.");
 
   await prisma.contactListMember.delete({
     where: {

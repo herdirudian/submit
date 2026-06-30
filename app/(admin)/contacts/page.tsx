@@ -9,11 +9,14 @@ import {
 import { ContactStatus } from "@prisma/client";
 import Link from "next/link";
 import { toast } from "sonner";
+import { useSession } from "next-auth/react";
 import { getContacts, deleteContact, getContactLists, createContact, importContacts, createContactList, deleteContactList, removeContactFromList, addContactsToList } from "@/actions/contact";
 import ContactExportButton from "@/components/ContactExportButton";
 import { INDONESIA_CITIES, WORLD_COUNTRIES } from "@/lib/cities";
 
 export default function ContactsPage() {
+    const { data: session } = useSession();
+    const isCashier = (session?.user as any)?.role === 'CASHIER';
     const [contacts, setContacts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [total, setTotal] = useState(0);
@@ -519,22 +522,24 @@ export default function ContactsPage() {
                                                     <button className="p-2 text-slate-400 hover:text-primary-600 transition-colors">
                                                         <Edit2 size={16} />
                                                     </button>
-                                                    {selectedListId ? (
-                                                        <button 
-                                                            onClick={() => handleRemoveFromList(contact.id)}
-                                                            className="p-2 text-slate-400 hover:text-orange-600 transition-colors"
-                                                            title="Keluarkan dari list"
-                                                        >
-                                                            <X size={16} />
-                                                        </button>
-                                                    ) : (
-                                                        <button 
-                                                            onClick={() => handleDelete(contact.id)}
-                                                            className="p-2 text-slate-400 hover:text-red-600 transition-colors"
-                                                            title="Hapus kontak permanen"
-                                                        >
-                                                            <Trash2 size={16} />
-                                                        </button>
+                                                    {!isCashier && (
+                                                        selectedListId ? (
+                                                            <button 
+                                                                onClick={() => handleRemoveFromList(contact.id)}
+                                                                className="p-2 text-slate-400 hover:text-orange-600 transition-colors"
+                                                                title="Keluarkan dari list"
+                                                            >
+                                                                <X size={16} />
+                                                            </button>
+                                                        ) : (
+                                                            <button 
+                                                                onClick={() => handleDelete(contact.id)}
+                                                                className="p-2 text-slate-400 hover:text-red-600 transition-colors"
+                                                                title="Hapus kontak permanen"
+                                                            >
+                                                                <Trash2 size={16} />
+                                                            </button>
+                                                        )
                                                     )}
                                                 </div>
                                             </td>
@@ -579,9 +584,11 @@ export default function ContactsPage() {
                                 <div className="p-3 bg-primary-50 text-primary-600 rounded-xl">
                                     <Users size={24} />
                                 </div>
-                                <button onClick={() => handleDeleteList(list.id)} className="p-2 text-slate-400 hover:text-red-600">
-                                    <Trash2 size={16} />
-                                </button>
+                                {!isCashier && (
+                                    <button onClick={() => handleDeleteList(list.id)} className="p-2 text-slate-400 hover:text-red-600">
+                                        <Trash2 size={16} />
+                                    </button>
+                                )}
                             </div>
                             <h3 className="font-bold text-slate-800 text-lg mb-1">{list.name}</h3>
                             <p className="text-sm text-slate-500 mb-4">{list.description || "Tidak ada deskripsi."}</p>

@@ -17,6 +17,7 @@ model User {
   name          String?
   email         String    @unique
   password      String?   // Hashed password
+  role          UserRole  @default(ADMIN)
   emailVerified DateTime?
   image         String?
   createdAt     DateTime  @default(now())
@@ -30,6 +31,11 @@ model User {
   updatedContacts Contact[] @relation("UpdatedContacts")
 
   @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  CASHIER
 }
 
 model Account {

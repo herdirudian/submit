@@ -30,16 +30,20 @@ export default function AdminLayout({
   const activeKey = getActiveKey(pathname);
 
   const sidebarLinks = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, id: 'dashboard' },
-    { name: 'My Forms', href: '/forms', icon: FileText, id: 'forms' },
-    { name: 'Responses', href: '/responses', icon: Inbox, id: 'responses' },
-    { name: 'Analytics', href: '/analytics', icon: BarChart3, id: 'analytics' },
-    { name: 'Users', href: '/users', icon: Users, id: 'users' },
-    { name: 'Blast Dashboard', href: '/blast-email', icon: Mail, id: 'blast-email' },
-    { name: 'Contacts', href: '/contacts', icon: Contact2, id: 'contacts' },
-    { name: 'Campaigns', href: '/campaigns', icon: Megaphone, id: 'campaigns' },
-    { name: 'Histori Email', href: '/campaigns/logs', icon: History, id: 'email-logs' },
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, id: 'dashboard', roles: ['ADMIN'] },
+    { name: 'My Forms', href: '/forms', icon: FileText, id: 'forms', roles: ['ADMIN'] },
+    { name: 'Responses', href: '/responses', icon: Inbox, id: 'responses', roles: ['ADMIN'] },
+    { name: 'Analytics', href: '/analytics', icon: BarChart3, id: 'analytics', roles: ['ADMIN'] },
+    { name: 'Users', href: '/users', icon: Users, id: 'users', roles: ['ADMIN'] },
+    { name: 'Blast Dashboard', href: '/blast-email', icon: Mail, id: 'blast-email', roles: ['ADMIN'] },
+    { name: 'Contacts', href: '/contacts', icon: Contact2, id: 'contacts', roles: ['ADMIN', 'CASHIER'] },
+    { name: 'Campaigns', href: '/campaigns', icon: Megaphone, id: 'campaigns', roles: ['ADMIN'] },
+    { name: 'Histori Email', href: '/campaigns/logs', icon: History, id: 'email-logs', roles: ['ADMIN'] },
   ];
+
+  const filteredLinks = sidebarLinks.filter(item => 
+    !item.roles || item.roles.includes((session?.user as any)?.role || 'ADMIN')
+  );
 
   const navItemClassName = (key: string) =>
     `flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-colors ${
@@ -74,7 +78,7 @@ export default function AdminLayout({
         <div className="px-4 py-2">
             <p className="text-xs font-semibold text-slate-400 px-4 mb-2 uppercase tracking-wider">Main Menu</p>
             <nav className="space-y-1">
-              {sidebarLinks.map((item) => (
+              {filteredLinks.map((item) => (
                 <Link
                   key={item.id}
                   href={item.href}
@@ -132,7 +136,7 @@ export default function AdminLayout({
                     )}
                     <div className="hidden md:block text-left">
                         <p className="text-sm font-bold text-slate-800 leading-none">{displayName}</p>
-                        <p className="text-xs text-slate-400 mt-1">Super Admin</p>
+                        <p className="text-xs text-slate-400 mt-1">{(session?.user as any)?.role === 'CASHIER' ? 'Cashier' : 'Super Admin'}</p>
                     </div>
                 </div>
             </div>
