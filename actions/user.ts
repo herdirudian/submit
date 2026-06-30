@@ -13,6 +13,15 @@ export async function getUsers() {
     }
 
     return await prisma.user.findMany({
+        select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            image: true,
+            createdAt: true,
+            updatedAt: true
+        },
         orderBy: { createdAt: 'desc' }
     });
 }
