@@ -85,6 +85,7 @@ export async function createContact(data: {
   name?: string;
   phone?: string;
   waNumber?: string;
+  ticketType?: string;
   visitors?: number;
   infoSource?: string;
   company?: string;
@@ -95,6 +96,7 @@ export async function createContact(data: {
 }) {
   const session = await getServerSession(authOptions);
   if (!session?.user) throw new Error("Unauthorized");
+  if (!data.ticketType?.trim()) throw new Error("Tiket yang dibeli wajib dipilih.");
 
   const { listId, ...contactData } = data;
 
@@ -185,6 +187,7 @@ export async function importContacts(
           name: contact.name,
           phone: contact.phone,
           waNumber: contact.waNumber,
+          ticketType: contact.ticketType,
           visitors: contact.visitors,
           infoSource: contact.infoSource,
           company: contact.company,
@@ -198,6 +201,7 @@ export async function importContacts(
           name: contact.name,
           phone: contact.phone,
           waNumber: contact.waNumber,
+          ticketType: contact.ticketType,
           visitors: contact.visitors,
           infoSource: contact.infoSource,
           company: contact.company,

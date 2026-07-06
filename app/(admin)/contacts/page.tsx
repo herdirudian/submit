@@ -14,6 +14,17 @@ import { getContacts, deleteContact, getContactLists, createContact, importConta
 import ContactExportButton from "@/components/ContactExportButton";
 import { INDONESIA_CITIES, WORLD_COUNTRIES } from "@/lib/cities";
 
+const TICKET_OPTIONS = [
+    "Tiket Basic",
+    "Tiket Regular",
+    "Tiket Terusan",
+    "Tiket Woosh",
+    "The Lodge Connect",
+    "Tiket The Pines",
+    "Tiket The Cave",
+    "Tiket Nature Play Day"
+];
+
 export default function ContactsPage() {
     const { data: session } = useSession();
     const isCashier = (session?.user as any)?.role === 'CASHIER';
@@ -49,6 +60,7 @@ export default function ContactsPage() {
         name: "",
         phone: "",
         waNumber: "",
+        ticketType: "",
         visitors: 1,
         infoSource: "",
         company: "",
@@ -126,12 +138,16 @@ export default function ContactsPage() {
             toast.error("Silakan pilih List tujuan terlebih dahulu.");
             return;
         }
+        if (!newContact.ticketType) {
+            toast.error("Silakan pilih tiket yang dibeli terlebih dahulu.");
+            return;
+        }
         setCreateLoading(true);
         try {
             await createContact(newContact);
             const currentListId = newContact.listId;
             setNewContact({ 
-                email: "", name: "", phone: "", waNumber: "", 
+                email: "", name: "", phone: "", waNumber: "", ticketType: "",
                 visitors: 1, infoSource: "", company: "", 
                 city: "", tags: "", listId: currentListId
             });
@@ -495,6 +511,12 @@ export default function ContactsPage() {
                                                             {contact.city}
                                                         </div>
                                                     )}
+                                                    {contact.ticketType && (
+                                                        <div className="flex items-center gap-1">
+                                                            <Tag size={12} className="text-slate-400" />
+                                                            {contact.ticketType}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
@@ -851,6 +873,21 @@ export default function ContactsPage() {
                                         <option value="Lainnya">Lainnya</option>
                                     </select>
                                 </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-slate-700">Tiket yang dibeli</label>
+                                <select
+                                    required
+                                    value={newContact.ticketType}
+                                    onChange={e => setNewContact(p => ({ ...p, ticketType: e.target.value }))}
+                                    className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+                                >
+                                    <option value="">Pilih Tiket...</option>
+                                    {TICKET_OPTIONS.map((ticket) => (
+                                        <option key={ticket} value={ticket}>{ticket}</option>
+                                    ))}
+                                </select>
                             </div>
 
                             <div className="space-y-2">
