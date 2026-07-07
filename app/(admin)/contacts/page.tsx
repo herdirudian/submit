@@ -10,7 +10,7 @@ import { ContactStatus } from "@prisma/client";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
-import { getContacts, deleteContact, getContactLists, createContact, importContacts, createContactList, deleteContactList, removeContactFromList, addContactsToList } from "@/actions/contact";
+import { getContacts, deleteContact, getContactLists, createContact, importContacts, createContactList, deleteContactList, removeContactFromList, addContactsToList, getAllContactsForExport } from "@/actions/contact";
 import ContactExportButton from "@/components/ContactExportButton";
 import { INDONESIA_CITIES, WORLD_COUNTRIES } from "@/lib/cities";
 
@@ -296,7 +296,18 @@ export default function ContactsPage() {
                     <p className="text-slate-500 mt-1">Kelola database email dan segmentasi pelanggan.</p>
                 </div>
                 <div className="flex gap-3 w-full md:w-auto">
-                    <ContactExportButton data={contacts} filename="contacts.csv" />
+                    <ContactExportButton 
+                        onExport={async () => {
+                            return await getAllContactsForExport({
+                                search,
+                                status,
+                                listId: selectedListId,
+                                startDate,
+                                endDate
+                            });
+                        }} 
+                        filename="contacts.csv" 
+                    />
                     <button 
                         onClick={() => setShowImportModal(true)}
                         className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-slate-700 font-bold hover:bg-slate-50 transition-all shadow-sm"

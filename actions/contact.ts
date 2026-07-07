@@ -80,6 +80,87 @@ export async function getContacts(params: {
   return { contacts, total, pages: Math.ceil(total / pageSize) };
 }
 
+export async function getAllContactsForExport(params: {
+  search?: string;
+  status?: ContactStatus;
+  tag?: string;
+  listId?: string;
+  startDate?: string;
+  endDate?: string;
+} = {}) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Unauthorized");
+
+  const { search, status, tag, listId, startDate, endDate } = params;
+
+  const where: any = {};
+  if (search) {
+    where.OR = [
+      { email: { contains: search } },
+      { name: { contains: search } },
+      { phone: { contains: search } },
+      { waNumber: { contains: search } },
+      { company: { contains: search } },
+    ];
+  }
+  if (status) where.status = status;
+  if (tag) where.tags = { contains: tag };
+  if (listId) {
+    where.lists = {
+      some: {
+        contactListId: listId
+      }
+    };
+  }
+
+  if (startDate || endDate) {
+    where.createdAt = {};
+    if (startDate) {
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      where.createdAt.gte = start;
+    }
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      where.createdAt.lte = end;
+    }
+  }
+
+  const contacts = await prisma.contact.findMany({
+    where,
+    orderBy: { createdAt: 'desc' },
+    include: {
+      lists: {
+        include: { list: true }
+      },
+      createdBy: {
+        select: { name: true }
+      },
+      updatedBy: {
+        select: { name: true }
+      }
+    }
+  });
+
+  return contacts.map(c => ({
+    "Nama": c.name || "-",
+    "Email": c.email || "-",
+    "Nomor WA": c.waNumber || c.phone || "-",
+    "Kota/Negara": c.city || "-",
+    "Perusahaan": c.company || "-",
+    "Tiket": (c as any).ticketType || "-",
+    "Jumlah Pengunjung": c.visitors || 1,
+    "Sumber Info": c.infoSource || "-",
+    "Status": c.status,
+    "Tags": c.tags || "-",
+    "List/Segmen": c.lists.map(l => l.list.name).join(", ") || "-",
+    "Dibuat Oleh": c.createdBy?.name || "System",
+    "Diupdate Oleh": c.updatedBy?.name || "-",
+    "Tanggal Dibuat": c.createdAt.toISOString().split("T")[0]
+  }));
+}
+
 export async function createContact(data: {
   email?: string;
   name?: string;
