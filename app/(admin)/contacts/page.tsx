@@ -478,7 +478,7 @@ export default function ContactsPage() {
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-10 h-10 rounded-full bg-primary-50 text-primary-600 flex items-center justify-center font-bold">
-                                                        {(contact.name?.[0] || contact.email[0]).toUpperCase()}
+                                                        {(contact.name?.[0] || contact.email?.[0] || "?").toUpperCase()}
                                                     </div>
                                                     <div>
                                                         <div className="font-bold text-slate-800">{contact.name || "Unknown"}</div>
