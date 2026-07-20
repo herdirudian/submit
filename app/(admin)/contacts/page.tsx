@@ -61,6 +61,7 @@ export default function ContactsPage() {
         phone: "",
         waNumber: "",
         ticketType: "",
+        customerType: "",
         visitors: 1,
         infoSource: "",
         company: "",
@@ -147,7 +148,7 @@ export default function ContactsPage() {
             await createContact(newContact);
             const currentListId = newContact.listId;
             setNewContact({ 
-                email: "", name: "", phone: "", waNumber: "", ticketType: "",
+                email: "", name: "", phone: "", waNumber: "", ticketType: "", customerType: "",
                 visitors: 1, infoSource: "", company: "", 
                 city: "", tags: "", listId: currentListId
             });
@@ -884,6 +885,22 @@ export default function ContactsPage() {
                                         <option value="Lainnya">Lainnya</option>
                                     </select>
                                 </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-slate-700">Type of Customer</label>
+                                <select
+                                    required
+                                    value={newContact.customerType}
+                                    onChange={e => setNewContact(p => ({ ...p, customerType: e.target.value }))}
+                                    className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+                                >
+                                    <option value="">Pilih Type...</option>
+                                    <option value="Family">Family</option>
+                                    <option value="Friend">Friend</option>
+                                    <option value="Individual">Individual</option>
+                                    <option value="Group">Group</option>
+                                </select>
                             </div>
 
                             <div className="space-y-2">

@@ -261,6 +261,7 @@ model Contact {
   phone        String?
   waNumber     String?
   ticketType   String?
+  customerType String?
   visitors     Int            @default(1)
   infoSource   String?
   company      String?

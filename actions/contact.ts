@@ -150,6 +150,7 @@ export async function getAllContactsForExport(params: {
     "Kota/Negara": c.city || "-",
     "Perusahaan": c.company || "-",
     "Tiket": (c as any).ticketType || "-",
+    "Type of Customer": (c as any).customerType || "-",
     "Jumlah Pengunjung": c.visitors || 1,
     "Sumber Info": c.infoSource || "-",
     "Status": c.status,
@@ -167,6 +168,7 @@ export async function createContact(data: {
   phone?: string;
   waNumber?: string;
   ticketType?: string;
+  customerType?: string;
   visitors?: number;
   infoSource?: string;
   company?: string;
@@ -178,6 +180,7 @@ export async function createContact(data: {
   const session = await getServerSession(authOptions);
   if (!session?.user) throw new Error("Unauthorized");
   if (!data.ticketType?.trim()) throw new Error("Tiket yang dibeli wajib dipilih.");
+  if (!data.customerType?.trim()) throw new Error("Type of Customer wajib dipilih.");
 
   const { listId, ...contactData } = data;
 
@@ -269,6 +272,7 @@ export async function importContacts(
           phone: contact.phone,
           waNumber: contact.waNumber,
           ticketType: contact.ticketType,
+          customerType: contact.customerType,
           visitors: contact.visitors,
           infoSource: contact.infoSource,
           company: contact.company,
@@ -283,6 +287,7 @@ export async function importContacts(
           phone: contact.phone,
           waNumber: contact.waNumber,
           ticketType: contact.ticketType,
+          customerType: contact.customerType,
           visitors: contact.visitors,
           infoSource: contact.infoSource,
           company: contact.company,
