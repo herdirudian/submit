@@ -236,10 +236,21 @@ function NewCampaignForm() {
                                         <p className="font-bold text-slate-700 mb-1">Tips Konten Menarik:</p>
                                         <ul className="list-disc ml-4 space-y-1">
                                             <li>Gunakan <code className="bg-white px-1 border border-slate-200 rounded text-primary-700 font-bold">{"{{name}}"}</code> untuk menyapa nama.</li>
-                                            <li><strong>Gambar:</strong> Gunakan tag HTML <code className="bg-white px-1 border border-slate-200 rounded text-primary-700">{"<img src='URL_GAMBAR'>"}</code>.</li>
-                                            <li><strong>Tombol:</strong> Gunakan class <code className="bg-white px-1 border border-slate-200 rounded text-primary-700">btn</code>, contoh: <br/>
-                                                <code className="bg-white px-1 border border-slate-200 rounded text-primary-700">{"<a href='...' class='btn'>Klik Di Sini</a>"}</code>
-                                            </li>
+                                            {!isWa && (
+                                                <>
+                                                    <li><strong>Gambar:</strong> Gunakan tag HTML <code className="bg-white px-1 border border-slate-200 rounded text-primary-700">{"<img src='URL_GAMBAR'>"}</code>.</li>
+                                                    <li><strong>Tombol:</strong> Gunakan class <code className="bg-white px-1 border border-slate-200 rounded text-primary-700">btn</code>, contoh: <br/>
+                                                        <code className="bg-white px-1 border border-slate-200 rounded text-primary-700">{"<a href='...' class='btn'>Klik Di Sini</a>"}</code>
+                                                    </li>
+                                                </>
+                                            )}
+                                            {isWa && (
+                                                <>
+                                                    <li><strong>Bold:</strong> Gunakan bintang <code className="bg-white px-1 border border-slate-200 rounded text-primary-700">*teks tebal*</code>.</li>
+                                                    <li><strong>Italic:</strong> Gunakan garis bawah <code className="bg-white px-1 border border-slate-200 rounded text-primary-700">_teks miring_</code>.</li>
+                                                    <li><strong>Strikethrough:</strong> Gunakan tilde <code className="bg-white px-1 border border-slate-200 rounded text-primary-700">~teks dicoret~</code>.</li>
+                                                </>
+                                            )}
                                         </ul>
                                     </div>
                                 </div>
@@ -289,14 +300,16 @@ function NewCampaignForm() {
                                         ))}
                                     </select>
                                 )}
-                                <p className="text-[10px] text-slate-400">Pilih segmen audiens yang akan menerima email ini.</p>
+                                <p className="text-[10px] text-slate-400">Pilih segmen audiens yang akan menerima {isWa ? "pesan" : "email"} ini.</p>
                             </div>
 
-                            <hr className="border-slate-50" />
+                            {!isWa && (
+                                <>
+                                    <hr className="border-slate-50" />
 
-                            {/* Header Image Upload */}
-                            <div className="space-y-2">
-                                <label className="text-sm font-bold text-slate-700 flex items-center justify-between">
+                                    {/* Header Image Upload */}
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-bold text-slate-700 flex items-center justify-between">
                                     <span>Gambar Header</span>
                                     {formData.headerImageUrl && (
                                         <button 
@@ -409,6 +422,8 @@ function NewCampaignForm() {
                                 )}
                                 <p className="text-[10px] text-slate-400 italic">Muncul di bagian bawah email, di atas informasi perusahaan.</p>
                             </div>
+                                </>
+                            )}
                         </div>
 
                         <div className="pt-4 space-y-3">
@@ -420,15 +435,17 @@ function NewCampaignForm() {
                                 {loading ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
                                 Simpan Draft
                             </button>
-                            <button 
-                                type="button"
-                                onClick={handlePreview}
-                                disabled={previewLoading}
-                                className="w-full py-3 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
-                            >
-                                {previewLoading ? <Loader2 size={20} className="animate-spin" /> : <Eye size={20} />}
-                                Preview Email
-                            </button>
+                            {!isWa && (
+                                <button 
+                                    type="button"
+                                    onClick={handlePreview}
+                                    disabled={previewLoading}
+                                    className="w-full py-3 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                                >
+                                    {previewLoading ? <Loader2 size={20} className="animate-spin" /> : <Eye size={20} />}
+                                    Preview Email
+                                </button>
+                            )}
                         </div>
                     </div>
 
@@ -440,15 +457,15 @@ function NewCampaignForm() {
                         <ul className="space-y-3 text-xs text-slate-400">
                             <li className="flex gap-2">
                                 <div className="w-4 h-4 rounded-full border border-slate-600 flex items-center justify-center text-[8px] font-bold shrink-0">✓</div>
-                                <span>Pastikan subjek email menarik</span>
+                                <span>Pastikan subjek {isWa ? "pesan" : "email"} menarik</span>
                             </li>
                             <li className="flex gap-2">
                                 <div className="w-4 h-4 rounded-full border border-slate-600 flex items-center justify-center text-[8px] font-bold shrink-0">✓</div>
-                                <span>Cek link di dalam email</span>
+                                <span>Cek link di dalam {isWa ? "pesan" : "email"}</span>
                             </li>
                             <li className="flex gap-2">
                                 <div className="w-4 h-4 rounded-full border border-slate-600 flex items-center justify-center text-[8px] font-bold shrink-0">✓</div>
-                                <span>Kirim email testing ke diri sendiri</span>
+                                <span>Kirim {isWa ? "pesan" : "email"} testing ke diri sendiri</span>
                             </li>
                         </ul>
                     </div>

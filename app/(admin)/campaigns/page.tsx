@@ -21,7 +21,7 @@ export default function CampaignsPage() {
     async function loadCampaigns() {
         setLoading(true);
         try {
-            const data = await getCampaigns();
+            const data = await getCampaigns("EMAIL");
             setCampaigns(data);
         } catch (error) {
             console.error(error);

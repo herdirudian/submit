@@ -25,7 +25,8 @@ export default function EditCampaignPage() {
     const [contactLists, setContactLists] = useState<any[]>([]);
     const [showPreview, setShowPreview] = useState(false);
     const [previewHtml, setPreviewHtml] = useState("");
-    const [previewLoading, setPreviewLoading] = useState(false);
+    const [campaignType, setCampaignType] = useState<'EMAIL' | 'WHATSAPP'>('EMAIL');
+    const isWa = campaignType === 'WHATSAPP';
     
     const [formData, setFormData] = useState({
         name: "",
@@ -52,6 +53,7 @@ export default function EditCampaignPage() {
                 return;
             }
 
+            setCampaignType(campaign.type as 'EMAIL' | 'WHATSAPP');
             setContactLists(lists);
             setFormData({
                 name: campaign.name || "",
@@ -121,7 +123,11 @@ export default function EditCampaignPage() {
         try {
             await updateCampaign(id, formData);
             toast.success("Campaign berhasil diperbarui");
-            router.push("/campaigns");
+            if (isWa) {
+                router.push("/blast-wa");
+            } else {
+                router.push("/campaigns");
+            }
         } catch (error: any) {
             console.error(error);
             alert("Gagal memperbarui campaign: " + (error.message || "Unknown error"));
@@ -143,12 +149,12 @@ export default function EditCampaignPage() {
         <div className="max-w-5xl mx-auto space-y-6 pb-20">
             <div className="flex justify-between items-center">
                 <div className="flex items-center gap-4">
-                    <Link href="/campaigns" className="p-2 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-primary-600 transition-all shadow-sm">
+                    <Link href={isWa ? "/blast-wa" : "/campaigns"} className="p-2 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-primary-600 transition-all shadow-sm">
                         <ArrowLeft size={20} />
                     </Link>
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-800">Edit Campaign</h1>
-                        <p className="text-slate-500 text-sm">Perbarui rancangan pesan blast email Anda.</p>
+                        <h1 className="text-2xl font-bold text-slate-800">Edit {isWa ? "Pesan WA" : "Campaign"}</h1>
+                        <p className="text-slate-500 text-sm">Perbarui rancangan pesan blast {isWa ? "WhatsApp" : "email"} Anda.</p>
                     </div>
                 </div>
             </div>
@@ -161,51 +167,55 @@ export default function EditCampaignPage() {
                             <div className="space-y-2">
                                 <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
                                     <Type size={16} className="text-primary-600" />
-                                    Subjek Email
+                                    {isWa ? "Subjek Pesan WA" : "Subjek Email"}
                                 </label>
                                 <input 
                                     type="text"
                                     required
-                                    placeholder="Contoh: Penawaran Spesial Akhir Bulan!"
+                                    placeholder={isWa ? "Contoh: Promo Ramadhan!" : "Contoh: Penawaran Spesial Akhir Bulan!"}
                                     value={formData.subject}
                                     onChange={(e) => setFormData(p => ({ ...p, subject: e.target.value }))}
                                     className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-4 focus:ring-primary-50 focus:border-primary-500 outline-none transition-all font-medium text-slate-800"
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-700">Tombol CTA (Optional)</label>
-                                    <input 
-                                        type="text"
-                                        placeholder="Contoh: Pelajari Selengkapnya"
-                                        value={formData.ctaText}
-                                        onChange={(e) => setFormData(p => ({ ...p, ctaText: e.target.value }))}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary-500 outline-none transition-all text-sm"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-700">Link Tombol (URL)</label>
-                                    <input 
-                                        type="text"
-                                        placeholder="https://..."
-                                        value={formData.ctaUrl}
-                                        onChange={(e) => setFormData(p => ({ ...p, ctaUrl: e.target.value }))}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary-500 outline-none transition-all text-sm"
-                                    />
-                                </div>
-                            </div>
+                            {!isWa && (
+                                <>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-bold text-slate-700">Tombol CTA (Optional)</label>
+                                            <input 
+                                                type="text"
+                                                placeholder="Contoh: Pelajari Selengkapnya"
+                                                value={formData.ctaText}
+                                                onChange={(e) => setFormData(p => ({ ...p, ctaText: e.target.value }))}
+                                                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary-500 outline-none transition-all text-sm"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-bold text-slate-700">Link Tombol (URL)</label>
+                                            <input 
+                                                type="text"
+                                                placeholder="https://..."
+                                                value={formData.ctaUrl}
+                                                onChange={(e) => setFormData(p => ({ ...p, ctaUrl: e.target.value }))}
+                                                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary-500 outline-none transition-all text-sm"
+                                            />
+                                        </div>
+                                    </div>
 
-                            <div className="space-y-2">
-                                <label className="text-sm font-bold text-slate-700">Preview Text (Optional)</label>
-                                <input 
-                                    type="text"
-                                    placeholder="Teks singkat yang muncul setelah subjek di inbox"
-                                    value={formData.previewText}
-                                    onChange={(e) => setFormData(p => ({ ...p, previewText: e.target.value }))}
-                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-4 focus:ring-primary-50 focus:border-primary-500 outline-none transition-all text-sm text-slate-600"
-                                />
-                            </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-bold text-slate-700">Preview Text (Optional)</label>
+                                        <input 
+                                            type="text"
+                                            placeholder="Teks singkat yang muncul setelah subjek di inbox"
+                                            value={formData.previewText}
+                                            onChange={(e) => setFormData(p => ({ ...p, previewText: e.target.value }))}
+                                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-4 focus:ring-primary-50 focus:border-primary-500 outline-none transition-all text-sm text-slate-600"
+                                        />
+                                    </div>
+                                </>
+                            )}
                         </div>
 
                         <hr className="border-slate-50" />
@@ -214,7 +224,7 @@ export default function EditCampaignPage() {
                             <div className="flex items-center justify-between">
                                 <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
                                     <Layout size={16} className="text-primary-600" />
-                                    Isi Email (HTML / Text)
+                                    {isWa ? "Isi Pesan" : "Isi Email (HTML / Text)"}
                                 </label>
                                 <div className="flex gap-2">
                                     <button type="button" className="text-xs font-bold text-primary-600 hover:bg-primary-50 px-2 py-1 rounded transition-colors">
@@ -224,7 +234,7 @@ export default function EditCampaignPage() {
                             </div>
                             <textarea 
                                 required
-                                placeholder="Tulis konten email Anda di sini..."
+                                placeholder={isWa ? "Tulis pesan WhatsApp Anda di sini..." : "Tulis konten email Anda di sini..."}
                                 value={formData.content}
                                 onChange={(e) => setFormData(p => ({ ...p, content: e.target.value }))}
                                 className="w-full px-4 py-4 rounded-xl border border-slate-200 focus:ring-4 focus:ring-primary-50 focus:border-primary-500 outline-none transition-all min-h-[400px] font-mono text-sm leading-relaxed"
@@ -236,10 +246,21 @@ export default function EditCampaignPage() {
                                         <p className="font-bold text-slate-700 mb-1">Tips Konten Menarik:</p>
                                         <ul className="list-disc ml-4 space-y-1">
                                             <li>Gunakan <code className="bg-white px-1 border border-slate-200 rounded text-primary-700 font-bold">{"{{name}}"}</code> untuk menyapa nama.</li>
-                                            <li><strong>Gambar:</strong> Gunakan tag HTML <code className="bg-white px-1 border border-slate-200 rounded text-primary-700">{"<img src='URL_GAMBAR'>"}</code>.</li>
-                                            <li><strong>Tombol:</strong> Gunakan class <code className="bg-white px-1 border border-slate-200 rounded text-primary-700">btn</code>, contoh: <br/>
-                                                <code className="bg-white px-1 border border-slate-200 rounded text-primary-700">{"<a href='...' class='btn'>Klik Di Sini</a>"}</code>
-                                            </li>
+                                            {!isWa && (
+                                                <>
+                                                    <li><strong>Gambar:</strong> Gunakan tag HTML <code className="bg-white px-1 border border-slate-200 rounded text-primary-700">{"<img src='URL_GAMBAR'>"}</code>.</li>
+                                                    <li><strong>Tombol:</strong> Gunakan class <code className="bg-white px-1 border border-slate-200 rounded text-primary-700">btn</code>, contoh: <br/>
+                                                        <code className="bg-white px-1 border border-slate-200 rounded text-primary-700">{"<a href='...' class='btn'>Klik Di Sini</a>"}</code>
+                                                    </li>
+                                                </>
+                                            )}
+                                            {isWa && (
+                                                <>
+                                                    <li><strong>Bold:</strong> Gunakan bintang <code className="bg-white px-1 border border-slate-200 rounded text-primary-700">*teks tebal*</code>.</li>
+                                                    <li><strong>Italic:</strong> Gunakan garis bawah <code className="bg-white px-1 border border-slate-200 rounded text-primary-700">_teks miring_</code>.</li>
+                                                    <li><strong>Strikethrough:</strong> Gunakan tilde <code className="bg-white px-1 border border-slate-200 rounded text-primary-700">~teks dicoret~</code>.</li>
+                                                </>
+                                            )}
                                         </ul>
                                     </div>
                                 </div>
@@ -289,14 +310,16 @@ export default function EditCampaignPage() {
                                         ))}
                                     </select>
                                 )}
-                                <p className="text-[10px] text-slate-400">Pilih segmen audiens yang akan menerima email ini.</p>
+                                <p className="text-[10px] text-slate-400">Pilih segmen audiens yang akan menerima {isWa ? "pesan" : "email"} ini.</p>
                             </div>
 
-                            <hr className="border-slate-50" />
+                            {!isWa && (
+                                <>
+                                    <hr className="border-slate-50" />
 
-                            {/* Header Image Upload */}
-                            <div className="space-y-2">
-                                <label className="text-sm font-bold text-slate-700 flex items-center justify-between">
+                                    {/* Header Image Upload */}
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-bold text-slate-700 flex items-center justify-between">
                                     <span>Gambar Header</span>
                                     {formData.headerImageUrl && (
                                         <button 
@@ -420,15 +443,17 @@ export default function EditCampaignPage() {
                                 {loading ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
                                 Simpan Perubahan
                             </button>
-                            <button 
-                                type="button"
-                                onClick={handlePreview}
-                                disabled={previewLoading}
-                                className="w-full py-3 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
-                            >
-                                {previewLoading ? <Loader2 size={20} className="animate-spin" /> : <Eye size={20} />}
-                                Preview Email
-                            </button>
+                            {!isWa && (
+                                <button 
+                                    type="button"
+                                    onClick={handlePreview}
+                                    disabled={previewLoading}
+                                    className="w-full py-3 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                                >
+                                    {previewLoading ? <Loader2 size={20} className="animate-spin" /> : <Eye size={20} />}
+                                    Preview Email
+                                </button>
+                            )}
                         </div>
                     </div>
 
@@ -440,15 +465,15 @@ export default function EditCampaignPage() {
                         <ul className="space-y-3 text-xs text-slate-400">
                             <li className="flex gap-2">
                                 <div className="w-4 h-4 rounded-full border border-slate-600 flex items-center justify-center text-[8px] font-bold shrink-0">✓</div>
-                                <span>Pastikan subjek email menarik</span>
+                                <span>Pastikan subjek {isWa ? "pesan" : "email"} menarik</span>
                             </li>
                             <li className="flex gap-2">
                                 <div className="w-4 h-4 rounded-full border border-slate-600 flex items-center justify-center text-[8px] font-bold shrink-0">✓</div>
-                                <span>Cek link di dalam email</span>
+                                <span>Cek link di dalam {isWa ? "pesan" : "email"}</span>
                             </li>
                             <li className="flex gap-2">
                                 <div className="w-4 h-4 rounded-full border border-slate-600 flex items-center justify-center text-[8px] font-bold shrink-0">✓</div>
-                                <span>Kirim email testing ke diri sendiri</span>
+                                <span>Kirim {isWa ? "pesan" : "email"} testing ke diri sendiri</span>
                             </li>
                         </ul>
                     </div>

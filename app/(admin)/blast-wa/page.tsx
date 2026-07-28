@@ -1,8 +1,14 @@
 import React from "react";
-import { MessageCircle, Settings, Send } from "lucide-react";
+import { MessageCircle, Settings, Send, Megaphone, Calendar, Edit2, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { getCampaigns, deleteCampaign, sendCampaign } from "@/actions/campaign";
+import { format } from "date-fns";
+import WaCampaignList from "./WaCampaignList";
 
-export default function BlastWaDashboard() {
+export default async function BlastWaDashboard() {
+    // Fetch WhatsApp campaigns directly on the server
+    const campaigns = await getCampaigns("WHATSAPP");
+
     return (
         <div className="space-y-8">
             <div className="flex justify-between items-center">
@@ -36,15 +42,12 @@ export default function BlastWaDashboard() {
                     <h2 className="text-lg font-bold text-green-800 mb-2">Integrasi OpenWA Aktif</h2>
                     <p className="text-green-700 text-sm leading-relaxed">
                         Fitur Blast WhatsApp sudah siap digunakan. Pastikan Anda telah memasukkan URL API OpenWA Anda di menu <b>Settings</b>.
-                        Sistem akan membaca nomor tujuan dari kolom <b>Nomor WA</b> pada daftar kontak Anda.
+                        Sistem akan otomatis mengatur jeda (delay) secara natural untuk mencegah blokir.
                     </p>
                 </div>
             </div>
             
-            <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm text-center text-slate-500">
-                <p>Fitur analitik pengiriman pesan WhatsApp akan segera hadir di halaman ini.</p>
-                <p className="mt-2 text-sm">Untuk mulai mengirim, klik tombol <b>Buat Pesan WA</b> di atas.</p>
-            </div>
+            <WaCampaignList initialCampaigns={campaigns} />
         </div>
     );
 }
