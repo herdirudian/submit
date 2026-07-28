@@ -1,7 +1,7 @@
 import React from "react";
 import { MessageCircle, Settings, Send, Megaphone, Calendar, Edit2, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { getCampaigns, deleteCampaign, sendCampaign } from "@/actions/campaign";
+import { getCampaigns, deleteCampaign, sendCampaignNow } from "@/actions/campaign";
 import { format } from "date-fns";
 import WaCampaignList from "./WaCampaignList";
 
