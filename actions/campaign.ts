@@ -255,14 +255,14 @@ export async function sendCampaignNow(id: string) {
       const getRandomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
       const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-      // 1. Random delay between 4 to 8 seconds (Simulating typing and sending)
-      const typingDelay = getRandomInt(4000, 8000);
+      // 1. Random delay between 15 to 25 seconds (Simulating typing and sending)
+      const typingDelay = getRandomInt(15000, 25000);
       await delay(typingDelay);
 
       // 2. Batch resting (Human takes a break)
-      // After every 20 successful messages, pause for 1 to 2 minutes
-      if (successCount > 0 && successCount % 20 === 0) {
-        const restDelay = getRandomInt(60000, 120000); // 60s to 120s
+      // After every 10 successful messages, pause for 2 to 5 minutes
+      if (successCount > 0 && successCount % 10 === 0) {
+        const restDelay = getRandomInt(120000, 300000); // 120s to 300s
         await delay(restDelay);
       }
     }
