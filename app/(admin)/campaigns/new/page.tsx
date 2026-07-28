@@ -9,11 +9,24 @@ import {
 import { createCampaign, renderCampaignPreview } from "@/actions/campaign";
 import { getContactLists } from "@/actions/contact";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
+import { Suspense } from "react";
 
 export default function NewCampaignPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <NewCampaignForm />
+        </Suspense>
+    );
+}
+
+function NewCampaignForm() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const campaignType = searchParams.get("type") as 'EMAIL' | 'WHATSAPP' | null;
+    const isWa = campaignType === 'WHATSAPP';
+    
     const [loading, setLoading] = useState(false);
     const [uploadingHeader, setUploadingHeader] = useState(false);
     const [uploadingFooter, setUploadingFooter] = useState(false);
@@ -24,6 +37,7 @@ export default function NewCampaignPage() {
     const [previewLoading, setPreviewLoading] = useState(false);
     
     const [formData, setFormData] = useState({
+        type: campaignType || 'EMAIL',
         name: "",
         subject: "",
         previewText: "",
@@ -95,8 +109,12 @@ export default function NewCampaignPage() {
         e.preventDefault();
         setLoading(true);
         try {
-            await createCampaign(formData);
-            router.push("/campaigns");
+            await createCampaign({ ...formData, type: formData.type as any });
+            if (isWa) {
+                router.push("/blast-wa");
+            } else {
+                router.push("/campaigns");
+            }
         } catch (error: any) {
             console.error(error);
             alert("Gagal membuat campaign: " + (error.message || "Unknown error"));
@@ -109,13 +127,25 @@ export default function NewCampaignPage() {
         <div className="max-w-5xl mx-auto space-y-6 pb-20">
             <div className="flex justify-between items-center">
                 <div className="flex items-center gap-4">
-                    <Link href="/campaigns" className="p-2 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-primary-600 transition-all shadow-sm">
+                    <Link href={isWa ? "/blast-wa" : "/campaigns"} className="w-10 h-10 flex items-center justify-center bg-white border border-slate-200 rounded-xl text-slate-500 hover:bg-slate-50 transition-all shadow-sm">
                         <ArrowLeft size={20} />
                     </Link>
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-800">Buat Campaign Baru</h1>
-                        <p className="text-slate-500 text-sm">Rancang pesan blast email Anda.</p>
+                        <h1 className="text-2xl font-bold text-slate-800">{isWa ? "Buat Pesan WA" : "Buat Campaign Baru"}</h1>
+                        <p className="text-slate-500 mt-1">{isWa ? "Kirim pesan WhatsApp massal ke pelanggan." : "Rancang dan kirim email massal ke pelanggan Anda."}</p>
                     </div>
+                </div>
+                <div className="flex gap-3">
+                    {!isWa && (
+                        <button 
+                            type="button"
+                            onClick={handlePreview}
+                            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-all shadow-sm"
+                        >
+                            <Eye size={18} />
+                            Preview Email
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -127,51 +157,55 @@ export default function NewCampaignPage() {
                             <div className="space-y-2">
                                 <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
                                     <Type size={16} className="text-primary-600" />
-                                    Subjek Email
+                                    {isWa ? "Subjek Pesan WA" : "Subjek Email"}
                                 </label>
                                 <input 
                                     type="text"
                                     required
-                                    placeholder="Contoh: Penawaran Spesial Akhir Bulan!"
+                                    placeholder={isWa ? "Contoh: Promo Ramadhan!" : "Contoh: Penawaran Spesial Akhir Bulan!"}
                                     value={formData.subject}
                                     onChange={(e) => setFormData(p => ({ ...p, subject: e.target.value }))}
                                     className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-4 focus:ring-primary-50 focus:border-primary-500 outline-none transition-all font-medium text-slate-800"
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-700">Tombol CTA (Optional)</label>
-                                    <input 
-                                        type="text"
-                                        placeholder="Contoh: Pelajari Selengkapnya"
-                                        value={formData.ctaText}
-                                        onChange={(e) => setFormData(p => ({ ...p, ctaText: e.target.value }))}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary-500 outline-none transition-all text-sm"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-700">Link Tombol (URL)</label>
-                                    <input 
-                                        type="text"
-                                        placeholder="https://..."
-                                        value={formData.ctaUrl}
-                                        onChange={(e) => setFormData(p => ({ ...p, ctaUrl: e.target.value }))}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary-500 outline-none transition-all text-sm"
-                                    />
-                                </div>
-                            </div>
+                            {!isWa && (
+                                <>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-bold text-slate-700">Tombol CTA (Optional)</label>
+                                            <input 
+                                                type="text"
+                                                placeholder="Contoh: Pelajari Selengkapnya"
+                                                value={formData.ctaText}
+                                                onChange={(e) => setFormData(p => ({ ...p, ctaText: e.target.value }))}
+                                                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary-500 outline-none transition-all text-sm"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-bold text-slate-700">Link Tombol (URL)</label>
+                                            <input 
+                                                type="text"
+                                                placeholder="https://..."
+                                                value={formData.ctaUrl}
+                                                onChange={(e) => setFormData(p => ({ ...p, ctaUrl: e.target.value }))}
+                                                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary-500 outline-none transition-all text-sm"
+                                            />
+                                        </div>
+                                    </div>
 
-                            <div className="space-y-2">
-                                <label className="text-sm font-bold text-slate-700">Preview Text (Optional)</label>
-                                <input 
-                                    type="text"
-                                    placeholder="Teks singkat yang muncul setelah subjek di inbox"
-                                    value={formData.previewText}
-                                    onChange={(e) => setFormData(p => ({ ...p, previewText: e.target.value }))}
-                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-4 focus:ring-primary-50 focus:border-primary-500 outline-none transition-all text-sm text-slate-600"
-                                />
-                            </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-bold text-slate-700">Preview Text (Optional)</label>
+                                        <input 
+                                            type="text"
+                                            placeholder="Teks singkat yang muncul setelah subjek di inbox"
+                                            value={formData.previewText}
+                                            onChange={(e) => setFormData(p => ({ ...p, previewText: e.target.value }))}
+                                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-4 focus:ring-primary-50 focus:border-primary-500 outline-none transition-all text-sm text-slate-600"
+                                        />
+                                    </div>
+                                </>
+                            )}
                         </div>
 
                         <hr className="border-slate-50" />
@@ -180,7 +214,7 @@ export default function NewCampaignPage() {
                             <div className="flex items-center justify-between">
                                 <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
                                     <Layout size={16} className="text-primary-600" />
-                                    Isi Email (HTML / Text)
+                                    {isWa ? "Isi Pesan" : "Isi Email (HTML / Text)"}
                                 </label>
                                 <div className="flex gap-2">
                                     <button type="button" className="text-xs font-bold text-primary-600 hover:bg-primary-50 px-2 py-1 rounded transition-colors">
@@ -190,7 +224,7 @@ export default function NewCampaignPage() {
                             </div>
                             <textarea 
                                 required
-                                placeholder="Tulis konten email Anda di sini..."
+                                placeholder={isWa ? "Tulis pesan WhatsApp Anda di sini..." : "Tulis konten email Anda di sini..."}
                                 value={formData.content}
                                 onChange={(e) => setFormData(p => ({ ...p, content: e.target.value }))}
                                 className="w-full px-4 py-4 rounded-xl border border-slate-200 focus:ring-4 focus:ring-primary-50 focus:border-primary-500 outline-none transition-all min-h-[400px] font-mono text-sm leading-relaxed"

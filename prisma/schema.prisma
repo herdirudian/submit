@@ -161,6 +161,10 @@ model AppSettings {
   websiteUrl            String?
   tiktokUrl             String?
   
+  // WhatsApp Integration
+  whatsappApiUrl        String?
+  whatsappApiKey        String?
+  
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
@@ -330,6 +334,7 @@ model EmailTemplate {
 
 model Campaign {
   id              String         @id @default(cuid())
+  type            CampaignType   @default(EMAIL)
   name            String
   subject         String
   previewText     String?
@@ -360,6 +365,11 @@ model Campaign {
   updatedAt       DateTime       @updatedAt
 
   @@map("campaigns")
+}
+
+enum CampaignType {
+  EMAIL
+  WHATSAPP
 }
 
 enum CampaignStatus {

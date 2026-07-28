@@ -7,11 +7,12 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { CampaignStatus } from "@prisma/client";
 
-export async function getCampaigns() {
+export async function getCampaigns(type: 'EMAIL' | 'WHATSAPP' = 'EMAIL') {
   const session = await getServerSession(authOptions);
   if (!session?.user) throw new Error("Unauthorized");
 
   return await prisma.campaign.findMany({
+    where: { type },
     orderBy: { createdAt: 'desc' },
     include: {
       contactList: { select: { name: true } },
@@ -21,6 +22,7 @@ export async function getCampaigns() {
 }
 
 export async function createCampaign(data: {
+  type?: 'EMAIL' | 'WHATSAPP';
   name: string;
   subject: string;
   content: string;
@@ -37,6 +39,7 @@ export async function createCampaign(data: {
 
   const campaign = await prisma.campaign.create({
     data: {
+      type: data.type || 'EMAIL',
       name: data.name,
       subject: data.subject,
       content: data.content,

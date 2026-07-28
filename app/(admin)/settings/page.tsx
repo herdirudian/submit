@@ -29,6 +29,9 @@ export default function SettingsPage() {
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [tiktokUrl, setTiktokUrl] = useState("");
 
+  const [whatsappApiUrl, setWhatsappApiUrl] = useState("");
+  const [whatsappApiKey, setWhatsappApiKey] = useState("");
+
   const canSave = useMemo(() => !isLoading && !!snapshot?.user, [isLoading, snapshot?.user]);
 
   useEffect(() => {
@@ -51,6 +54,8 @@ export default function SettingsPage() {
         setLinkedinUrl(data.appSettings.linkedinUrl ?? "");
         setWebsiteUrl(data.appSettings.websiteUrl ?? "");
         setTiktokUrl(data.appSettings.tiktokUrl ?? "");
+        setWhatsappApiUrl(data.appSettings.whatsappApiUrl ?? "");
+        setWhatsappApiKey(data.appSettings.whatsappApiKey ?? "");
       })
       .catch(() => {
         if (cancelled) return;
@@ -106,6 +111,8 @@ export default function SettingsPage() {
           linkedinUrl,
           websiteUrl,
           tiktokUrl,
+          whatsappApiUrl,
+          whatsappApiKey,
         });
         toast.success("Settings branding & footer tersimpan");
       } catch {
@@ -355,6 +362,47 @@ export default function SettingsPage() {
                   Simpan Branding & Footer
                 </button>
               </div>
+            </div>
+          </div>
+
+          {/* WhatsApp API Settings */}
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+              <div className="text-lg font-bold text-slate-800">WhatsApp API Integration (OpenWA)</div>
+              <div className="text-sm text-slate-500">Konfigurasi API endpoint untuk fitur WhatsApp Blast.</div>
+            </div>
+            <div className="p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">OpenWA API URL</label>
+                  <input
+                    value={whatsappApiUrl}
+                    onChange={(e) => setWhatsappApiUrl(e.target.value)}
+                    className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-300"
+                    placeholder="http://localhost:3000 atau https://wa.domain.com"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">API Key / Token (Opsional)</label>
+                  <input
+                    type="password"
+                    value={whatsappApiKey}
+                    onChange={(e) => setWhatsappApiKey(e.target.value)}
+                    className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-300"
+                    placeholder="Masukkan token rahasia jika diperlukan"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end">
+              <button
+                onClick={saveBranding}
+                disabled={!canSave || isPending}
+                className="flex items-center gap-2 px-6 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isPending ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                Simpan API WA
+              </button>
             </div>
           </div>
         </div>

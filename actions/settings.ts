@@ -66,6 +66,8 @@ export async function updateAppSettings(data: {
   linkedinUrl?: string;
   websiteUrl?: string;
   tiktokUrl?: string;
+  whatsappApiUrl?: string;
+  whatsappApiKey?: string;
 }) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
@@ -83,6 +85,8 @@ export async function updateAppSettings(data: {
   const linkedinUrl = (data.linkedinUrl ?? "").trim();
   const websiteUrl = (data.websiteUrl ?? "").trim();
   const tiktokUrl = (data.tiktokUrl ?? "").trim();
+  const whatsappApiUrl = (data.whatsappApiUrl ?? "").trim();
+  const whatsappApiKey = (data.whatsappApiKey ?? "").trim();
 
   if (notificationFromEmail && !isValidEmail(notificationFromEmail)) {
     throw new Error("From Email tidak valid");
@@ -103,6 +107,8 @@ export async function updateAppSettings(data: {
       linkedinUrl: linkedinUrl || null,
       websiteUrl: websiteUrl || null,
       tiktokUrl: tiktokUrl || null,
+      whatsappApiUrl: whatsappApiUrl || null,
+      whatsappApiKey: whatsappApiKey || null,
     },
     update: {
       brandName: brandName || null,
@@ -116,6 +122,8 @@ export async function updateAppSettings(data: {
       linkedinUrl: linkedinUrl || null,
       websiteUrl: websiteUrl || null,
       tiktokUrl: tiktokUrl || null,
+      whatsappApiUrl: whatsappApiUrl || null,
+      whatsappApiKey: whatsappApiKey || null,
     },
   });
 

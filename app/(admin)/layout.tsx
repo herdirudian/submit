@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { LayoutDashboard, Settings, Search, LogOut, FileText, BarChart3, Users, Inbox, Mail, Megaphone, Contact2, History } from 'lucide-react';
+import { LayoutDashboard, Settings, Search, LogOut, FileText, BarChart3, Users, Inbox, Mail, Megaphone, Contact2, History, MessageCircle } from 'lucide-react';
 import { signOut, useSession } from "next-auth/react";
 import NotificationDropdown from "@/components/NotificationDropdown";
 import { usePathname } from "next/navigation";
@@ -21,6 +21,7 @@ export default function AdminLayout({
     if (path === "/analytics" || path.startsWith("/analytics/")) return "analytics";
     if (path === "/users" || path.startsWith("/users/")) return "users";
     if (path === "/blast-email" || path.startsWith("/blast-email")) return "blast-email";
+    if (path === "/blast-wa" || path.startsWith("/blast-wa")) return "blast-wa";
     if (path === "/contacts" || path.startsWith("/contacts")) return "contacts";
     if (path === "/campaigns/logs" || path.startsWith("/campaigns/logs")) return "email-logs";
     if (path === "/campaigns" || path.startsWith("/campaigns")) return "campaigns";
@@ -35,7 +36,8 @@ export default function AdminLayout({
     { name: 'Responses', href: '/responses', icon: Inbox, id: 'responses', roles: ['ADMIN'] },
     { name: 'Analytics', href: '/analytics', icon: BarChart3, id: 'analytics', roles: ['ADMIN'] },
     { name: 'Users', href: '/users', icon: Users, id: 'users', roles: ['ADMIN'] },
-    { name: 'Blast Dashboard', href: '/blast-email', icon: Mail, id: 'blast-email', roles: ['ADMIN'] },
+    { name: 'Blast Email', href: '/blast-email', icon: Mail, id: 'blast-email', roles: ['ADMIN'] },
+    { name: 'Blast WA', href: '/blast-wa', icon: MessageCircle, id: 'blast-wa', roles: ['ADMIN'] },
     { name: 'Contacts', href: '/contacts', icon: Contact2, id: 'contacts', roles: ['ADMIN', 'CASHIER'] },
     { name: 'Campaigns', href: '/campaigns', icon: Megaphone, id: 'campaigns', roles: ['ADMIN'] },
     { name: 'Histori Email', href: '/campaigns/logs', icon: History, id: 'email-logs', roles: ['ADMIN'] },
