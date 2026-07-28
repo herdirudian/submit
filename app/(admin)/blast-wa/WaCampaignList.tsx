@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { Megaphone, Calendar, Edit2, Trash2, Send, Loader2, MessageCircle } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { deleteCampaign, sendCampaign } from "@/actions/campaign";
+import { deleteCampaign, sendCampaignNow } from "@/actions/campaign";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -25,19 +25,18 @@ export default function WaCampaignList({ initialCampaigns }: { initialCampaigns:
     };
 
     const handleSend = async (id: string) => {
-        if (!confirm("Mulai kirim blast WhatsApp sekarang? Proses ini akan memakan waktu karena ada delay natural antar pesan.")) return;
+        if (!confirm("Kirim pesan WA ini sekarang? Proses akan berjalan di background.")) return;
         
         setLoadingId(id);
-        toast.loading("Memulai pengiriman pesan WhatsApp...", { id: 'send-wa' });
+        toast.loading("Mempersiapkan pengiriman...", { id: 'send-wa' });
         
         try {
-            const res = await sendCampaign(id);
-            if (res?.success) {
-                toast.success(`Blast selesai! Terkirim: ${res.successCount}, Gagal: ${res.failCount}`, { id: 'send-wa' });
-                router.refresh();
-            }
+            await sendCampaignNow(id);
+            toast.success(`Blast sedang diproses! Silakan pantau statusnya.`, { id: 'send-wa' });
+            router.refresh();
         } catch (error: any) {
-            toast.error(error.message || "Gagal mengirim pesan", { id: 'send-wa' });
+            console.error("Error sending WA:", error);
+            toast.error(error.message || "Gagal mengirim pesan WA", { id: 'send-wa' });
         } finally {
             setLoadingId(null);
         }
