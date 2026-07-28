@@ -257,20 +257,20 @@ export async function sendCampaignNow(id: string) {
   } else {
     // Logic for sending EMAIL
     for (const contact of contacts) {
-    if (!contact.email) {
-      failCount++;
-      await prisma.emailLog.create({
-        data: {
-          campaignId: id,
-          contactId: contact.id,
-          status: 'FAILED',
-          errorMessage: "Kontak tidak memiliki alamat email"
-        }
-      });
-      continue;
-    }
+      if (!contact.email) {
+        failCount++;
+        await prisma.emailLog.create({
+          data: {
+            campaignId: id,
+            contactId: contact.id,
+            status: 'FAILED',
+            errorMessage: "Kontak tidak memiliki alamat email"
+          }
+        });
+        continue;
+      }
 
-    try {
+      try {
       // 1. Personalization & Newline handling
       let bodyContent = campaign.content;
       
@@ -444,6 +444,7 @@ export async function sendCampaignNow(id: string) {
       });
     }
   }
+}
 
   await prisma.campaign.update({
     where: { id },
