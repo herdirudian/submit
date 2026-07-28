@@ -251,8 +251,20 @@ export async function sendCampaignNow(id: string) {
         });
       }
 
-      // Delay to avoid OpenWA ban (2.5 seconds)
-      await new Promise(resolve => setTimeout(resolve, 2500));
+      // Helper for natural delays
+      const getRandomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+      const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+      // 1. Random delay between 4 to 8 seconds (Simulating typing and sending)
+      const typingDelay = getRandomInt(4000, 8000);
+      await delay(typingDelay);
+
+      // 2. Batch resting (Human takes a break)
+      // After every 20 successful messages, pause for 1 to 2 minutes
+      if (successCount > 0 && successCount % 20 === 0) {
+        const restDelay = getRandomInt(60000, 120000); // 60s to 120s
+        await delay(restDelay);
+      }
     }
   } else {
     // Logic for sending EMAIL
