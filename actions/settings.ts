@@ -134,39 +134,60 @@ export async function updateAppSettings(data: {
 }
 
 export async function testWhatsAppConnection(waNumber: string) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) throw new Error("Unauthorized");
-
-  const settings = await prisma.appSettings.findUnique({ where: { id: "singleton" } });
-  const apiUrl = settings?.whatsappApiUrl;
-  const apiKey = settings?.whatsappApiKey;
-
-  if (!apiUrl) {
-    throw new Error("WhatsApp API URL belum dikonfigurasi.");
-  }
-
-  let endpoint = apiUrl.trim();
-  if (!endpoint.endsWith('/messages/send-text')) {
-    endpoint = endpoint.replace(/\/$/, '') + '/messages/send-text';
-  }
-
-  const rawNumber = waNumber.replace(/\D/g, '');
-  if (!rawNumber) throw new Error("Nomor WA tidak valid");
-
-  let cleanNumber = rawNumber;
-  if (cleanNumber.startsWith('0')) {
-    cleanNumber = '62' + cleanNumber.substring(1);
-  }
-  const chatId = `${cleanNumber}@c.us`;
-
-  // Helper for natural delays
-  const getRandomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
-  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-  // 1. Simulate typing indicator BEFORE sending
-  const presenceEndpoint = endpoint.replace('/messages/send-text', '/presence');
   try {
-    await fetch(presenceEndpoint, {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) return { success: false, error: "Unauthorized" };
+
+    const settings = await prisma.appSettings.findUnique({ where: { id: "singleton" } });
+    const apiUrl = settings?.whatsappApiUrl;
+    const apiKey = settings?.whatsappApiKey;
+
+    if (!apiUrl) {
+      return { success: false, error: "WhatsApp API URL belum dikonfigurasi." };
+    }
+
+    let endpoint = apiUrl.trim();
+    if (!endpoint.endsWith('/messages/send-text')) {
+      endpoint = endpoint.replace(/\/$/, '') + '/messages/send-text';
+    }
+
+    const rawNumber = waNumber.replace(/\D/g, '');
+    if (!rawNumber) return { success: false, error: "Nomor WA tidak valid" };
+
+    let cleanNumber = rawNumber;
+    if (cleanNumber.startsWith('0')) {
+      cleanNumber = '62' + cleanNumber.substring(1);
+    }
+    const chatId = `${cleanNumber}@c.us`;
+
+    // Helper for natural delays
+    const getRandomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+    // 1. Simulate typing indicator BEFORE sending
+    const presenceEndpoint = endpoint.replace('/messages/send-text', '/presence');
+    try {
+      await fetch(presenceEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(apiKey ? { 'x-api-key': apiKey } : {})
+        },
+        body: JSON.stringify({
+          chatId,
+          presence: "composing"
+        })
+      });
+    } catch (e) {
+      // Ignore presence error
+    }
+
+    // 2. Random delay between 15 to 25 seconds (Simulating typing duration)
+    const typingDelay = getRandomInt(15000, 25000);
+    await delay(typingDelay);
+
+    // 3. Send Message
+    const res = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -174,46 +195,29 @@ export async function testWhatsAppConnection(waNumber: string) {
       },
       body: JSON.stringify({
         chatId,
-        presence: "composing"
+        text: "Halo! Ini adalah pesan TEST KONEKSI dari The Lodge System. Jika Anda menerima pesan ini, artinya integrasi OpenWA berhasil 🚀"
       })
     });
-  } catch (e) {
-    // Ignore presence error
+
+    if (!res.ok) {
+      const err = await res.text();
+      return { success: false, error: `Gagal mengirim pesan: ${err}` };
+    }
+
+    // Clear typing
+    try {
+      await fetch(presenceEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(apiKey ? { 'x-api-key': apiKey } : {})
+        },
+        body: JSON.stringify({ chatId, presence: "available" })
+      });
+    } catch (e) {}
+
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Terjadi kesalahan internal" };
   }
-
-  // 2. Random delay between 15 to 25 seconds (Simulating typing duration)
-  const typingDelay = getRandomInt(15000, 25000);
-  await delay(typingDelay);
-
-  // 3. Send Message
-  const res = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(apiKey ? { 'x-api-key': apiKey } : {})
-    },
-    body: JSON.stringify({
-      chatId,
-      text: "Halo! Ini adalah pesan TEST KONEKSI dari The Lodge System. Jika Anda menerima pesan ini, artinya integrasi OpenWA berhasil 🚀"
-    })
-  });
-
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Gagal mengirim pesan: ${err}`);
-  }
-
-  // Clear typing
-  try {
-    await fetch(presenceEndpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(apiKey ? { 'x-api-key': apiKey } : {})
-      },
-      body: JSON.stringify({ chatId, presence: "available" })
-    });
-  } catch (e) {}
-
-  return { success: true };
 }

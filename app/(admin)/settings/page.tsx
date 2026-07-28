@@ -131,11 +131,16 @@ export default function SettingsPage() {
     try {
       // Need to import testWhatsAppConnection at the top
       const { testWhatsAppConnection } = await import('@/actions/settings');
-      await testWhatsAppConnection(testWaNumber);
-      toast.success("Test pesan berhasil terkirim!", { id: 'test-wa' });
-      setTestWaNumber("");
+      const result = await testWhatsAppConnection(testWaNumber);
+      
+      if (result.success) {
+        toast.success("Test pesan berhasil terkirim!", { id: 'test-wa' });
+        setTestWaNumber("");
+      } else {
+        toast.error(result.error || "Gagal mengirim test pesan", { id: 'test-wa' });
+      }
     } catch (err: any) {
-      toast.error(err.message || "Gagal mengirim test pesan", { id: 'test-wa' });
+      toast.error(err.message || "Terjadi kesalahan internal", { id: 'test-wa' });
     } finally {
       setIsTestingWa(false);
     }
