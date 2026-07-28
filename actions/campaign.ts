@@ -175,8 +175,88 @@ export async function sendCampaignNow(id: string) {
   let successCount = 0;
   let failCount = 0;
 
-  // Logic for sending
-  for (const contact of contacts) {
+  if (campaign.type === 'WHATSAPP') {
+    const apiUrl = settings?.whatsappApiUrl;
+    const apiKey = settings?.whatsappApiKey;
+
+    if (!apiUrl) {
+      await prisma.campaign.update({
+        where: { id },
+        data: { status: 'FAILED' }
+      });
+      throw new Error("WhatsApp API URL belum dikonfigurasi di Settings.");
+    }
+
+    let endpoint = apiUrl.trim();
+    if (!endpoint.endsWith('/messages/send-text')) {
+      endpoint = endpoint.replace(/\/$/, '') + '/messages/send-text';
+    }
+
+    for (const contact of contacts) {
+      const rawNumber = contact.waNumber || contact.phone;
+      if (!rawNumber) {
+        failCount++;
+        await prisma.emailLog.create({
+          data: {
+            campaignId: id,
+            contactId: contact.id,
+            status: 'FAILED',
+            errorMessage: "Kontak tidak memiliki nomor WhatsApp"
+          }
+        });
+        continue;
+      }
+
+      // Format number to 628xxx@c.us
+      let cleanNumber = rawNumber.replace(/\D/g, '');
+      if (cleanNumber.startsWith('0')) {
+        cleanNumber = '62' + cleanNumber.substring(1);
+      }
+      const chatId = `${cleanNumber}@c.us`;
+
+      let bodyContent = campaign.content;
+      bodyContent = bodyContent.replace(/{{name}}/g, contact.name || "Sobat");
+      bodyContent = bodyContent.replace(/{{email}}/g, contact.email || "");
+      bodyContent = bodyContent.replace(/{{company}}/g, contact.company || "");
+
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(apiKey ? { 'x-api-key': apiKey } : {})
+          },
+          body: JSON.stringify({
+            chatId,
+            text: bodyContent
+          })
+        });
+
+        if (res.ok) {
+          successCount++;
+          await prisma.emailLog.create({
+            data: { campaignId: id, contactId: contact.id, status: 'SENT' }
+          });
+        } else {
+          const errorText = await res.text();
+          failCount++;
+          await prisma.emailLog.create({
+            data: { campaignId: id, contactId: contact.id, status: 'FAILED', errorMessage: errorText }
+          });
+        }
+      } catch (err: any) {
+        failCount++;
+        await prisma.emailLog.create({
+          data: { campaignId: id, contactId: contact.id, status: 'FAILED', errorMessage: err.message }
+        });
+      }
+
+      // Delay to avoid OpenWA ban (2.5 seconds)
+      await new Promise(resolve => setTimeout(resolve, 2500));
+    }
+  } else {
+    // Logic for sending EMAIL
+    for (const contact of contacts) {
     if (!contact.email) {
       failCount++;
       await prisma.emailLog.create({
@@ -370,12 +450,16 @@ export async function sendCampaignNow(id: string) {
     data: { 
       status: failCount === contacts.length ? 'FAILED' : 'SENT',
       sentAt: new Date(),
-      totalSent: successCount
+      totalSent: successCount,
+      totalBounced: failCount
     }
   });
 
   revalidatePath("/campaigns");
   revalidatePath("/blast-email");
+  revalidatePath(`/campaigns/${id}`);
+  
+  return { success: true, successCount, failCount };
 }
 
 export async function renderCampaignPreview(data: {
