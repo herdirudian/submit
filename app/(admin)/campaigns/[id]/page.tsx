@@ -25,6 +25,7 @@ export default function EditCampaignPage() {
     const [contactLists, setContactLists] = useState<any[]>([]);
     const [showPreview, setShowPreview] = useState(false);
     const [previewHtml, setPreviewHtml] = useState("");
+    const [previewLoading, setPreviewLoading] = useState(false);
     const [campaignType, setCampaignType] = useState<'EMAIL' | 'WHATSAPP'>('EMAIL');
     const isWa = campaignType === 'WHATSAPP';
     
@@ -432,6 +433,8 @@ export default function EditCampaignPage() {
                                 )}
                                 <p className="text-[10px] text-slate-400 italic">Muncul di bagian bawah email, di atas informasi perusahaan.</p>
                             </div>
+                                </>
+                            )}
                         </div>
 
                         <div className="pt-4 space-y-3">
