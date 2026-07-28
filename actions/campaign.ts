@@ -219,6 +219,32 @@ export async function sendCampaignNow(id: string) {
       bodyContent = bodyContent.replace(/{{email}}/g, contact.email || "");
       bodyContent = bodyContent.replace(/{{company}}/g, contact.company || "");
 
+      // Helper for natural delays
+      const getRandomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+      const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+      // 0. Simulate typing indicator BEFORE sending
+      const presenceEndpoint = endpoint.replace('/messages/send-text', '/presence');
+      try {
+        await fetch(presenceEndpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(apiKey ? { 'x-api-key': apiKey } : {})
+          },
+          body: JSON.stringify({
+            chatId,
+            presence: "composing"
+          })
+        });
+      } catch (e) {
+        // Ignore error if presence endpoint is not supported
+      }
+
+      // 1. Random delay between 15 to 25 seconds (Simulating typing duration)
+      const typingDelay = getRandomInt(15000, 25000);
+      await delay(typingDelay);
+
       try {
         const res = await fetch(endpoint, {
           method: 'POST',
@@ -251,13 +277,20 @@ export async function sendCampaignNow(id: string) {
         });
       }
 
-      // Helper for natural delays
-      const getRandomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
-      const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-      // 1. Random delay between 15 to 25 seconds (Simulating typing and sending)
-      const typingDelay = getRandomInt(15000, 25000);
-      await delay(typingDelay);
+      // Clear typing indicator (optional, usually clears automatically after message is sent)
+      try {
+        await fetch(presenceEndpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(apiKey ? { 'x-api-key': apiKey } : {})
+          },
+          body: JSON.stringify({
+            chatId,
+            presence: "available"
+          })
+        });
+      } catch (e) {}
 
       // 2. Batch resting (Human takes a break)
       // After every 10 successful messages, pause for 2 to 5 minutes

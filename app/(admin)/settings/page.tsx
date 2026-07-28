@@ -32,6 +32,9 @@ export default function SettingsPage() {
   const [whatsappApiUrl, setWhatsappApiUrl] = useState("");
   const [whatsappApiKey, setWhatsappApiKey] = useState("");
 
+  const [testWaNumber, setTestWaNumber] = useState("");
+  const [isTestingWa, setIsTestingWa] = useState(false);
+
   const canSave = useMemo(() => !isLoading && !!snapshot?.user, [isLoading, snapshot?.user]);
 
   useEffect(() => {
@@ -119,6 +122,23 @@ export default function SettingsPage() {
         toast.error("Gagal menyimpan branding");
       }
     });
+  };
+
+  const handleTestWa = async () => {
+    if (!testWaNumber) return;
+    setIsTestingWa(true);
+    toast.loading("Mengirim pesan test (membutuhkan waktu 15-25 detik karena simulasi mengetik)...", { id: 'test-wa' });
+    try {
+      // Need to import testWhatsAppConnection at the top
+      const { testWhatsAppConnection } = await import('@/actions/settings');
+      await testWhatsAppConnection(testWaNumber);
+      toast.success("Test pesan berhasil terkirim!", { id: 'test-wa' });
+      setTestWaNumber("");
+    } catch (err: any) {
+      toast.error(err.message || "Gagal mengirim test pesan", { id: 'test-wa' });
+    } finally {
+      setIsTestingWa(false);
+    }
   };
 
   return (
@@ -391,6 +411,26 @@ export default function SettingsPage() {
                     className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-300"
                     placeholder="Masukkan token rahasia jika diperlukan"
                   />
+                </div>
+              </div>
+
+              <div className="mt-6 p-4 border border-slate-200 rounded-xl bg-slate-50">
+                <div className="font-semibold text-sm mb-3">Test Koneksi WhatsApp</div>
+                <div className="flex gap-2">
+                  <input
+                    value={testWaNumber}
+                    onChange={(e) => setTestWaNumber(e.target.value)}
+                    className="flex-1 px-4 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-100"
+                    placeholder="Contoh: 08123456789"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleTestWa}
+                    disabled={isTestingWa || !testWaNumber}
+                    className="px-4 py-2 bg-slate-800 text-white text-sm rounded-xl font-semibold hover:bg-slate-700 disabled:opacity-50 transition-colors flex items-center gap-2"
+                  >
+                    {isTestingWa ? <Loader2 size={14} className="animate-spin" /> : "Kirim Test Pesan"}
+                  </button>
                 </div>
               </div>
             </div>

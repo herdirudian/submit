@@ -74,58 +74,146 @@ export async function updateAppSettings(data: {
     throw new Error("Unauthorized");
   }
 
-  const brandName = (data.brandName ?? "").trim();
-  const brandLogoUrl = (data.brandLogoUrl ?? "").trim();
-  const notificationFromName = (data.notificationFromName ?? "").trim();
-  const notificationFromEmail = (data.notificationFromEmail ?? "").trim();
-  const address = (data.address ?? "").trim();
-  const instagramUrl = (data.instagramUrl ?? "").trim();
-  const facebookUrl = (data.facebookUrl ?? "").trim();
-  const twitterUrl = (data.twitterUrl ?? "").trim();
-  const linkedinUrl = (data.linkedinUrl ?? "").trim();
-  const websiteUrl = (data.websiteUrl ?? "").trim();
-  const tiktokUrl = (data.tiktokUrl ?? "").trim();
-  const whatsappApiUrl = (data.whatsappApiUrl ?? "").trim();
-  const whatsappApiKey = (data.whatsappApiKey ?? "").trim();
+  const {
+    brandName,
+    brandLogoUrl,
+    notificationFromName,
+    notificationFromEmail,
+    address,
+    instagramUrl,
+    facebookUrl,
+    twitterUrl,
+    linkedinUrl,
+    websiteUrl,
+    tiktokUrl,
+    whatsappApiUrl,
+    whatsappApiKey,
+  } = data;
 
   if (notificationFromEmail && !isValidEmail(notificationFromEmail)) {
-    throw new Error("From Email tidak valid");
+    throw new Error("Format email tidak valid");
   }
 
   await prisma.appSettings.upsert({
     where: { id: "singleton" },
+    update: {
+      brandName,
+      brandLogoUrl,
+      notificationFromName,
+      notificationFromEmail,
+      address,
+      instagramUrl,
+      facebookUrl,
+      twitterUrl,
+      linkedinUrl,
+      websiteUrl,
+      tiktokUrl,
+      whatsappApiUrl,
+      whatsappApiKey,
+    },
     create: {
       id: "singleton",
-      brandName: brandName || null,
-      brandLogoUrl: brandLogoUrl || null,
-      notificationFromName: notificationFromName || null,
-      notificationFromEmail: notificationFromEmail || null,
-      address: address || null,
-      instagramUrl: instagramUrl || null,
-      facebookUrl: facebookUrl || null,
-      twitterUrl: twitterUrl || null,
-      linkedinUrl: linkedinUrl || null,
-      websiteUrl: websiteUrl || null,
-      tiktokUrl: tiktokUrl || null,
-      whatsappApiUrl: whatsappApiUrl || null,
-      whatsappApiKey: whatsappApiKey || null,
-    },
-    update: {
-      brandName: brandName || null,
-      brandLogoUrl: brandLogoUrl || null,
-      notificationFromName: notificationFromName || null,
-      notificationFromEmail: notificationFromEmail || null,
-      address: address || null,
-      instagramUrl: instagramUrl || null,
-      facebookUrl: facebookUrl || null,
-      twitterUrl: twitterUrl || null,
-      linkedinUrl: linkedinUrl || null,
-      websiteUrl: websiteUrl || null,
-      tiktokUrl: tiktokUrl || null,
-      whatsappApiUrl: whatsappApiUrl || null,
-      whatsappApiKey: whatsappApiKey || null,
+      brandName,
+      brandLogoUrl,
+      notificationFromName,
+      notificationFromEmail,
+      address,
+      instagramUrl,
+      facebookUrl,
+      twitterUrl,
+      linkedinUrl,
+      websiteUrl,
+      tiktokUrl,
+      whatsappApiUrl,
+      whatsappApiKey,
     },
   });
 
   revalidatePath("/settings");
+  revalidatePath("/public/forms");
+}
+
+export async function testWhatsAppConnection(waNumber: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Unauthorized");
+
+  const settings = await prisma.appSettings.findUnique({ where: { id: "singleton" } });
+  const apiUrl = settings?.whatsappApiUrl;
+  const apiKey = settings?.whatsappApiKey;
+
+  if (!apiUrl) {
+    throw new Error("WhatsApp API URL belum dikonfigurasi.");
+  }
+
+  let endpoint = apiUrl.trim();
+  if (!endpoint.endsWith('/messages/send-text')) {
+    endpoint = endpoint.replace(/\/$/, '') + '/messages/send-text';
+  }
+
+  const rawNumber = waNumber.replace(/\D/g, '');
+  if (!rawNumber) throw new Error("Nomor WA tidak valid");
+
+  let cleanNumber = rawNumber;
+  if (cleanNumber.startsWith('0')) {
+    cleanNumber = '62' + cleanNumber.substring(1);
+  }
+  const chatId = `${cleanNumber}@c.us`;
+
+  // Helper for natural delays
+  const getRandomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+  // 1. Simulate typing indicator BEFORE sending
+  const presenceEndpoint = endpoint.replace('/messages/send-text', '/presence');
+  try {
+    await fetch(presenceEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(apiKey ? { 'x-api-key': apiKey } : {})
+      },
+      body: JSON.stringify({
+        chatId,
+        presence: "composing"
+      })
+    });
+  } catch (e) {
+    // Ignore presence error
+  }
+
+  // 2. Random delay between 15 to 25 seconds (Simulating typing duration)
+  const typingDelay = getRandomInt(15000, 25000);
+  await delay(typingDelay);
+
+  // 3. Send Message
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(apiKey ? { 'x-api-key': apiKey } : {})
+    },
+    body: JSON.stringify({
+      chatId,
+      text: "Halo! Ini adalah pesan TEST KONEKSI dari The Lodge System. Jika Anda menerima pesan ini, artinya integrasi OpenWA berhasil 🚀"
+    })
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Gagal mengirim pesan: ${err}`);
+  }
+
+  // Clear typing
+  try {
+    await fetch(presenceEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(apiKey ? { 'x-api-key': apiKey } : {})
+      },
+      body: JSON.stringify({ chatId, presence: "available" })
+    });
+  } catch (e) {}
+
+  return { success: true };
 }
