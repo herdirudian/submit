@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Megaphone, Calendar, Edit2, Trash2, Send, Loader2, MessageCircle } from "lucide-react";
 import Link from "next/link";
-import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import { deleteCampaign, sendCampaignNow } from "@/actions/campaign";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -104,7 +104,7 @@ export default function WaCampaignList({ initialCampaigns }: { initialCampaigns:
                     <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
                         <div className="flex items-center gap-2 text-[10px] text-slate-400 font-medium">
                             <Calendar size={12} />
-                            {format(new Date(campaign.createdAt), "MMM d, yyyy")}
+                            {formatInTimeZone(new Date(campaign.createdAt), "Asia/Jakarta", "MMM d, yyyy")}
                         </div>
                         <div className="flex gap-2">
                             {campaign.status === 'DRAFT' && (

@@ -7,7 +7,7 @@ import {
     RefreshCcw, AlertTriangle, Search, Filter
 } from "lucide-react";
 import { getEmailLogs } from "@/actions/campaign";
-import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import Link from "next/link";
 
 export default function EmailLogsPage() {
@@ -137,7 +137,7 @@ export default function EmailLogsPage() {
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-2 text-xs text-slate-500">
                                                 <Calendar size={14} className="text-slate-400" />
-                                                {format(new Date(log.createdAt), "dd MMM yyyy, HH:mm")}
+                                                {formatInTimeZone(new Date(log.createdAt), "Asia/Jakarta", "dd MMM yyyy, HH:mm")}
                                             </div>
                                         </td>
                                     </tr>

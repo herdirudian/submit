@@ -1,6 +1,6 @@
 import { getUsers } from "@/actions/user";
 import { Mail, Calendar, Shield } from "lucide-react";
-import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import CreateUserButton from "@/components/CreateUserButton";
 import UserListActions from "@/components/UserListActions";
 import Link from "next/link";
@@ -79,7 +79,7 @@ export default async function UsersPage() {
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center gap-2 text-sm text-slate-500">
                                                 <Calendar size={14} />
-                                                {format(new Date(user.createdAt), "MMM d, yyyy")}
+                                                {formatInTimeZone(new Date(user.createdAt), "Asia/Jakarta", "MMM d, yyyy")}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right">

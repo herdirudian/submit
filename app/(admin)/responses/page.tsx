@@ -1,6 +1,6 @@
 import prisma from "@/lib/prisma";
 import Link from "next/link";
-import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import { FileText } from "lucide-react";
 
 type SearchParams = {
@@ -166,7 +166,7 @@ export default async function ResponsesPage({ searchParams }: { searchParams?: S
                 {responses.map((r) => (
                   <tr key={r.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                      {format(new Date(r.submittedAt), "MMM d, yyyy HH:mm")}
+                      {formatInTimeZone(new Date(r.submittedAt), "Asia/Jakarta", "MMM d, yyyy HH:mm")}
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-800 font-semibold max-w-[360px] truncate">
                       {r.form.title}

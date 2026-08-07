@@ -1,6 +1,6 @@
 import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import Link from "next/link";
 import ExportButton from "@/components/ExportButton";
 
@@ -167,7 +167,7 @@ export default async function FormResponsesPage({
                 {responses.map((response) => (
                   <tr key={response.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {format(new Date(response.submittedAt), "MMM d, yyyy h:mm a")}
+                      {formatInTimeZone(new Date(response.submittedAt), "Asia/Jakarta", "MMM d, yyyy h:mm a")}
                     </td>
                     {form.questions.map((question) => {
                       const answer = response.answers.find(a => a.questionId === question.id);

@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { getCampaigns, deleteCampaign, sendCampaignNow } from "@/actions/campaign";
 import Link from "next/link";
-import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 
 export default function CampaignsPage() {
     const [campaigns, setCampaigns] = useState<any[]>([]);
@@ -127,7 +127,7 @@ export default function CampaignsPage() {
                             <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
                                 <div className="flex items-center gap-2 text-[10px] text-slate-400 font-medium">
                                     <Calendar size={12} />
-                                    {format(new Date(campaign.createdAt), "MMM d, yyyy")}
+                                    {formatInTimeZone(new Date(campaign.createdAt), "Asia/Jakarta", "MMM d, yyyy")}
                                 </div>
                                 <div className="flex gap-2">
                                     {campaign.status === 'DRAFT' && (

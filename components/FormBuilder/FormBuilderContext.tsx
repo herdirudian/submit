@@ -12,7 +12,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { publishForm } from "@/actions/form";
 import FormSettings from "./FormSettings";
-import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 
 type FormWithQuestions = Form & {
   questions: (Question & { options: QuestionOption[] })[];
@@ -139,7 +139,7 @@ export default function FormBuilderContext({ form }: { form: FormWithQuestions }
                               ? "Menyimpan..."
                               : saveState === "error"
                                 ? "Gagal menyimpan"
-                                : `Tersimpan ${format(lastSavedAt, "HH:mm")}`}
+                                : `Tersimpan ${formatInTimeZone(lastSavedAt, "Asia/Jakarta", "HH:mm")}`}
                         </span>
                     </div>
                 </div>

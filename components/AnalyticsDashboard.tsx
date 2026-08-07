@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import { 
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     PieChart, Pie, Cell
@@ -390,7 +390,7 @@ export default function AnalyticsDashboard({ form, dateRange }: { form: FormWith
                             {form.responses.slice(0, 5).map(response => (
                                 <tr key={response.id} className="hover:bg-slate-50/50 transition-colors">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                                        {format(new Date(response.submittedAt), "MMM d, HH:mm")}
+                                        {formatInTimeZone(new Date(response.submittedAt), "Asia/Jakarta", "MMM d, HH:mm")}
                                     </td>
                                     {form.questions.slice(0, 3).map(q => {
                                         const answer = response.answers.find(a => a.questionId === q.id);
