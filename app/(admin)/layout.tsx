@@ -2,7 +2,11 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { LayoutDashboard, Settings, Search, LogOut, FileText, BarChart3, Users, Inbox, Mail, Megaphone, Contact2, MessageSquare, MessageCircle, History, Hash } from 'lucide-react';
+import { 
+  LayoutDashboard, Settings, Search, LogOut, FileText, 
+  BarChart3, Users, Inbox, Mail, Megaphone, 
+  Contact2, MessageSquare, MessageCircle, History, Hash 
+} from 'lucide-react';
 import { signOut, useSession } from "next-auth/react";
 import NotificationDropdown from "@/components/NotificationDropdown";
 import { usePathname } from "next/navigation";

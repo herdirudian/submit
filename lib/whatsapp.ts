@@ -82,8 +82,8 @@ export async function getWaMetaTemplates() {
   } else {
     console.log("[WA-API] WABA ID not found in .env, attempting automatic lookup...");
     if (!PHONE_NUMBER_ID) {
-      console.error("[WA-API] Phone Number ID missing for lookup");
-      return { success: false, error: "Phone Number ID missing" };
+      console.warn("[WA-API] Phone Number ID missing for lookup, returning empty templates");
+      return { success: true, data: [], warning: "Phone Number ID missing. Templates could not be fetched." };
     }
 
     try {
@@ -94,10 +94,11 @@ export async function getWaMetaTemplates() {
       const infoData = await infoRes.json();
       
       if (!infoData.whatsapp_business_account) {
-        console.error("[WA-API] Automatic WABA ID lookup failed. Meta Response:", JSON.stringify(infoData));
+        console.warn("[WA-API] Automatic WABA ID lookup failed. Meta Response:", JSON.stringify(infoData));
         return { 
-          success: false, 
-          error: "Could not find WhatsApp Business Account ID. Please set WHATSAPP_BUSINESS_ACCOUNT_ID in .env manually." 
+          success: true, 
+          data: [], 
+          warning: "WhatsApp Business Account ID tidak ditemukan otomatis. Harap isi WHATSAPP_BUSINESS_ACCOUNT_ID di .env." 
         };
       }
 
@@ -105,7 +106,7 @@ export async function getWaMetaTemplates() {
       console.log(`[WA-API] Automatic WABA ID lookup successful: ${wabaId}`);
     } catch (error) {
       console.error("[WA-API] WABA ID lookup exception:", error);
-      return { success: false, error: "Error looking up WABA ID" };
+      return { success: true, data: [], error: "Error looking up WABA ID" };
     }
   }
 
