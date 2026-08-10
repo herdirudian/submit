@@ -52,7 +52,7 @@ export default function PrivacyPolicyPage() {
                         <section>
                             <h2 className="text-xl font-bold text-slate-800 mb-4">4. Penghapusan Data (Data Deletion)</h2>
                             <p>
-                                Pengguna memiliki hak untuk meminta penghapusan data pribadi mereka dari sistem kami kapan saja. Jika Anda ingin menghapus data Anda, silakan hubungi kami melalui email di <strong>admin@thelodgegroup.id</strong> dengan subjek "Permintaan Penghapusan Data".
+                                Pengguna memiliki hak untuk meminta penghapusan data pribadi mereka dari sistem kami kapan saja. Jika Anda ingin menghapus data Anda, silakan hubungi kami melalui email di <strong>admin@thelodgegroup.id</strong> dengan subjek &quot;Permintaan Penghapusan Data&quot;.
                             </p>
                         </section>
 
