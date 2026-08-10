@@ -20,8 +20,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    // Gunakan log yang lebih jelas untuk monitoring
-    console.log("=== WHATSAPP WEBHOOK RECEIVED ===");
+    console.log("=== [WEBHOOK] NEW PAYLOAD RECEIVED ===");
     console.log(JSON.stringify(body, null, 2));
 
     if (body.object === "whatsapp_business_account") {
@@ -29,22 +28,22 @@ export async function POST(req: NextRequest) {
         for (const change of entry.changes) {
           const value = change.value;
           
-          // Debugging log untuk setiap perubahan
-          console.log(`Webhook change field: ${change.field}`);
+          console.log(`[WEBHOOK] Change Field: ${change.field}`);
 
-          // 1. Handle message status updates FIRST
+          // 1. Handle message status updates
           if (value.statuses) {
             for (const status of value.statuses) {
               const waMessageId = status.id;
               const messageStatus = status.status.toUpperCase();
-              console.log(`Status Update: ${waMessageId} -> ${messageStatus}`);
+              console.log(`[WEBHOOK] Status Update: ${waMessageId} -> ${messageStatus}`);
 
               const validStatuses = ["SENT", "DELIVERED", "READ", "FAILED"];
               if (validStatuses.includes(messageStatus)) {
-                await prisma.waMessage.updateMany({
+                const updateResult = await prisma.waMessage.updateMany({
                   where: { waMessageId },
                   data: { status: messageStatus as any },
                 });
+                console.log(`[WEBHOOK] DB Update Status Result:`, updateResult);
               }
             }
           }
@@ -52,10 +51,10 @@ export async function POST(req: NextRequest) {
           // 2. Handle incoming messages
           if (value.messages) {
             for (const message of value.messages) {
-              const waId = message.from;
+              const rawWaId = message.from;
               const messageId = message.id;
               const timestamp = new Date(parseInt(message.timestamp) * 1000);
-              console.log(`New Message from ${waId} (Type: ${message.type}, ID: ${messageId})`);
+              console.log(`[WEBHOOK] Incoming Message from: ${rawWaId}, Type: ${message.type}, ID: ${messageId}`);
               
               let bodyContent = "";
               let type: any = "TEXT";
@@ -86,11 +85,11 @@ export async function POST(req: NextRequest) {
                 type = "TEXT";
               }
 
-              console.log(`Parsed Body Content: ${bodyContent}`);
+              console.log(`[WEBHOOK] Parsed Content: "${bodyContent}"`);
 
-              // Find or create chat
-              // Pastikan waId bersih (hanya angka)
-              const cleanWaId = waId.replace(/\D/g, "");
+              // Normalisasi waId (Hanya angka)
+              const cleanWaId = rawWaId.replace(/\D/g, "");
+              console.log(`[WEBHOOK] Normalized waId: ${cleanWaId}`);
 
               let chat = await prisma.waChat.findUnique({
                 where: { waId: cleanWaId },
@@ -98,7 +97,7 @@ export async function POST(req: NextRequest) {
 
               let isNewChat = false;
               if (!chat) {
-                console.log(`Creating new chat for ${cleanWaId}`);
+                console.log(`[WEBHOOK] Chat not found. Creating new chat for ${cleanWaId}`);
                 isNewChat = true;
                 const contact = await prisma.contact.findFirst({
                   where: { OR: [{ phone: cleanWaId }, { waNumber: cleanWaId }] },
@@ -112,8 +111,9 @@ export async function POST(req: NextRequest) {
                     lastMessageAt: timestamp,
                   },
                 });
+                console.log(`[WEBHOOK] New Chat Created ID: ${chat.id}`);
               } else {
-                console.log(`Updating existing chat ${chat.id}`);
+                console.log(`[WEBHOOK] Existing Chat Found ID: ${chat.id}. Updating last message.`);
                 await prisma.waChat.update({
                   where: { id: chat.id },
                   data: {
@@ -123,14 +123,14 @@ export async function POST(req: NextRequest) {
                 });
               }
 
-              // Check if message already exists to avoid duplicates from Webhook retries
+              // Check if message already exists
               const existingMsg = await prisma.waMessage.findUnique({
                 where: { waMessageId: messageId }
               });
 
               if (!existingMsg) {
-                console.log(`Saving new message to database: ${messageId}`);
-                await prisma.waMessage.create({
+                console.log(`[WEBHOOK] Saving message to DB...`);
+                const newMsg = await prisma.waMessage.create({
                   data: {
                     chatId: chat.id,
                     waMessageId: messageId,
@@ -140,28 +140,32 @@ export async function POST(req: NextRequest) {
                     createdAt: timestamp,
                   },
                 });
+                console.log(`[WEBHOOK] Message Saved successfully: ${newMsg.id}`);
               } else {
-                console.log(`Message ${messageId} already exists, skipping.`);
+                console.log(`[WEBHOOK] Duplicate message detected (${messageId}), skipping.`);
               }
 
               // Auto-reply for new chats
               const hour = new Date().getHours();
               if (isNewChat && (hour < 8 || hour > 17)) {
-                console.log(`Sending auto-reply to ${cleanWaId} (After hours)`);
+                console.log(`[WEBHOOK] Triggering Auto-reply (Off-hours)`);
                 const autoMsg = "Halo! Terima kasih telah menghubungi The Lodge Maribaya. Saat ini kami sedang di luar jam operasional. Kami akan membalas pesan Anda segera setelah kami kembali bertugas (Jam 08:00 - 17:00).";
                 try {
-                  await sendWaText(cleanWaId, autoMsg);
+                  const sendResult = await sendWaText(cleanWaId, autoMsg);
+                  console.log(`[WEBHOOK] Auto-reply send result:`, sendResult);
                   
-                  await prisma.waMessage.create({
-                    data: {
-                      chatId: chat.id,
-                      body: autoMsg,
-                      fromMe: true,
-                      status: 'SENT',
-                    }
-                  });
+                  if (sendResult.success) {
+                    await prisma.waMessage.create({
+                      data: {
+                        chatId: chat.id,
+                        body: autoMsg,
+                        fromMe: true,
+                        status: 'SENT',
+                      }
+                    });
+                  }
                 } catch (err) {
-                  console.error("Auto-reply failed:", err);
+                  console.error("[WEBHOOK] Auto-reply exception:", err);
                 }
               }
             }
@@ -171,7 +175,8 @@ export async function POST(req: NextRequest) {
       return new NextResponse("OK", { status: 200 });
     }
   } catch (error) {
-    console.error("Webhook Error:", error);
+    console.error("=== [WEBHOOK ERROR] ===");
+    console.error(error);
     return new NextResponse("Error", { status: 500 });
   }
 

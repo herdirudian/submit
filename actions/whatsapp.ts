@@ -10,7 +10,8 @@ export async function getWaChats() {
   const session = await getServerSession(authOptions);
   if (!session?.user) throw new Error("Unauthorized");
 
-  return await prisma.waChat.findMany({
+  console.log(`[ACTION] Fetching chats for user: ${session.user.email}`);
+  const chats = await prisma.waChat.findMany({
     orderBy: { lastMessageAt: 'desc' },
     include: {
       contact: true,
@@ -24,16 +25,21 @@ export async function getWaChats() {
       }
     }
   });
+  console.log(`[ACTION] Found ${chats.length} chats.`);
+  return chats;
 }
 
 export async function getWaChatMessages(chatId: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) throw new Error("Unauthorized");
 
-  return await prisma.waMessage.findMany({
+  console.log(`[ACTION] Fetching messages for chatId: ${chatId}`);
+  const messages = await prisma.waMessage.findMany({
     where: { chatId },
     orderBy: { createdAt: 'asc' },
   });
+  console.log(`[ACTION] Found ${messages.length} messages for chatId: ${chatId}`);
+  return messages;
 }
 
 export async function sendWaMessageAction(chatId: string, body: string, isInternal: boolean = false) {

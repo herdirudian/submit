@@ -5,10 +5,12 @@ const API_VERSION = process.env.WHATSAPP_API_VERSION || 'v20.0';
 
 async function waRequest(endpoint: string, data: any) {
   if (!PHONE_NUMBER_ID || !ACCESS_TOKEN) {
-    console.error("WhatsApp API credentials missing in .env");
+    console.error("=== [WA-CONFIG-ERROR] ===");
+    console.error("Missing WHATSAPP_PHONE_NUMBER_ID or WHATSAPP_ACCESS_TOKEN in .env");
     return { success: false, error: "WhatsApp credentials missing" };
   }
 
+  console.log(`[WA-API] Request to ${endpoint} with PhoneID: ${PHONE_NUMBER_ID}`);
   const url = `https://graph.facebook.com/${API_VERSION}/${PHONE_NUMBER_ID}${endpoint}`;
   
   try {

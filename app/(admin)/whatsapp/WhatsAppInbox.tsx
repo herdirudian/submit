@@ -108,16 +108,16 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
 
         try {
             const newMsg = await sendWaMessageAction(selectedChat.id, body, isInternal);
-            setMessages([...messages, newMsg]);
+            setMessages(prev => [...prev, newMsg]);
             
             // Update chat list last message
-            setChats(chats.map(c => 
+            setChats(prevChats => prevChats.map(c => 
                 c.id === selectedChat.id 
                 ? { ...c, lastMessage: body, lastMessageAt: new Date() } 
                 : c
             ));
         } catch (error: any) {
-            alert(error.message);
+            toast.error(error.message || "Gagal mengirim pesan");
         }
     };
 
@@ -128,12 +128,12 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
         setStartingChat(true);
         try {
             const chat = await startNewChatAction(newWaId);
-            setChats([chat, ...chats.filter(c => c.id !== chat.id)]);
+            setChats(prev => [chat, ...prev.filter(c => c.id !== chat.id)]);
             setSelectedChat(chat);
             setShowNewChatModal(false);
             setNewWaId("");
         } catch (error: any) {
-            alert(error.message);
+            toast.error(error.message || "Gagal memulai chat");
         } finally {
             setStartingChat(false);
         }
@@ -144,14 +144,16 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
         try {
             await assignChatAction(selectedChat.id, userId);
             const agent = agents.find(a => a.id === userId);
-            setSelectedChat({ ...selectedChat, assignedTo: agent ? { id: agent.id, name: agent.name } : null });
-            setChats(chats.map(c => 
+            const updatedChat = { ...selectedChat, assignedTo: agent ? { id: agent.id, name: agent.name } : null };
+            setSelectedChat(updatedChat);
+            setChats(prev => prev.map(c => 
                 c.id === selectedChat.id 
-                ? { ...c, assignedTo: agent ? { id: agent.id, name: agent.name } : null } 
+                ? updatedChat
                 : c
             ));
         } catch (error) {
             console.error(error);
+            toast.error("Gagal menugaskan agen");
         }
     };
 
