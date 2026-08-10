@@ -18,8 +18,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  // Tambahkan log paling awal untuk mendeteksi setiap request yang masuk
-  console.log("=== [WEBHOOK] HTTP POST REQUEST RECEIVED ===");
+  const url = new URL(req.url);
+  console.log(`=== [WEBHOOK] POST REQUEST RECEIVED at ${url.pathname} ===`);
+  console.log(`[WEBHOOK] Headers: ${JSON.stringify(Object.fromEntries(req.headers.entries()))}`);
   
   try {
     const body = await req.json();
