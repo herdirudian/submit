@@ -71,14 +71,18 @@ export async function markWaAsRead(messageId: string) {
 
 export async function getWaMetaTemplates() {
   if (!ACCESS_TOKEN) {
+    console.error("[WA-API] Access Token is missing");
     return { success: false, error: "WhatsApp Access Token missing" };
   }
 
   let wabaId = WABA_ID;
 
-  // 1. If WABA_ID not provided, look it up using Phone Number ID
-  if (!wabaId) {
+  if (wabaId) {
+    console.log(`[WA-API] Using manual WABA ID from .env: ${wabaId}`);
+  } else {
+    console.log("[WA-API] WABA ID not found in .env, attempting automatic lookup...");
     if (!PHONE_NUMBER_ID) {
+      console.error("[WA-API] Phone Number ID missing for lookup");
       return { success: false, error: "Phone Number ID missing" };
     }
 
@@ -90,7 +94,7 @@ export async function getWaMetaTemplates() {
       const infoData = await infoRes.json();
       
       if (!infoData.whatsapp_business_account) {
-        console.error("Failed to get WABA ID automatically. infoData:", JSON.stringify(infoData));
+        console.error("[WA-API] Automatic WABA ID lookup failed. Meta Response:", JSON.stringify(infoData));
         return { 
           success: false, 
           error: "Could not find WhatsApp Business Account ID. Please set WHATSAPP_BUSINESS_ACCOUNT_ID in .env manually." 
@@ -98,8 +102,9 @@ export async function getWaMetaTemplates() {
       }
 
       wabaId = infoData.whatsapp_business_account.id;
+      console.log(`[WA-API] Automatic WABA ID lookup successful: ${wabaId}`);
     } catch (error) {
-      console.error("WABA ID lookup exception:", error);
+      console.error("[WA-API] WABA ID lookup exception:", error);
       return { success: false, error: "Error looking up WABA ID" };
     }
   }
