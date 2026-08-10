@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { createCampaign, renderCampaignPreview } from "@/actions/campaign";
 import { getContactLists } from "@/actions/contact";
+import { getWaTemplates, syncWaTemplatesAction } from "@/actions/whatsapp";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
@@ -32,6 +33,9 @@ function NewCampaignForm() {
     const [uploadingFooter, setUploadingFooter] = useState(false);
     const [fetchingLists, setFetchingLists] = useState(true);
     const [contactLists, setContactLists] = useState<any[]>([]);
+    const [waTemplates, setWaTemplates] = useState<any[]>([]);
+    const [fetchingTemplates, setFetchingTemplates] = useState(false);
+    const [syncingTemplates, setSyncingTemplates] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
     const [previewHtml, setPreviewHtml] = useState("");
     const [previewLoading, setPreviewLoading] = useState(false);
@@ -51,7 +55,10 @@ function NewCampaignForm() {
 
     useEffect(() => {
         loadContactLists();
-    }, []);
+        if (isWa) {
+            loadWaTemplates();
+        }
+    }, [isWa]);
 
     const handleUpload = async (file: File) => {
         const data = new FormData();
@@ -79,6 +86,32 @@ function NewCampaignForm() {
             setFetchingLists(false);
         }
     }
+
+    async function loadWaTemplates() {
+        setFetchingTemplates(true);
+        try {
+            const data = await getWaTemplates();
+            setWaTemplates(data);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setFetchingTemplates(false);
+        }
+    }
+
+    const handleSyncTemplates = async () => {
+        setSyncingTemplates(true);
+        toast.loading("Menyinkronkan template dari Meta...", { id: "sync-wa" });
+        try {
+            const result = await syncWaTemplatesAction();
+            toast.success(`${result.count} Template berhasil disinkronkan!`, { id: "sync-wa" });
+            loadWaTemplates();
+        } catch (error: any) {
+            toast.error(error.message || "Gagal sinkronisasi template", { id: "sync-wa" });
+        } finally {
+            setSyncingTemplates(false);
+        }
+    };
 
     const handlePreview = async () => {
         if (!formData.content) {
@@ -155,18 +188,55 @@ function NewCampaignForm() {
                     <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-6">
                         <div className="space-y-4">
                             <div className="space-y-2">
-                                <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                                    <Type size={16} className="text-primary-600" />
-                                    {isWa ? "Subjek Pesan WA" : "Subjek Email"}
+                                <label className="text-sm font-bold text-slate-700 flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <Type size={16} className="text-primary-600" />
+                                        {isWa ? "Template Pesan WA (Meta)" : "Subjek Email"}
+                                    </div>
+                                    {isWa && (
+                                        <button 
+                                            type="button" 
+                                            onClick={handleSyncTemplates}
+                                            disabled={syncingTemplates}
+                                            className="text-[10px] font-bold text-primary-600 hover:underline flex items-center gap-1"
+                                        >
+                                            <RefreshCcw size={10} className={syncingTemplates ? "animate-spin" : ""} />
+                                            Sync Meta
+                                        </button>
+                                    )}
                                 </label>
-                                <input 
-                                    type="text"
-                                    required
-                                    placeholder={isWa ? "Contoh: Promo Ramadhan!" : "Contoh: Penawaran Spesial Akhir Bulan!"}
-                                    value={formData.subject}
-                                    onChange={(e) => setFormData(p => ({ ...p, subject: e.target.value }))}
-                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-4 focus:ring-primary-50 focus:border-primary-500 outline-none transition-all font-medium text-slate-800"
-                                />
+                                {isWa ? (
+                                    <div className="space-y-3">
+                                        <select 
+                                            required
+                                            value={formData.subject}
+                                            onChange={(e) => {
+                                                const tpl = waTemplates.find(t => t.name === e.target.value);
+                                                setFormData(p => ({ 
+                                                    ...p, 
+                                                    subject: e.target.value,
+                                                    content: tpl?.content || p.content 
+                                                }));
+                                            }}
+                                            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-4 focus:ring-primary-50 focus:border-primary-500 outline-none transition-all font-medium text-slate-800 bg-white"
+                                        >
+                                            <option value="">Pilih Template WhatsApp...</option>
+                                            {waTemplates.map(tpl => (
+                                                <option key={tpl.id} value={tpl.name}>{tpl.name} ({tpl.language})</option>
+                                            ))}
+                                        </select>
+                                        {fetchingTemplates && <p className="text-[10px] text-slate-400 animate-pulse">Memuat template...</p>}
+                                    </div>
+                                ) : (
+                                    <input 
+                                        type="text"
+                                        required
+                                        placeholder="Contoh: Penawaran Spesial Akhir Bulan!"
+                                        value={formData.subject}
+                                        onChange={(e) => setFormData(p => ({ ...p, subject: e.target.value }))}
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-4 focus:ring-primary-50 focus:border-primary-500 outline-none transition-all font-medium text-slate-800"
+                                    />
+                                )}
                             </div>
 
                             {!isWa && (

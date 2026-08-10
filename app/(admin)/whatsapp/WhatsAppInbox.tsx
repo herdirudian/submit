@@ -5,12 +5,17 @@ import {
     Search, Phone, User, MoreVertical, Send, 
     Paperclip, Smile, Shield, Check, CheckCheck, 
     Clock, Filter, UserPlus, Info, Trash2, 
-    MessageSquare, Hash, Tag, Plus
+    MessageSquare, Hash, Tag, Plus, RefreshCw
 } from "lucide-react";
-import { getWaChats, getWaChatMessages, sendWaMessageAction, assignChatAction, getAgents, getWaQuickReplies, startNewChatAction } from "@/actions/whatsapp";
+import { 
+    getWaChats, getWaChatMessages, sendWaMessageAction, 
+    assignChatAction, getAgents, getWaQuickReplies, 
+    startNewChatAction, syncWaTemplatesAction 
+} from "@/actions/whatsapp";
 import { formatDistance } from "date-fns";
 import { id } from "date-fns/locale";
 import { X } from "lucide-react";
+import { toast } from "sonner";
 
 export default function WhatsAppInbox({ initialChats, agents }: { initialChats: any[], agents: any[] }) {
     const [chats, setChats] = useState(initialChats);
@@ -24,6 +29,7 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
     const [showNewChatModal, setShowNewChatModal] = useState(false);
     const [newWaId, setNewWaId] = useState("");
     const [startingChat, setStartingChat] = useState(false);
+    const [syncing, setSyncing] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -146,6 +152,19 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
         }
     };
 
+    const handleSyncTemplates = async () => {
+        setSyncing(true);
+        toast.loading("Menyinkronkan template dari Meta...", { id: "sync-wa" });
+        try {
+            const result = await syncWaTemplatesAction();
+            toast.success(`${result.count} Template berhasil disinkronkan!`, { id: "sync-wa" });
+        } catch (error: any) {
+            toast.error(error.message || "Gagal sinkronisasi template", { id: "sync-wa" });
+        } finally {
+            setSyncing(false);
+        }
+    };
+
     const filteredChats = chats.filter(c => 
         c.waId.includes(searchTerm) || 
         c.contact?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -160,6 +179,14 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                     <div className="flex items-center justify-between">
                         <h2 className="text-lg font-bold text-slate-800">WhatsApp CRM</h2>
                         <div className="flex gap-2">
+                            <button 
+                                onClick={handleSyncTemplates}
+                                disabled={syncing}
+                                className="p-2 text-slate-400 hover:text-primary-600 hover:bg-white rounded-xl transition-all disabled:opacity-50"
+                                title="Sinkronkan Template Meta"
+                            >
+                                <RefreshCw size={18} className={syncing ? "animate-spin" : ""} />
+                            </button>
                             <button className="p-2 text-slate-400 hover:text-primary-600 hover:bg-white rounded-xl transition-all">
                                 <Filter size={18} />
                             </button>

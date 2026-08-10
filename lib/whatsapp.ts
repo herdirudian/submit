@@ -55,3 +55,32 @@ export async function markWaAsRead(messageId: string) {
     message_id: messageId,
   });
 }
+
+export async function getWaMetaTemplates() {
+  // 1. Get WABA ID first from Phone Number ID
+  const urlInfo = `https://graph.facebook.com/${API_VERSION}/${PHONE_NUMBER_ID}`;
+  const infoRes = await fetch(urlInfo, {
+    headers: { 'Authorization': `Bearer ${ACCESS_TOKEN}` }
+  });
+  const infoData = await infoRes.json();
+  
+  if (!infoData.whatsapp_business_account) {
+    console.error("Failed to get WABA ID:", infoData);
+    return { success: false, error: "Could not find WhatsApp Business Account ID" };
+  }
+
+  const wabaId = infoData.whatsapp_business_account.id;
+
+  // 2. Fetch templates using WABA ID
+  const urlTemplates = `https://graph.facebook.com/${API_VERSION}/${wabaId}/message_templates`;
+  const templatesRes = await fetch(urlTemplates, {
+    headers: { 'Authorization': `Bearer ${ACCESS_TOKEN}` }
+  });
+  const templatesData = await templatesRes.json();
+
+  if (!templatesRes.ok) {
+    return { success: false, error: templatesData };
+  }
+
+  return { success: true, data: templatesData.data };
+}

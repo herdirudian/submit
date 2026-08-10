@@ -3,7 +3,7 @@
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { sendWaText, sendWaTemplate } from "@/lib/whatsapp";
+import { sendWaText, sendWaTemplate, getWaMetaTemplates } from "@/lib/whatsapp";
 import { revalidatePath } from "next/cache";
 
 export async function getWaChats() {
@@ -141,4 +141,45 @@ export async function startNewChatAction(waId: string) {
 
   revalidatePath("/whatsapp");
   return chat;
+}
+
+export async function syncWaTemplatesAction() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Unauthorized");
+
+  const result = await getWaMetaTemplates();
+  if (!result.success) {
+    throw new Error(typeof result.error === 'string' ? result.error : JSON.stringify(result.error));
+  }
+
+  const templates = result.data;
+  
+  // Upsert templates into database
+  for (const template of templates) {
+    // Extract body content from components
+    const bodyComponent = template.components?.find((c: any) => c.type === 'BODY');
+    const content = bodyComponent?.text || "";
+
+    await prisma.waTemplate.upsert({
+      where: { name: template.name },
+      update: {
+        category: template.category,
+        language: template.language,
+        content: content,
+        components: JSON.stringify(template.components),
+        status: template.status,
+      },
+      create: {
+        name: template.name,
+        category: template.category,
+        language: template.language,
+        content: content,
+        components: JSON.stringify(template.components),
+        status: template.status,
+      },
+    });
+  }
+
+  revalidatePath("/whatsapp");
+  return { count: templates.length };
 }
