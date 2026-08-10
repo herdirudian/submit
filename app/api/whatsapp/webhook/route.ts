@@ -18,9 +18,12 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  // Tambahkan log paling awal untuk mendeteksi setiap request yang masuk
+  console.log("=== [WEBHOOK] HTTP POST REQUEST RECEIVED ===");
+  
   try {
     const body = await req.json();
-    console.log("=== [WEBHOOK] NEW PAYLOAD RECEIVED ===");
+    console.log("=== [WEBHOOK] PAYLOAD BODY ===");
     console.log(JSON.stringify(body, null, 2));
 
     if (body.object === "whatsapp_business_account") {
