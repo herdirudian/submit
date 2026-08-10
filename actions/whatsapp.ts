@@ -114,3 +114,31 @@ export async function getWaQuickReplies() {
 export async function getWaTemplates() {
   return await prisma.waTemplate.findMany();
 }
+
+export async function startNewChatAction(waId: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Unauthorized");
+
+  // Clean waId (remove +, spaces, etc)
+  const cleanWaId = waId.replace(/\D/g, "");
+
+  let chat = await prisma.waChat.findUnique({
+    where: { waId: cleanWaId },
+  });
+
+  if (!chat) {
+    const contact = await prisma.contact.findFirst({
+      where: { OR: [{ phone: cleanWaId }, { waNumber: cleanWaId }] },
+    });
+
+    chat = await prisma.waChat.create({
+      data: {
+        waId: cleanWaId,
+        contactId: contact?.id,
+      },
+    });
+  }
+
+  revalidatePath("/whatsapp");
+  return chat;
+}

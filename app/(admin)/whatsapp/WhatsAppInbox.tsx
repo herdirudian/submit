@@ -7,9 +7,10 @@ import {
     Clock, Filter, UserPlus, Info, Trash2, 
     MessageSquare, Hash, Tag, Plus
 } from "lucide-react";
-import { getWaChats, getWaChatMessages, sendWaMessageAction, assignChatAction, getAgents, getWaQuickReplies } from "@/actions/whatsapp";
+import { getWaChats, getWaChatMessages, sendWaMessageAction, assignChatAction, getAgents, getWaQuickReplies, startNewChatAction } from "@/actions/whatsapp";
 import { formatDistance } from "date-fns";
 import { id } from "date-fns/locale";
+import { X } from "lucide-react";
 
 export default function WhatsAppInbox({ initialChats, agents }: { initialChats: any[], agents: any[] }) {
     const [chats, setChats] = useState(initialChats);
@@ -20,6 +21,9 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
     const [isInternal, setIsInternal] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [quickReplies, setQuickReplies] = useState<any[]>([]);
+    const [showNewChatModal, setShowNewChatModal] = useState(false);
+    const [newWaId, setNewWaId] = useState("");
+    const [startingChat, setStartingChat] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -68,7 +72,7 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
     }
 
     const handleQuickReply = (content: string) => {
-         setMessageInput(content);
+          setMessageInput(content);
     };
 
     const scrollToBottom = () => {
@@ -108,6 +112,24 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
         }
     };
 
+    const handleStartChat = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newWaId.trim()) return;
+        
+        setStartingChat(true);
+        try {
+            const chat = await startNewChatAction(newWaId);
+            setChats([chat, ...chats.filter(c => c.id !== chat.id)]);
+            setSelectedChat(chat);
+            setShowNewChatModal(false);
+            setNewWaId("");
+        } catch (error: any) {
+            alert(error.message);
+        } finally {
+            setStartingChat(false);
+        }
+    };
+
     const handleAssign = async (userId: string | null) => {
         if (!selectedChat) return;
         try {
@@ -141,7 +163,10 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                             <button className="p-2 text-slate-400 hover:text-primary-600 hover:bg-white rounded-xl transition-all">
                                 <Filter size={18} />
                             </button>
-                            <button className="p-2 text-slate-400 hover:text-primary-600 hover:bg-white rounded-xl transition-all">
+                            <button 
+                                onClick={() => setShowNewChatModal(true)}
+                                className="p-2 text-slate-400 hover:text-primary-600 hover:bg-white rounded-xl transition-all"
+                            >
                                 <Plus size={18} />
                             </button>
                         </div>
@@ -426,6 +451,54 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                             <Trash2 size={18} />
                             Hapus Percakapan
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {/* New Chat Modal */}
+            {showNewChatModal && (
+                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+                            <h3 className="text-lg font-bold text-slate-800">Mulai Chat Baru</h3>
+                            <button onClick={() => setShowNewChatModal(false)} className="text-slate-400 hover:text-slate-600">
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <form onSubmit={handleStartChat} className="p-6 space-y-4">
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-slate-700">Nomor WhatsApp</label>
+                                <div className="relative">
+                                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                                    <input 
+                                        type="text" 
+                                        required
+                                        placeholder="Contoh: 628123456789"
+                                        value={newWaId}
+                                        onChange={e => setNewWaId(e.target.value)}
+                                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-primary-500 transition-all"
+                                    />
+                                </div>
+                                <p className="text-[10px] text-slate-400">Gunakan kode negara tanpa tanda + atau spasi (contoh: 62 untuk Indonesia).</p>
+                            </div>
+                            <div className="pt-4 flex gap-3">
+                                <button 
+                                    type="button"
+                                    onClick={() => setShowNewChatModal(false)}
+                                    className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50 transition-all"
+                                >
+                                    Batal
+                                </button>
+                                <button 
+                                    type="submit"
+                                    disabled={startingChat || !newWaId.trim()}
+                                    className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-primary-100"
+                                >
+                                    {startingChat ? <Clock size={18} className="animate-spin" /> : <MessageSquare size={18} />}
+                                    Mulai Chat
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}
