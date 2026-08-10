@@ -7,7 +7,7 @@ import {
     Clock, Filter, UserPlus, Info, Trash2, 
     MessageSquare, Hash, Tag, Plus
 } from "lucide-react";
-import { getWaChats, getWaChatMessages, sendWaMessageAction, assignChatAction, getAgents } from "@/actions/whatsapp";
+import { getWaChats, getWaChatMessages, sendWaMessageAction, assignChatAction, getAgents, getWaQuickReplies } from "@/actions/whatsapp";
 import { formatDistance } from "date-fns";
 import { id } from "date-fns/locale";
 
