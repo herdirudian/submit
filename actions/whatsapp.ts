@@ -108,7 +108,47 @@ export async function getAgents() {
 }
 
 export async function getWaQuickReplies() {
-  return await prisma.waQuickReply.findMany();
+  return await prisma.waQuickReply.findMany({
+    orderBy: { shortcut: 'asc' }
+  });
+}
+
+export async function createWaQuickReply(data: { shortcut: string, content: string }) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Unauthorized");
+
+  // Ensure shortcut starts with /
+  if (!data.shortcut.startsWith("/")) {
+    data.shortcut = "/" + data.shortcut;
+  }
+
+  const result = await prisma.waQuickReply.create({ data });
+  revalidatePath("/whatsapp/quick-replies");
+  return result;
+}
+
+export async function updateWaQuickReply(id: string, data: { shortcut: string, content: string }) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Unauthorized");
+
+  if (!data.shortcut.startsWith("/")) {
+    data.shortcut = "/" + data.shortcut;
+  }
+
+  const result = await prisma.waQuickReply.update({
+    where: { id },
+    data
+  });
+  revalidatePath("/whatsapp/quick-replies");
+  return result;
+}
+
+export async function deleteWaQuickReply(id: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Unauthorized");
+
+  await prisma.waQuickReply.delete({ where: { id } });
+  revalidatePath("/whatsapp/quick-replies");
 }
 
 export async function getWaTemplates() {

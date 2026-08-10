@@ -5,7 +5,8 @@ import {
     Search, Phone, User, MoreVertical, Send, 
     Paperclip, Smile, Shield, Check, CheckCheck, 
     Clock, Filter, UserPlus, Info, Trash2, 
-    MessageSquare, Hash, Tag, Plus, RefreshCw
+    MessageSquare, Hash, Tag, Plus, RefreshCw,
+    Building, MapPin
 } from "lucide-react";
 import { 
     getWaChats, getWaChatMessages, sendWaMessageAction, 
@@ -30,6 +31,8 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
     const [newWaId, setNewWaId] = useState("");
     const [startingChat, setStartingChat] = useState(false);
     const [syncing, setSyncing] = useState(false);
+    const [showQuickReplyMenu, setShowQuickReplyMenu] = useState(false);
+    const [quickReplyFilter, setQuickReplyFilter] = useState("");
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -366,9 +369,53 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                                     </button>
                                 </div>
                                 <div className="relative">
+                                    {showQuickReplyMenu && !isInternal && (
+                                        <div className="absolute bottom-full left-0 w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl mb-2 z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2">
+                                            <div className="p-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Balasan Cepat</span>
+                                                <button onClick={() => setShowQuickReplyMenu(false)}><X size={14} className="text-slate-400" /></button>
+                                            </div>
+                                            <div className="max-h-60 overflow-y-auto">
+                                                {quickReplies
+                                                    .filter(qr => qr.shortcut.toLowerCase().includes(quickReplyFilter))
+                                                    .map(qr => (
+                                                        <button 
+                                                            key={qr.id}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                const words = messageInput.split(/\s/);
+                                                                words.pop();
+                                                                setMessageInput(words.join(" ") + (words.length > 0 ? " " : "") + qr.content);
+                                                                setShowQuickReplyMenu(false);
+                                                            }}
+                                                            className="w-full text-left px-4 py-3 hover:bg-primary-50 transition-colors border-b border-slate-50 last:border-0"
+                                                        >
+                                                            <p className="text-xs font-bold text-primary-600 mb-0.5">{qr.shortcut}</p>
+                                                            <p className="text-[11px] text-slate-500 line-clamp-1">{qr.content}</p>
+                                                        </button>
+                                                    ))
+                                                }
+                                                {quickReplies.filter(qr => qr.shortcut.toLowerCase().includes(quickReplyFilter)).length === 0 && (
+                                                    <div className="p-4 text-center text-xs text-slate-400">Tidak ada shortcut yang cocok</div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
                                     <textarea 
                                         value={messageInput}
-                                        onChange={(e) => setMessageInput(e.target.value)}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            setMessageInput(val);
+                                            
+                                            // Handle Quick Reply shortcut "/"
+                                            const lastWord = val.split(/\s/).pop() || "";
+                                            if (lastWord.startsWith("/")) {
+                                                setShowQuickReplyMenu(true);
+                                                setQuickReplyFilter(lastWord.toLowerCase());
+                                            } else {
+                                                setShowQuickReplyMenu(false);
+                                            }
+                                        }}
                                         onKeyDown={(e) => {
                                             if (e.key === 'Enter' && !e.shiftKey) {
                                                 e.preventDefault();
@@ -456,6 +503,20 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                             Informasi Kontak
                         </h5>
                         <div className="space-y-3">
+                            <div className="flex items-center gap-3">
+                                <Building size={14} className="text-slate-300" />
+                                <div className="text-xs">
+                                    <p className="text-slate-400">Perusahaan</p>
+                                    <p className="font-bold text-slate-700">{selectedChat.contact?.company || "-"}</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <MapPin size={14} className="text-slate-300" />
+                                <div className="text-xs">
+                                    <p className="text-slate-400">Kota</p>
+                                    <p className="font-bold text-slate-700">{selectedChat.contact?.city || "-"}</p>
+                                </div>
+                            </div>
                             <div className="flex items-center gap-3">
                                 <Hash size={14} className="text-slate-300" />
                                 <div className="text-xs">

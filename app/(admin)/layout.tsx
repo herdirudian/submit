@@ -23,7 +23,10 @@ export default function AdminLayout({
     if (path === "/blast-email" || path.startsWith("/blast-email")) return "blast-email";
     if (path === "/blast-wa" || path.startsWith("/blast-wa")) return "blast-wa";
     if (path === "/contacts" || path.startsWith("/contacts")) return "contacts";
-    if (path === "/whatsapp" || path.startsWith("/whatsapp")) return "whatsapp";
+    if (path === "/whatsapp" || path.startsWith("/whatsapp")) {
+      if (path === "/whatsapp/quick-replies") return "quick-replies";
+      return "whatsapp";
+    }
     if (path === "/campaigns/logs" || path.startsWith("/campaigns/logs")) return "email-logs";
     if (path === "/campaigns" || path.startsWith("/campaigns")) return "campaigns";
     if (path === "/settings" || path.startsWith("/settings/")) return "settings";
@@ -41,6 +44,7 @@ export default function AdminLayout({
     { name: 'Blast WA', href: '/blast-wa', icon: MessageCircle, id: 'blast-wa', roles: ['ADMIN'] },
     { name: 'Contacts', href: '/contacts', icon: Contact2, id: 'contacts', roles: ['ADMIN', 'CASHIER'] },
     { name: 'WA CRM', href: '/whatsapp', icon: MessageSquare, id: 'whatsapp', roles: ['ADMIN'] },
+    { name: 'Balasan Cepat', href: '/whatsapp/quick-replies', icon: Hash, id: 'quick-replies', roles: ['ADMIN'] },
     { name: 'Campaigns', href: '/campaigns', icon: Megaphone, id: 'campaigns', roles: ['ADMIN'] },
     { name: 'Histori Email', href: '/campaigns/logs', icon: History, id: 'email-logs', roles: ['ADMIN'] },
   ];
