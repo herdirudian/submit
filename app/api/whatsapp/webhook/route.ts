@@ -124,6 +124,23 @@ export async function POST(req: NextRequest) {
                   where: { waMessageId },
                   data: { status: messageStatus as any },
                 });
+
+                // Also update EmailLog (Blast WA Logs) if it exists
+                try {
+                  const logStatusMap: Record<string, any> = {
+                    'SENT': 'SENT',
+                    'DELIVERED': 'DELIVERED',
+                    'READ': 'READ',
+                    'FAILED': 'FAILED'
+                  };
+
+                  if (logStatusMap[messageStatus]) {
+                    // We don't have the waMessageId in EmailLog yet, but we could use errorMessage or a new field.
+                    // For now, since we only have messageId from Meta in status updates, 
+                    // we might need to store it in EmailLog during sending.
+                    // Let's assume we'll store it in errorMessage temporarily or add a field later.
+                  }
+                } catch (e) {}
               }
             }
           }

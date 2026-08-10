@@ -2,6 +2,7 @@
 
 import prisma from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
+import { sendWaTemplate, sendWaText } from "@/lib/whatsapp";
 import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -176,20 +177,13 @@ export async function sendCampaignNow(id: string) {
   let failCount = 0;
 
   if (campaign.type === 'WHATSAPP') {
-    const apiUrl = settings?.whatsappApiUrl;
-    const apiKey = settings?.whatsappApiKey;
-
-    if (!apiUrl) {
+    // Check for Meta WhatsApp Cloud API credentials
+    if (!process.env.WHATSAPP_PHONE_NUMBER_ID || !process.env.WHATSAPP_ACCESS_TOKEN) {
       await prisma.campaign.update({
         where: { id },
         data: { status: 'FAILED' }
       });
-      throw new Error("WhatsApp API URL belum dikonfigurasi di Settings.");
-    }
-
-    let endpoint = apiUrl.trim();
-    if (!endpoint.endsWith('/messages/send-text')) {
-      endpoint = endpoint.replace(/\/$/, '') + '/messages/send-text';
+      throw new Error("WhatsApp Cloud API credentials (.env) belum dikonfigurasi.");
     }
 
     for (const contact of contacts) {
@@ -200,6 +194,7 @@ export async function sendCampaignNow(id: string) {
           data: {
             campaignId: id,
             contactId: contact.id,
+            type: 'WHATSAPP',
             status: 'FAILED',
             errorMessage: "Kontak tidak memiliki nomor WhatsApp"
           }
@@ -207,97 +202,77 @@ export async function sendCampaignNow(id: string) {
         continue;
       }
 
-      // Format number to 628xxx@c.us
+      // Format number to international format (62xxx)
       let cleanNumber = rawNumber.replace(/\D/g, '');
       if (cleanNumber.startsWith('0')) {
         cleanNumber = '62' + cleanNumber.substring(1);
       }
-      const chatId = `${cleanNumber}@c.us`;
+      if (!cleanNumber.startsWith('62') && cleanNumber.length > 8) {
+        // Assume Indonesian if not specified and looks like a local number
+        cleanNumber = '62' + cleanNumber;
+      }
 
       let bodyContent = campaign.content;
       bodyContent = bodyContent.replace(/{{name}}/g, contact.name || "Sobat");
       bodyContent = bodyContent.replace(/{{email}}/g, contact.email || "");
       bodyContent = bodyContent.replace(/{{company}}/g, contact.company || "");
 
-      // Helper for natural delays
-      const getRandomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
-      const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-      // 0. Simulate typing indicator BEFORE sending
-      const presenceEndpoint = endpoint.replace('/messages/send-text', '/presence');
       try {
-        await fetch(presenceEndpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(apiKey ? { 'x-api-key': apiKey } : {})
-          },
-          body: JSON.stringify({
-            chatId,
-            presence: "composing"
-          })
-        });
-      } catch (e) {
-        // Ignore error if presence endpoint is not supported
-      }
+        let result;
+        // If content looks like a template name (no spaces, or matches WaTemplate), use template
+        // For now, if subject is provided as template name, use that.
+        const isTemplate = campaign.subject && !campaign.subject.includes(' ');
+        
+        if (isTemplate) {
+          result = await sendWaTemplate(cleanNumber, campaign.subject, 'id', [
+            {
+              type: 'body',
+              parameters: [
+                { type: 'text', text: contact.name || "Sobat" }
+              ]
+            }
+          ]);
+        } else {
+          result = await sendWaText(cleanNumber, bodyContent);
+        }
 
-      // 1. Random delay between 15 to 25 seconds (Simulating typing duration)
-      const typingDelay = getRandomInt(15000, 25000);
-      await delay(typingDelay);
-
-      try {
-        const res = await fetch(endpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(apiKey ? { 'x-api-key': apiKey } : {})
-          },
-          body: JSON.stringify({
-            chatId,
-            text: bodyContent
-          })
-        });
-
-        if (res.ok) {
+        if (result.success) {
           successCount++;
           await prisma.emailLog.create({
-            data: { campaignId: id, contactId: contact.id, status: 'SENT' }
+            data: { 
+              campaignId: id, 
+              contactId: contact.id, 
+              type: 'WHATSAPP',
+              status: 'SENT' 
+            }
           });
         } else {
-          const errorText = await res.text();
           failCount++;
           await prisma.emailLog.create({
-            data: { campaignId: id, contactId: contact.id, status: 'FAILED', errorMessage: errorText }
+            data: { 
+              campaignId: id, 
+              contactId: contact.id, 
+              type: 'WHATSAPP',
+              status: 'FAILED', 
+              errorMessage: JSON.stringify(result.error) 
+            }
           });
         }
       } catch (err: any) {
         failCount++;
         await prisma.emailLog.create({
-          data: { campaignId: id, contactId: contact.id, status: 'FAILED', errorMessage: err.message }
+          data: { 
+            campaignId: id, 
+            contactId: contact.id, 
+            type: 'WHATSAPP',
+            status: 'FAILED', 
+            errorMessage: err.message 
+          }
         });
       }
-
-      // Clear typing indicator (optional, usually clears automatically after message is sent)
-      try {
-        await fetch(presenceEndpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(apiKey ? { 'x-api-key': apiKey } : {})
-          },
-          body: JSON.stringify({
-            chatId,
-            presence: "available"
-          })
-        });
-      } catch (e) {}
-
-      // 2. Batch resting (Human takes a break)
-      // After every 10 successful messages, pause for 2 to 5 minutes
-      if (successCount > 0 && successCount % 10 === 0) {
-        const restDelay = getRandomInt(120000, 300000); // 120s to 300s
-        await delay(restDelay);
-      }
+      
+      // Delay to avoid rate limits (WhatsApp Cloud API has limits, but small delays are good)
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
   } else {
     // Logic for sending EMAIL

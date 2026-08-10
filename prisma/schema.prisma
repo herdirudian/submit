@@ -470,6 +470,7 @@ model EmailLog {
   id           String    @id @default(cuid())
   campaignId   String
   contactId    String
+  type         CampaignType @default(EMAIL)
   status       LogStatus
   openedAt     DateTime?
   clickedAt    DateTime?
@@ -487,6 +488,7 @@ model EmailLog {
 enum LogStatus {
   SENT
   DELIVERED
+  READ
   BOUNCED
   FAILED
 }
