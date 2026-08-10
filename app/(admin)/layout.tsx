@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { LayoutDashboard, Settings, Search, LogOut, FileText, BarChart3, Users, Inbox, Mail, Megaphone, Contact2, History, MessageCircle } from 'lucide-react';
+import { LayoutDashboard, Settings, Search, LogOut, FileText, BarChart3, Users, Inbox, Mail, Megaphone, Contact2, MessageSquare, MessageCircle, History } from 'lucide-react';
 import { signOut, useSession } from "next-auth/react";
 import NotificationDropdown from "@/components/NotificationDropdown";
 import { usePathname } from "next/navigation";
@@ -23,6 +23,7 @@ export default function AdminLayout({
     if (path === "/blast-email" || path.startsWith("/blast-email")) return "blast-email";
     if (path === "/blast-wa" || path.startsWith("/blast-wa")) return "blast-wa";
     if (path === "/contacts" || path.startsWith("/contacts")) return "contacts";
+    if (path === "/whatsapp" || path.startsWith("/whatsapp")) return "whatsapp";
     if (path === "/campaigns/logs" || path.startsWith("/campaigns/logs")) return "email-logs";
     if (path === "/campaigns" || path.startsWith("/campaigns")) return "campaigns";
     if (path === "/settings" || path.startsWith("/settings/")) return "settings";
@@ -39,6 +40,7 @@ export default function AdminLayout({
     { name: 'Blast Email', href: '/blast-email', icon: Mail, id: 'blast-email', roles: ['ADMIN'] },
     { name: 'Blast WA', href: '/blast-wa', icon: MessageCircle, id: 'blast-wa', roles: ['ADMIN'] },
     { name: 'Contacts', href: '/contacts', icon: Contact2, id: 'contacts', roles: ['ADMIN', 'CASHIER'] },
+    { name: 'WA CRM', href: '/whatsapp', icon: MessageSquare, id: 'whatsapp', roles: ['ADMIN'] },
     { name: 'Campaigns', href: '/campaigns', icon: Megaphone, id: 'campaigns', roles: ['ADMIN'] },
     { name: 'Histori Email', href: '/campaigns/logs', icon: History, id: 'email-logs', roles: ['ADMIN'] },
   ];

@@ -29,6 +29,7 @@ model User {
   notifications Notification[]
   createdContacts Contact[] @relation("CreatedContacts")
   updatedContacts Contact[] @relation("UpdatedContacts")
+  assignedChats WaChat[] @relation("AssignedChats")
 
   @@map("users")
 }
@@ -282,11 +283,96 @@ model Contact {
   
   lists        ContactListMember[]
   logs         EmailLog[]
+  waChats      WaChat[]
 
   @@map("contacts")
 }
 
-enum ContactStatus {
+// --- WhatsApp CRM Models ---
+
+model WaChat {
+  id            String      @id @default(cuid())
+  waId          String      @unique // Phone number or WA internal ID
+  contactId     String?
+  contact       Contact?    @relation(fields: [contactId], references: [id])
+  assignedToId  String?
+  assignedTo    User?       @relation("AssignedChats", fields: [assignedToId], references: [id])
+  lastMessage   String?     @db.Text
+  lastMessageAt DateTime    @default(now())
+  status        ChatStatus  @default(OPEN)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  messages      WaMessage[]
+
+  @@index([assignedToId])
+  @@map("wa_chats")
+}
+
+enum ChatStatus {
+  OPEN
+  RESOLVED
+  PENDING
+}
+
+model WaMessage {
+  id          String      @id @default(cuid())
+  chatId      String
+  waMessageId String?     @unique // ID from Meta
+  senderId    String?     // If sent by agent, this is User.id
+  fromMe      Boolean     @default(false)
+  type        MessageType @default(TEXT)
+  body        String      @db.Text
+  status      MessageStatus @default(SENT)
+  isInternal  Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+
+  chat        WaChat      @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  
+  @@index([chatId])
+  @@map("wa_messages")
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  VIDEO
+  DOCUMENT
+  AUDIO
+  TEMPLATE
+}
+
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+model WaQuickReply {
+  id        String   @id @default(cuid())
+  shortcut  String   @unique // e.g., "/harga"
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("wa_quick_replies")
+}
+
+model WaTemplate {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  category    String?
+  language    String   @default("id")
+  content     String   @db.Text
+  components  String?  @db.Text // JSON string for template components
+  status      String   @default("APPROVED")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("wa_templates")
+}
+
+enum LogStatus {
   ACTIVE
   UNSUBSCRIBED
   BOUNCED

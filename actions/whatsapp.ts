@@ -1,0 +1,116 @@
+"use server";
+
+import prisma from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { sendWaText, sendWaTemplate } from "@/lib/whatsapp";
+import { revalidatePath } from "next/cache";
+
+export async function getWaChats() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Unauthorized");
+
+  return await prisma.waChat.findMany({
+    orderBy: { lastMessageAt: 'desc' },
+    include: {
+      contact: true,
+      assignedTo: { select: { id: true, name: true } },
+      _count: {
+        select: {
+          messages: {
+            where: { fromMe: false, status: { not: 'READ' } }
+          }
+        }
+      }
+    }
+  });
+}
+
+export async function getWaChatMessages(chatId: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Unauthorized");
+
+  return await prisma.waMessage.findMany({
+    where: { chatId },
+    orderBy: { createdAt: 'asc' },
+  });
+}
+
+export async function sendWaMessageAction(chatId: string, body: string, isInternal: boolean = false) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Unauthorized");
+
+  const chat = await prisma.waChat.findUnique({
+    where: { id: chatId },
+  });
+
+  if (!chat) throw new Error("Chat not found");
+
+  if (isInternal) {
+    const msg = await prisma.waMessage.create({
+      data: {
+        chatId,
+        body,
+        fromMe: true,
+        isInternal: true,
+        senderId: (session.user as any).id,
+      },
+    });
+    revalidatePath("/whatsapp");
+    return msg;
+  }
+
+  // External WhatsApp message
+  const result = await sendWaText(chat.waId, body);
+  
+  if (result.success) {
+    const msg = await prisma.waMessage.create({
+      data: {
+        chatId,
+        waMessageId: result.data.messages[0].id,
+        body,
+        fromMe: true,
+        senderId: (session.user as any).id,
+      },
+    });
+
+    await prisma.waChat.update({
+      where: { id: chatId },
+      data: {
+        lastMessage: body,
+        lastMessageAt: new Date(),
+      },
+    });
+
+    revalidatePath("/whatsapp");
+    return msg;
+  } else {
+    throw new Error(result.error?.error?.message || "Gagal mengirim pesan");
+  }
+}
+
+export async function assignChatAction(chatId: string, userId: string | null) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Unauthorized");
+
+  await prisma.waChat.update({
+    where: { id: chatId },
+    data: { assignedToId: userId },
+  });
+
+  revalidatePath("/whatsapp");
+}
+
+export async function getAgents() {
+  return await prisma.user.findMany({
+    select: { id: true, name: true, email: true },
+  });
+}
+
+export async function getWaQuickReplies() {
+  return await prisma.waQuickReply.findMany();
+}
+
+export async function getWaTemplates() {
+  return await prisma.waTemplate.findMany();
+}
