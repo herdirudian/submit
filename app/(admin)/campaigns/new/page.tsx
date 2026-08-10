@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { 
     Megaphone, Send, Save, ArrowLeft, 
     Layout, Users, Type, Eye, Loader2,
-    CheckCircle, AlertTriangle, Info, Upload, X, Image as ImageIcon
+    CheckCircle, AlertTriangle, Info, Upload, X, Image as ImageIcon, RefreshCcw
 } from "lucide-react";
 import { createCampaign, renderCampaignPreview } from "@/actions/campaign";
 import { getContactLists } from "@/actions/contact";
