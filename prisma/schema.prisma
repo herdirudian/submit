@@ -372,7 +372,7 @@ model WaTemplate {
   @@map("wa_templates")
 }
 
-enum LogStatus {
+enum ContactStatus {
   ACTIVE
   UNSUBSCRIBED
   BOUNCED
