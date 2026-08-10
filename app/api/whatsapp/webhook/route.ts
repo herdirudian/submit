@@ -20,18 +20,37 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    console.log("WhatsApp Webhook Received:", JSON.stringify(body, null, 2));
 
     if (body.object === "whatsapp_business_account") {
       for (const entry of body.entry) {
         for (const change of entry.changes) {
           const value = change.value;
           
-          // Handle incoming messages
+          // 1. Handle message status updates FIRST
+          if (value.statuses) {
+            for (const status of value.statuses) {
+              const waMessageId = status.id;
+              const messageStatus = status.status.toUpperCase();
+              console.log(`Status Update: ${waMessageId} -> ${messageStatus}`);
+
+              const validStatuses = ["SENT", "DELIVERED", "READ", "FAILED"];
+              if (validStatuses.includes(messageStatus)) {
+                await prisma.waMessage.updateMany({
+                  where: { waMessageId },
+                  data: { status: messageStatus as any },
+                });
+              }
+            }
+          }
+
+          // 2. Handle incoming messages
           if (value.messages) {
             for (const message of value.messages) {
               const waId = message.from;
               const messageId = message.id;
               const timestamp = new Date(parseInt(message.timestamp) * 1000);
+              console.log(`New Message from ${waId}: ${message.type}`);
               
               let bodyContent = "";
               let type: any = "TEXT";
@@ -50,9 +69,19 @@ export async function POST(req: NextRequest) {
               } else if (message.type === "audio") {
                 bodyContent = "[Audio]";
                 type = "AUDIO";
+              } else if (message.type === "button") {
+                bodyContent = message.button.text;
+                type = "TEXT";
+              } else if (message.type === "interactive") {
+                if (message.interactive.type === "button_reply") {
+                  bodyContent = message.interactive.button_reply.title;
+                } else if (message.interactive.type === "list_reply") {
+                  bodyContent = message.interactive.list_reply.title;
+                }
+                type = "TEXT";
               }
 
-              // 1. Find or create chat
+              // Find or create chat
               let chat = await prisma.waChat.findUnique({
                 where: { waId },
               });
@@ -82,19 +111,25 @@ export async function POST(req: NextRequest) {
                 });
               }
 
-              // 2. Save message
-              await prisma.waMessage.create({
-                data: {
-                  chatId: chat.id,
-                  waMessageId: messageId,
-                  body: bodyContent,
-                  type,
-                  fromMe: false,
-                  createdAt: timestamp,
-                },
+              // Check if message already exists to avoid duplicates from Webhook retries
+              const existingMsg = await prisma.waMessage.findUnique({
+                where: { waMessageId: messageId }
               });
 
-              // 3. Auto-reply for new chats (Out of Office example)
+              if (!existingMsg) {
+                await prisma.waMessage.create({
+                  data: {
+                    chatId: chat.id,
+                    waMessageId: messageId,
+                    body: bodyContent,
+                    type,
+                    fromMe: false,
+                    createdAt: timestamp,
+                  },
+                });
+              }
+
+              // Auto-reply for new chats
               const hour = new Date().getHours();
               if (isNewChat && (hour < 8 || hour > 17)) {
                 const autoMsg = "Halo! Terima kasih telah menghubungi The Lodge Maribaya. Saat ini kami sedang di luar jam operasional. Kami akan membalas pesan Anda segera setelah kami kembali bertugas (Jam 08:00 - 17:00).";
@@ -108,39 +143,6 @@ export async function POST(req: NextRequest) {
                     status: 'SENT',
                   }
                 });
-              }
-            }
-          }
-
-          // Handle message status updates
-          if (value.statuses) {
-            for (const status of value.statuses) {
-              const waMessageId = status.id;
-              const messageStatus = status.status.toUpperCase(); // SENT, DELIVERED, READ, FAILED
-
-              const validStatuses = ["SENT", "DELIVERED", "READ", "FAILED"];
-              if (validStatuses.includes(messageStatus)) {
-                await prisma.waMessage.updateMany({
-                  where: { waMessageId },
-                  data: { status: messageStatus as any },
-                });
-
-                // Also update EmailLog (Blast WA Logs) if it exists
-                try {
-                  const logStatusMap: Record<string, any> = {
-                    'SENT': 'SENT',
-                    'DELIVERED': 'DELIVERED',
-                    'READ': 'READ',
-                    'FAILED': 'FAILED'
-                  };
-
-                  if (logStatusMap[messageStatus]) {
-                    // We don't have the waMessageId in EmailLog yet, but we could use errorMessage or a new field.
-                    // For now, since we only have messageId from Meta in status updates, 
-                    // we might need to store it in EmailLog during sending.
-                    // Let's assume we'll store it in errorMessage temporarily or add a field later.
-                  }
-                } catch (e) {}
               }
             }
           }
