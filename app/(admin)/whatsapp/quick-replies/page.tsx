@@ -201,7 +201,7 @@ export default function QuickRepliesPage() {
                                     onChange={e => setFormData({ ...formData, shortcut: e.target.value })}
                                     className="w-full px-4 py-3 rounded-2xl border border-slate-200 outline-none focus:ring-4 focus:ring-primary-50 focus:border-primary-500 transition-all font-medium"
                                 />
-                                <p className="text-[10px] text-slate-400 font-medium">Mulai dengan karakter '/' (contoh: /jam_operasional)</p>
+                                <p className="text-[10px] text-slate-400 font-medium">Mulai dengan karakter &apos;/&apos; (contoh: /jam_operasional)</p>
                             </div>
 
                             <div className="space-y-2">
