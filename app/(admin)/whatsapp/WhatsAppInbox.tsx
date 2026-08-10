@@ -157,12 +157,16 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
 
     const handleSyncTemplates = async () => {
         setSyncing(true);
-        toast.loading("Menyinkronkan template dari Meta...", { id: "sync-wa" });
+        const toastId = toast.loading("Menyinkronkan template dari Meta...");
         try {
             const result = await syncWaTemplatesAction();
-            toast.success(`${result.count} Template berhasil disinkronkan!`, { id: "sync-wa" });
+            if (result.success) {
+                toast.success(`${result.count} Template berhasil disinkronkan!`, { id: toastId });
+            } else {
+                toast.error(result.error || "Gagal sinkronisasi template", { id: toastId });
+            }
         } catch (error: any) {
-            toast.error(error.message || "Gagal sinkronisasi template", { id: "sync-wa" });
+            toast.error(error.message || "Gagal sinkronisasi template", { id: toastId });
         } finally {
             setSyncing(false);
         }

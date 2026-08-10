@@ -101,13 +101,17 @@ function NewCampaignForm() {
 
     const handleSyncTemplates = async () => {
         setSyncingTemplates(true);
-        toast.loading("Menyinkronkan template dari Meta...", { id: "sync-wa" });
+        const toastId = toast.loading("Menyinkronkan template dari Meta...");
         try {
             const result = await syncWaTemplatesAction();
-            toast.success(`${result.count} Template berhasil disinkronkan!`, { id: "sync-wa" });
-            loadWaTemplates();
+            if (result.success) {
+                toast.success(`${result.count} Template berhasil disinkronkan!`, { id: toastId });
+                loadWaTemplates();
+            } else {
+                toast.error(result.error || "Gagal sinkronisasi template", { id: toastId });
+            }
         } catch (error: any) {
-            toast.error(error.message || "Gagal sinkronisasi template", { id: "sync-wa" });
+            toast.error(error.message || "Gagal sinkronisasi template", { id: toastId });
         } finally {
             setSyncingTemplates(false);
         }

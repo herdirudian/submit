@@ -187,39 +187,48 @@ export async function syncWaTemplatesAction() {
   const session = await getServerSession(authOptions);
   if (!session?.user) throw new Error("Unauthorized");
 
-  const result = await getWaMetaTemplates();
-  if (!result.success) {
-    throw new Error(typeof result.error === 'string' ? result.error : JSON.stringify(result.error));
+  try {
+    const result = await getWaMetaTemplates();
+    if (!result.success) {
+      // Jangan throw error yang bikin crash, kembalikan pesan error yang ramah
+      return { 
+        success: false, 
+        error: typeof result.error === 'string' ? result.error : "Gagal mengambil template dari Meta. Pastikan WABA ID dan Token benar." 
+      };
+    }
+
+    const templates = result.data;
+    
+    // Upsert templates into database
+    for (const template of templates) {
+      // Extract body content from components
+      const bodyComponent = template.components?.find((c: any) => c.type === 'BODY');
+      const content = bodyComponent?.text || "";
+
+      await prisma.waTemplate.upsert({
+        where: { name: template.name },
+        update: {
+          category: template.category,
+          language: template.language,
+          content: content,
+          components: JSON.stringify(template.components),
+          status: template.status,
+        },
+        create: {
+          name: template.name,
+          category: template.category,
+          language: template.language,
+          content: content,
+          components: JSON.stringify(template.components),
+          status: template.status,
+        },
+      });
+    }
+
+    revalidatePath("/whatsapp");
+    return { success: true, count: templates.length };
+  } catch (error: any) {
+    console.error("syncWaTemplatesAction Error:", error);
+    return { success: false, error: error.message || "Terjadi kesalahan sistem saat sinkronisasi." };
   }
-
-  const templates = result.data;
-  
-  // Upsert templates into database
-  for (const template of templates) {
-    // Extract body content from components
-    const bodyComponent = template.components?.find((c: any) => c.type === 'BODY');
-    const content = bodyComponent?.text || "";
-
-    await prisma.waTemplate.upsert({
-      where: { name: template.name },
-      update: {
-        category: template.category,
-        language: template.language,
-        content: content,
-        components: JSON.stringify(template.components),
-        status: template.status,
-      },
-      create: {
-        name: template.name,
-        category: template.category,
-        language: template.language,
-        content: content,
-        components: JSON.stringify(template.components),
-        status: template.status,
-      },
-    });
-  }
-
-  revalidatePath("/whatsapp");
-  return { count: templates.length };
 }

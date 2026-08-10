@@ -20,13 +20,18 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    console.log("WhatsApp Webhook Received:", JSON.stringify(body, null, 2));
+    // Gunakan log yang lebih jelas untuk monitoring
+    console.log("=== WHATSAPP WEBHOOK RECEIVED ===");
+    console.log(JSON.stringify(body, null, 2));
 
     if (body.object === "whatsapp_business_account") {
       for (const entry of body.entry) {
         for (const change of entry.changes) {
           const value = change.value;
           
+          // Debugging log untuk setiap perubahan
+          console.log(`Webhook change field: ${change.field}`);
+
           // 1. Handle message status updates FIRST
           if (value.statuses) {
             for (const status of value.statuses) {
@@ -50,7 +55,7 @@ export async function POST(req: NextRequest) {
               const waId = message.from;
               const messageId = message.id;
               const timestamp = new Date(parseInt(message.timestamp) * 1000);
-              console.log(`New Message from ${waId}: ${message.type}`);
+              console.log(`New Message from ${waId} (Type: ${message.type}, ID: ${messageId})`);
               
               let bodyContent = "";
               let type: any = "TEXT";
@@ -81,27 +86,34 @@ export async function POST(req: NextRequest) {
                 type = "TEXT";
               }
 
+              console.log(`Parsed Body Content: ${bodyContent}`);
+
               // Find or create chat
+              // Pastikan waId bersih (hanya angka)
+              const cleanWaId = waId.replace(/\D/g, "");
+
               let chat = await prisma.waChat.findUnique({
-                where: { waId },
+                where: { waId: cleanWaId },
               });
 
               let isNewChat = false;
               if (!chat) {
+                console.log(`Creating new chat for ${cleanWaId}`);
                 isNewChat = true;
                 const contact = await prisma.contact.findFirst({
-                  where: { OR: [{ phone: waId }, { waNumber: waId }] },
+                  where: { OR: [{ phone: cleanWaId }, { waNumber: cleanWaId }] },
                 });
 
                 chat = await prisma.waChat.create({
                   data: {
-                    waId,
+                    waId: cleanWaId,
                     contactId: contact?.id,
                     lastMessage: bodyContent,
                     lastMessageAt: timestamp,
                   },
                 });
               } else {
+                console.log(`Updating existing chat ${chat.id}`);
                 await prisma.waChat.update({
                   where: { id: chat.id },
                   data: {
@@ -117,6 +129,7 @@ export async function POST(req: NextRequest) {
               });
 
               if (!existingMsg) {
+                console.log(`Saving new message to database: ${messageId}`);
                 await prisma.waMessage.create({
                   data: {
                     chatId: chat.id,
@@ -127,22 +140,29 @@ export async function POST(req: NextRequest) {
                     createdAt: timestamp,
                   },
                 });
+              } else {
+                console.log(`Message ${messageId} already exists, skipping.`);
               }
 
               // Auto-reply for new chats
               const hour = new Date().getHours();
               if (isNewChat && (hour < 8 || hour > 17)) {
+                console.log(`Sending auto-reply to ${cleanWaId} (After hours)`);
                 const autoMsg = "Halo! Terima kasih telah menghubungi The Lodge Maribaya. Saat ini kami sedang di luar jam operasional. Kami akan membalas pesan Anda segera setelah kami kembali bertugas (Jam 08:00 - 17:00).";
-                await sendWaText(waId, autoMsg);
-                
-                await prisma.waMessage.create({
-                  data: {
-                    chatId: chat.id,
-                    body: autoMsg,
-                    fromMe: true,
-                    status: 'SENT',
-                  }
-                });
+                try {
+                  await sendWaText(cleanWaId, autoMsg);
+                  
+                  await prisma.waMessage.create({
+                    data: {
+                      chatId: chat.id,
+                      body: autoMsg,
+                      fromMe: true,
+                      status: 'SENT',
+                    }
+                  });
+                } catch (err) {
+                  console.error("Auto-reply failed:", err);
+                }
               }
             }
           }
