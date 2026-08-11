@@ -173,6 +173,10 @@ model AppSettings {
   waWorkingHoursEnd     String?  @default("17:00")
   waWorkingDays         String?  @default("1,2,3,4,5,6,7") // 1=Mon, 7=Sun
   
+  // Chatbot FAQ Toggle
+  waChatbotEnabled      Boolean  @default(false)
+  waChatbotWelcomeMsg   String?  @db.Text
+  
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
@@ -501,4 +505,17 @@ enum LogStatus {
   READ
   BOUNCED
   FAILED
+}
+
+model WaFaq {
+  id        String   @id @default(cuid())
+  keyword   String   @unique // The number or word, e.g. "1"
+  question  String   // The label for the menu
+  answer    String   @db.Text // The auto-response
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("wa_faqs")
 }

@@ -218,7 +218,61 @@ export async function POST(req: NextRequest) {
                   console.log(`[WEBHOOK] Skipping duplicate message: ${messageId}`);
                 }
 
-                // Dynamic Auto-reply logic
+                // --- START CHATBOT FAQ LOGIC ---
+                try {
+                  const settings = await prisma.appSettings.findUnique({ where: { id: "singleton" } });
+                  
+                  if (settings?.waChatbotEnabled) {
+                    const faqs = await prisma.waFaq.findMany({
+                      where: { isActive: true },
+                      orderBy: { order: 'asc' }
+                    });
+
+                    const incomingText = bodyContent.trim().toLowerCase();
+                    const matchedFaq = faqs.find(f => f.keyword.toLowerCase() === incomingText);
+
+                    if (matchedFaq) {
+                      // Send the answer for the matched keyword
+                      const sendResult = await sendWaText(cleanWaId, matchedFaq.answer);
+                      if (sendResult.success) {
+                        await prisma.waMessage.create({
+                          data: {
+                            chatId: chat.id,
+                            body: matchedFaq.answer,
+                            fromMe: true,
+                            status: 'SENT',
+                            waMessageId: sendResult.data?.messages?.[0]?.id,
+                          }
+                        });
+                      }
+                    } else if (isNewChat || incomingText === 'menu' || incomingText === 'bantuan') {
+                      // Send Welcome Message + Menu List
+                      let menuText = settings.waChatbotWelcomeMsg || "Halo! Ada yang bisa kami bantu?\n\nSilakan pilih menu di bawah ini dengan mengetikkan nomornya:\n";
+                      
+                      faqs.forEach(faq => {
+                        menuText += `\n*${faq.keyword}*. ${faq.question}`;
+                      });
+
+                      const sendResult = await sendWaText(cleanWaId, menuText);
+                      if (sendResult.success) {
+                        await prisma.waMessage.create({
+                          data: {
+                            chatId: chat.id,
+                            body: menuText,
+                            fromMe: true,
+                            status: 'SENT',
+                            waMessageId: sendResult.data?.messages?.[0]?.id,
+                          }
+                        });
+                      }
+                    }
+                  }
+                } catch (chatbotErr) {
+                  console.error("[WEBHOOK] Chatbot FAQ error:", chatbotErr);
+                }
+                // --- END CHATBOT FAQ LOGIC ---
+
+                // Dynamic Auto-reply logic (Existing)
                 try {
                   const settings = await prisma.appSettings.findUnique({ where: { id: "singleton" } });
                   

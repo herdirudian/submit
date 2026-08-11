@@ -73,6 +73,8 @@ export async function updateAppSettings(data: {
   waWorkingHoursStart?: string;
   waWorkingHoursEnd?: string;
   waWorkingDays?: string;
+  waChatbotEnabled?: boolean;
+  waChatbotWelcomeMsg?: string;
 }) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
@@ -98,6 +100,8 @@ export async function updateAppSettings(data: {
     waWorkingHoursStart,
     waWorkingHoursEnd,
     waWorkingDays,
+    waChatbotEnabled,
+    waChatbotWelcomeMsg,
   } = data;
 
   if (notificationFromEmail && !isValidEmail(notificationFromEmail)) {
@@ -125,6 +129,8 @@ export async function updateAppSettings(data: {
       waWorkingHoursStart,
       waWorkingHoursEnd,
       waWorkingDays,
+      waChatbotEnabled,
+      waChatbotWelcomeMsg,
     },
     create: {
       id: "singleton",
@@ -146,6 +152,8 @@ export async function updateAppSettings(data: {
       waWorkingHoursStart,
       waWorkingHoursEnd,
       waWorkingDays,
+      waChatbotEnabled,
+      waChatbotWelcomeMsg,
     },
   });
 
