@@ -29,7 +29,11 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const headers = Object.fromEntries(req.headers.entries());
   console.log(`=== [WEBHOOK] INCOMING POST REQUEST ===`);
+  console.log(`[WEBHOOK] IP: ${headers['x-forwarded-for'] || 'unknown'}`);
+  console.log(`[WEBHOOK] CF-Ray: ${headers['cf-ray'] || 'Not via Cloudflare'}`);
+  console.log(`[WEBHOOK] User-Agent: ${headers['user-agent']}`);
   
   try {
     const body = await req.json();
