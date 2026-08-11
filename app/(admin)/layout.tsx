@@ -3,7 +3,6 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from "next/image";
-import Sidebar from "@/components/Sidebar";
 import { 
   LayoutDashboard, Settings, Search, LogOut, FileText, 
   BarChart3, Users, Inbox, Mail, Megaphone, 
