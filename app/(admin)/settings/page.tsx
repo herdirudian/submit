@@ -422,7 +422,7 @@ export default function SettingsPage() {
 
               <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl">
                 <p className="text-xs text-amber-800 leading-relaxed">
-                  <b>Catatan Penting:</b> Untuk menerima pesan dari pelanggan umum, pastikan App Mode di Meta Console diatur ke <b>"Live"</b> dan fitur <b>"whatsapp_business_messaging"</b> memiliki status <b>Advanced Access</b>.
+                  <b>Catatan Penting:</b> Untuk menerima pesan dari pelanggan umum, pastikan App Mode di Meta Console diatur ke <b>&quot;Live&quot;</b> dan fitur <b>&quot;whatsapp_business_messaging&quot;</b> memiliki status <b>Advanced Access</b>.
                 </p>
               </div>
 
