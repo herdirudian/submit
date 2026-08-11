@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { 
     Search, Phone, User, MoreVertical, Send, 
     Paperclip, Smile, Shield, Check, CheckCheck, 
     Clock, Filter, UserPlus, Info, Trash2, 
     MessageSquare, Hash, Tag, Plus, RefreshCw,
     Building, MapPin, UserCheck, FileText, Image as ImageIcon,
-    Play, Download
+    Play, Download, Mail, Ticket
 } from "lucide-react";
 import { 
     getWaChats, getWaChatMessages, sendWaMessageAction, 
@@ -59,7 +59,7 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
         return () => clearInterval(interval);
     }, [selectedChat, selectedStatus, selectedTag]);
 
-    async function refreshChats() {
+    const refreshChats = useCallback(async () => {
         try {
             const data = await getWaChats({ 
                 status: selectedStatus as any || undefined, 
@@ -69,9 +69,9 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
         } catch (error) {
             console.error("Polling chats failed", error);
         }
-    }
+    }, [selectedStatus, selectedTag]);
 
-    async function refreshMessages(chatId: string) {
+    const refreshMessages = useCallback(async (chatId: string) => {
         try {
             const data = await getWaChatMessages(chatId);
             // Only update if message count changed or something changed
@@ -84,35 +84,47 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
         } catch (error) {
             console.error("Polling messages failed", error);
         }
-    }
+    }, []);
 
-    async function loadQuickReplies() {
+    const loadQuickReplies = useCallback(async () => {
         try {
             const data = await getWaQuickReplies();
             setQuickReplies(data);
         } catch (error) {
             console.error(error);
         }
-    }
+    }, []);
 
     const handleQuickReply = (content: string) => {
-          setMessageInput(content);
+        setMessageInput(content);
     };
 
-    const scrollToBottom = () => {
+    const scrollToBottom = useCallback(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    };
+    }, []);
 
     useEffect(() => {
         scrollToBottom();
-    }, [messages]);
+    }, [messages, scrollToBottom]);
 
     useEffect(() => {
         if (selectedChat) {
             setLoadingMessages(true);
             refreshMessages(selectedChat.id).finally(() => setLoadingMessages(false));
         }
-    }, [selectedChat]);
+    }, [selectedChat, refreshMessages]);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            refreshChats();
+            if (selectedChat) {
+                refreshMessages(selectedChat.id);
+            }
+        }, 5000); // Poll every 5 seconds
+
+        loadQuickReplies();
+        return () => clearInterval(interval);
+    }, [selectedChat, refreshChats, refreshMessages, loadQuickReplies]);
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
