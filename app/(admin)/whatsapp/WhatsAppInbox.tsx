@@ -552,6 +552,7 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                                                             src={msg.mediaUrl} 
                                                             alt={msg.mediaCaption || "Image"} 
                                                             fill
+                                                            unoptimized
                                                             className="object-contain cursor-pointer hover:opacity-90 transition-opacity" 
                                                             onClick={() => window.open(msg.mediaUrl, '_blank')} 
                                                         />

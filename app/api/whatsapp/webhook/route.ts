@@ -150,10 +150,8 @@ export async function POST(req: NextRequest) {
                     await mkdir(uploadDir, { recursive: true });
                     await writeFile(path.join(uploadDir, filename), buffer);
                     
-                    // Construct local URL
-                    const host = req.headers.get("host");
-                    const protocol = req.headers.get("x-forwarded-proto") || "http";
-                    mediaUrl = `${protocol}://${host}/uploads/${filename}`;
+                    // Use relative URL for local storage
+                    mediaUrl = `/uploads/${filename}`;
                   }
                 }
               }

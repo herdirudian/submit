@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { sendWaText, sendWaTemplate, getWaMetaTemplates, sendWaMedia } from "@/lib/whatsapp";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 
 import { ChatStatus } from "@prisma/client";
 
@@ -129,8 +130,16 @@ export async function sendWaMediaAction(chatId: string, type: any, url: string, 
   });
 
   if (!chat) throw new Error("Chat not found");
-
-  const result = await sendWaMedia(chat.waId, type.toLowerCase(), url, caption);
+  
+  // Convert relative URL to absolute for Meta API (they need to download it)
+  let absoluteUrl = url;
+  if (url.startsWith("/")) {
+    const host = headers().get("host");
+    const protocol = headers().get("x-forwarded-proto") || "http";
+    absoluteUrl = `${protocol}://${host}${url}`;
+  }
+  
+  const result = await sendWaMedia(chat.waId, type.toLowerCase(), absoluteUrl, caption);
   
   if (result.success) {
     const msg = await prisma.waMessage.create({

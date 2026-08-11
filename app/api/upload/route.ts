@@ -31,15 +31,11 @@ export async function POST(request: NextRequest) {
     const filePath = path.join(uploadDir, filename);
     await writeFile(filePath, buffer);
 
-    // Get the base URL dynamically from the request headers
-    // This ensures it matches the domain the user is currently using
-    const protocol = request.headers.get("x-forwarded-proto") || "http";
-    const host = request.headers.get("host");
-    const baseUrl = `${protocol}://${host}`;
-    const url = `${baseUrl}/uploads/${filename}`;
+    // Return relative URL for internal use (works better with next/image)
+    const url = `/uploads/${filename}`;
 
     console.log(`File uploaded to: ${filePath}`);
-    console.log(`Dynamic absolute URL: ${url}`);
+    console.log(`Relative URL: ${url}`);
 
     return NextResponse.json({ 
       success: true, 
