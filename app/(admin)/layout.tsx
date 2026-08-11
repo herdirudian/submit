@@ -30,6 +30,7 @@ export default function AdminLayout({
     if (path === "/whatsapp" || path.startsWith("/whatsapp")) {
       if (path === "/whatsapp/quick-replies") return "quick-replies";
       if (path === "/whatsapp/templates") return "wa-templates";
+      if (path === "/whatsapp/analytics") return "wa-analytics";
       return "whatsapp";
     }
     if (path === "/campaigns/logs" || path.startsWith("/campaigns/logs")) return "email-logs";
@@ -49,6 +50,7 @@ export default function AdminLayout({
     { name: 'Blast WA', href: '/blast-wa', icon: MessageCircle, id: 'blast-wa', roles: ['ADMIN'] },
     { name: 'Contacts', href: '/contacts', icon: Contact2, id: 'contacts', roles: ['ADMIN', 'CASHIER'] },
     { name: 'WA CRM', href: '/whatsapp', icon: MessageSquare, id: 'whatsapp', roles: ['ADMIN'] },
+    { name: 'Analitik WA', href: '/whatsapp/analytics', icon: BarChart3, id: 'wa-analytics', roles: ['ADMIN'] },
     { name: 'Balasan Cepat', href: '/whatsapp/quick-replies', icon: Hash, id: 'quick-replies', roles: ['ADMIN'] },
     { name: 'Template WA', href: '/whatsapp/templates', icon: FileText, id: 'wa-templates', roles: ['ADMIN'] },
     { name: 'Campaigns', href: '/campaigns', icon: Megaphone, id: 'campaigns', roles: ['ADMIN'] },
