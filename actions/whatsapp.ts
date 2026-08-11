@@ -186,7 +186,19 @@ export async function startNewChatAction(waId: string) {
   }
 
   revalidatePath("/whatsapp");
-  return chat;
+    return chat;
+}
+
+export async function updateChatContactAction(chatId: string, contactId: string) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) throw new Error("Unauthorized");
+
+    await prisma.waChat.update({
+        where: { id: chatId },
+        data: { contactId },
+    });
+
+    revalidatePath("/whatsapp");
 }
 
 export async function syncWaTemplatesAction() {

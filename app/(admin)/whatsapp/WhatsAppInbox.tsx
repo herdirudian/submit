@@ -11,9 +11,9 @@ import {
 import { 
     getWaChats, getWaChatMessages, sendWaMessageAction, 
     assignChatAction, getAgents, getWaQuickReplies, 
-    startNewChatAction, syncWaTemplatesAction 
+    startNewChatAction, syncWaTemplatesAction, updateChatContactAction
 } from "@/actions/whatsapp";
-import { updateContact } from "@/actions/contact";
+import { updateContact, createContact } from "@/actions/contact";
 import { formatDistance } from "date-fns";
 import { id } from "date-fns/locale";
 import { X } from "lucide-react";
@@ -36,6 +36,7 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
     const [quickReplyFilter, setQuickReplyFilter] = useState("");
     const [showProfileSidebar, setShowProfileSidebar] = useState(true);
     const [isEditingContact, setIsEditingContact] = useState(false);
+    const [isRegisteringContact, setIsRegisteringContact] = useState(false);
     const [editContactData, setEditContactData] = useState<any>({});
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -194,6 +195,36 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
             setChats(prev => prev.map(c => c.id === selectedChat.id ? updatedChat : c));
         } catch (error: any) {
             toast.error(error.message || "Gagal memperbarui kontak", { id: toastId });
+        }
+    };
+
+    const handleRegisterContact = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedChat) return;
+
+        const toastId = toast.loading("Mendaftarkan kontak baru...");
+        try {
+            // 1. Create the contact
+            const newContact = await createContact({
+                ...editContactData,
+                waNumber: selectedChat.waId,
+                phone: selectedChat.waId,
+                customerType: editContactData.customerType || "Pelanggan",
+                ticketType: editContactData.ticketType || "Umum"
+            });
+
+            // 2. Link contact to waChat
+            await updateChatContactAction(selectedChat.id, newContact.id);
+
+            toast.success("Kontak berhasil didaftarkan!", { id: toastId });
+            setIsRegisteringContact(false);
+            
+            // 3. Update local state
+            const updatedChat = { ...selectedChat, contact: newContact };
+            setSelectedChat(updatedChat);
+            setChats(prev => prev.map(c => c.id === selectedChat.id ? updatedChat : c));
+        } catch (error: any) {
+            toast.error(error.message || "Gagal mendaftarkan kontak", { id: toastId });
         }
     };
 
@@ -563,7 +594,7 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                                     <Info size={14} className="text-primary-500" />
                                     Detail Informasi
                                 </h5>
-                                {!isEditingContact && selectedChat.contact && (
+                                {!isEditingContact && !isRegisteringContact && selectedChat.contact && (
                                     <button 
                                         onClick={startEditing}
                                         className="text-[10px] font-bold text-primary-600 hover:text-primary-700 uppercase transition-colors"
@@ -573,22 +604,23 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                                 )}
                             </div>
 
-                            {isEditingContact ? (
-                                <form onSubmit={handleUpdateContact} className="space-y-4">
+                            {isEditingContact || isRegisteringContact ? (
+                                <form onSubmit={isRegisteringContact ? handleRegisterContact : handleUpdateContact} className="space-y-4">
                                     <div className="space-y-1.5">
                                         <label className="text-[10px] font-bold text-slate-500 uppercase px-1">Nama</label>
                                         <input 
                                             type="text"
-                                            value={editContactData.name}
+                                            value={editContactData.name || ""}
                                             onChange={e => setEditContactData({...editContactData, name: e.target.value})}
                                             className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all"
+                                            required={isRegisteringContact}
                                         />
                                     </div>
                                     <div className="space-y-1.5">
                                         <label className="text-[10px] font-bold text-slate-500 uppercase px-1">Email</label>
                                         <input 
                                             type="email"
-                                            value={editContactData.email}
+                                            value={editContactData.email || ""}
                                             onChange={e => setEditContactData({...editContactData, email: e.target.value})}
                                             className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all"
                                         />
@@ -598,7 +630,7 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                                             <label className="text-[10px] font-bold text-slate-500 uppercase px-1">Perusahaan</label>
                                             <input 
                                                 type="text"
-                                                value={editContactData.company}
+                                                value={editContactData.company || ""}
                                                 onChange={e => setEditContactData({...editContactData, company: e.target.value})}
                                                 className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all"
                                             />
@@ -607,7 +639,7 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                                             <label className="text-[10px] font-bold text-slate-500 uppercase px-1">Kota</label>
                                             <input 
                                                 type="text"
-                                                value={editContactData.city}
+                                                value={editContactData.city || ""}
                                                 onChange={e => setEditContactData({...editContactData, city: e.target.value})}
                                                 className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all"
                                             />
@@ -618,18 +650,22 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                                             <label className="text-[10px] font-bold text-slate-500 uppercase px-1">Tipe Tiket</label>
                                             <input 
                                                 type="text"
-                                                value={editContactData.ticketType}
+                                                value={editContactData.ticketType || ""}
                                                 onChange={e => setEditContactData({...editContactData, ticketType: e.target.value})}
                                                 className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all"
+                                                placeholder="Contoh: Umum, VIP"
+                                                required={isRegisteringContact}
                                             />
                                         </div>
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-bold text-slate-500 uppercase px-1">Tipe Customer</label>
                                             <input 
                                                 type="text"
-                                                value={editContactData.customerType}
+                                                value={editContactData.customerType || ""}
                                                 onChange={e => setEditContactData({...editContactData, customerType: e.target.value})}
                                                 className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all"
+                                                placeholder="Contoh: Pelanggan, Agent"
+                                                required={isRegisteringContact}
                                             />
                                         </div>
                                     </div>
@@ -637,7 +673,7 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                                         <label className="text-[10px] font-bold text-slate-500 uppercase px-1">Tags (Pisahkan Koma)</label>
                                         <input 
                                             type="text"
-                                            value={editContactData.tags}
+                                            value={editContactData.tags || ""}
                                             onChange={e => setEditContactData({...editContactData, tags: e.target.value})}
                                             className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all"
                                             placeholder="VIP, Agent, Promo"
@@ -646,7 +682,10 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                                     <div className="flex gap-2 pt-2">
                                         <button 
                                             type="button"
-                                            onClick={() => setIsEditingContact(false)}
+                                            onClick={() => {
+                                                setIsEditingContact(false);
+                                                setIsRegisteringContact(false);
+                                            }}
                                             className="flex-1 px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors"
                                         >
                                             Batal
@@ -655,7 +694,7 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                                             type="submit"
                                             className="flex-1 px-3 py-2 bg-primary-600 text-white rounded-xl text-xs font-bold hover:bg-primary-700 shadow-lg shadow-primary-100 transition-all"
                                         >
-                                            Simpan
+                                            {isRegisteringContact ? "Daftarkan" : "Simpan"}
                                         </button>
                                     </div>
                                 </form>
@@ -725,15 +764,23 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                             )}
                         </div>
 
-                        {!selectedChat.contact && (
+                        {!selectedChat.contact && !isRegisteringContact && (
                             <div className="bg-primary-50 p-4 rounded-2xl border border-primary-100 space-y-3">
                                 <p className="text-xs text-primary-700 leading-relaxed">
                                     Nomor ini belum terdaftar di database kontak Anda.
                                 </p>
                                 <button 
                                     onClick={() => {
-                                        setNewWaId(selectedChat.waId);
-                                        setShowNewChatModal(true);
+                                        setEditContactData({
+                                            name: "",
+                                            email: "",
+                                            company: "",
+                                            city: "",
+                                            tags: "",
+                                            ticketType: "Umum",
+                                            customerType: "Pelanggan"
+                                        });
+                                        setIsRegisteringContact(true);
                                     }}
                                     className="w-full py-2 bg-primary-600 text-white rounded-xl text-xs font-bold hover:bg-primary-700 transition-all shadow-md shadow-primary-100"
                                 >
