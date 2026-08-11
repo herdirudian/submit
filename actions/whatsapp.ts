@@ -186,19 +186,19 @@ export async function startNewChatAction(waId: string) {
   }
 
   revalidatePath("/whatsapp");
-    return chat;
+  return chat;
 }
 
 export async function updateChatContactAction(chatId: string, contactId: string) {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) throw new Error("Unauthorized");
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Unauthorized");
 
-    await prisma.waChat.update({
-        where: { id: chatId },
-        data: { contactId },
-    });
+  await prisma.waChat.update({
+    where: { id: chatId },
+    data: { contactId },
+  });
 
-    revalidatePath("/whatsapp");
+  revalidatePath("/whatsapp");
 }
 
 export async function syncWaTemplatesAction() {
@@ -249,16 +249,4 @@ export async function syncWaTemplatesAction() {
     console.error("syncWaTemplatesAction Error:", error);
     return { success: false, error: error.message || "Terjadi kesalahan sistem saat sinkronisasi." };
   }
-}
-
-export async function updateChatContactAction(chatId: string, contactId: string) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) throw new Error("Unauthorized");
-
-  await prisma.waChat.update({
-    where: { id: chatId },
-    data: { contactId },
-  });
-
-  revalidatePath("/whatsapp");
 }
