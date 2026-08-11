@@ -2,6 +2,8 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from "next/image";
+import Sidebar from "@/components/Sidebar";
 import { 
   LayoutDashboard, Settings, Search, LogOut, FileText, 
   BarChart3, Users, Inbox, Mail, Megaphone, 
@@ -83,7 +85,7 @@ export default function AdminLayout({
       <aside className="w-64 bg-white border-r border-slate-100 flex flex-col fixed inset-y-0 z-50">
         <div className="p-6 flex items-center gap-3">
           <div className="w-10 h-10 relative">
-             <img src="/logotlm.png" alt="The Lodge Maribaya" className="w-full h-full object-contain" />
+             <Image src="/logotlm.png" alt="The Lodge Maribaya" width={40} height={40} className="w-full h-full object-contain" />
           </div>
           <div>
             <h1 className="text-lg font-bold text-slate-800 leading-none font-judul tracking-wide">The Lodge</h1>
@@ -143,13 +145,13 @@ export default function AdminLayout({
                 <NotificationDropdown />
                 <div className="h-8 w-[1px] bg-slate-200 mx-2"></div>
                 <div className="flex items-center gap-3 cursor-pointer hover:bg-slate-50 p-2 rounded-xl transition-colors">
-                    {session?.user?.image ? (
-                        <img src={session.user.image} alt={displayName} className="w-10 h-10 rounded-full object-cover" />
-                    ) : (
-                        <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center text-primary-700 font-bold">
-                            {initials}
-                        </div>
-                    )}
+                    <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold text-xs relative overflow-hidden">
+                        {session?.user?.image ? (
+                            <Image src={session.user.image} alt={displayName} fill className="object-cover" />
+                        ) : (
+                            initials
+                        )}
+                    </div>
                     <div className="hidden md:block text-left">
                         <p className="text-sm font-bold text-slate-800 leading-none">{displayName}</p>
                         <p className="text-xs text-slate-400 mt-1">{(session?.user as any)?.role === 'CASHIER' ? 'Cashier' : 'Super Admin'}</p>

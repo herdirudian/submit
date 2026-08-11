@@ -3,6 +3,7 @@
 import { Form, Question, QuestionOption, QuestionType } from "@prisma/client";
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, useSensor, useSensors, PointerSensor, TouchSensor, closestCenter } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable";
+import Image from "next/image";
 import { useState } from "react";
 import Toolbox from "./Toolbox";
 import SortableQuestion from "./SortableQuestion";
@@ -209,10 +210,11 @@ export default function FormBuilderContext({ form }: { form: FormWithQuestions }
                                         </div>
                                         {form.logo && (
                                             <div className="mb-6 flex justify-center">
-                                                <img 
+                                                <Image 
                                                     src={form.logo} 
                                                     alt="Logo" 
-                                                    style={{ width: form.logoWidth || 128 }}
+                                                    width={form.logoWidth || 128}
+                                                    height={form.logoWidth || 128}
                                                     className="object-contain" 
                                                 />
                                             </div>

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { getUsers } from "@/actions/user";
 import { Mail, Calendar, Shield } from "lucide-react";
 import { formatInTimeZone } from "date-fns-tz";
@@ -49,9 +50,9 @@ export default async function UsersPage() {
                                     <tr key={user.id} className="hover:bg-slate-50 transition-colors group">
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 font-bold overflow-hidden">
+                                                <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 font-bold overflow-hidden relative">
                                                     {user.image ? (
-                                                        <img src={user.image} alt={user.name || "User"} className="w-full h-full object-cover" />
+                                                        <Image src={user.image} alt={user.name || "User"} fill className="object-cover" />
                                                     ) : (
                                                         (user.name?.[0] || user.email[0]).toUpperCase()
                                                     )}

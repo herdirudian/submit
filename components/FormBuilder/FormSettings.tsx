@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { X, Upload, Loader2, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -330,7 +331,7 @@ export default function FormSettings({ form, isOpen, onClose }: { form: Form; is
                         <div className="flex items-center gap-4">
                             <div className="w-20 h-20 bg-slate-100 rounded-xl border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden relative group">
                                 {logo ? (
-                                    <img src={logo} alt="Logo" className="w-full h-full object-cover" />
+                                    <Image src={logo} alt="Logo" fill className="object-cover" />
                                 ) : (
                                     <ImageIcon className="text-slate-300" />
                                 )}

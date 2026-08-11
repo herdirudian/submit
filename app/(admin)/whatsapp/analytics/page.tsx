@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { 
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, 
     ResponsiveContainer, LineChart, Line, Cell, PieChart, Pie
@@ -18,7 +18,7 @@ export default function WhatsAppAnalytics() {
     const [loading, setLoading] = useState(true);
     const [days, setDays] = useState(7);
 
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
         setLoading(true);
         try {
             const result = await getWaAnalytics(days);
@@ -28,11 +28,11 @@ export default function WhatsAppAnalytics() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [days]);
 
     useEffect(() => {
         loadData();
-    }, [days]);
+    }, [loadData]);
 
     if (loading && !data) {
         return (
@@ -240,7 +240,7 @@ export default function WhatsAppAnalytics() {
                         <div className="p-4 bg-white/10 rounded-2xl border border-white/10 backdrop-blur-sm">
                             <p className="text-[10px] uppercase font-bold tracking-widest text-primary-300 mb-2">Rekomendasi</p>
                             <p className="text-xs text-primary-50 italic">
-                                "Gunakan template '{data?.templates[0]?.name || "..."}' lebih sering untuk mempercepat respon pada pertanyaan umum."
+                                {`"Gunakan template '${data?.templates?.[0]?.name || "..."}' lebih sering untuk mempercepat respon pada pertanyaan umum."`}
                             </p>
                         </div>
                     </div>

@@ -3,6 +3,7 @@
 import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { toast } from "sonner";
 import { Loader2, Mail, Lock, ArrowRight } from "lucide-react";
 
@@ -41,8 +42,13 @@ export default function LoginPage() {
         <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
             <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-100">
                 <div className="text-center mb-8">
-                    <div className="w-16 h-16 bg-primary-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-primary-600">
-                        <img src="/logotlm.png" alt="Logo" className="w-10 h-10 object-contain" />
+                    <div className="w-12 h-12 bg-primary-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary-200 relative overflow-hidden">
+                        <Image 
+                            src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=luxury%20resort%20logo%20minimalist%20nature&image_size=square" 
+                            alt="Logo" 
+                            fill
+                            className="object-cover"
+                        />
                     </div>
                     <h1 className="text-2xl font-bold text-slate-800 font-judul">Welcome Back</h1>
                     <p className="text-slate-500 mt-2">Sign in to manage your forms</p>

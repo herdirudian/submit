@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import React, { useState, useEffect } from "react";
 import { 
     Megaphone, Send, Save, ArrowLeft, 
@@ -399,7 +400,7 @@ function NewCampaignForm() {
                                 {formData.headerImageUrl ? (
                                     <div className="space-y-2">
                                         <div className="relative aspect-[3/1] rounded-xl border border-slate-200 overflow-hidden bg-slate-50">
-                                            <img src={formData.headerImageUrl} alt="Header" className="w-full h-full object-contain" />
+                                            <Image src={formData.headerImageUrl} alt="Header" fill className="object-contain" />
                                         </div>
                                         <div className="text-[10px] text-slate-400 break-all bg-slate-50 p-2 rounded border border-slate-100">
                                             URL: {formData.headerImageUrl}
@@ -457,7 +458,7 @@ function NewCampaignForm() {
                                 {formData.footerImageUrl ? (
                                     <div className="space-y-2">
                                         <div className="relative aspect-[3/1] rounded-xl border border-slate-200 overflow-hidden bg-slate-50">
-                                            <img src={formData.footerImageUrl} alt="Footer" className="w-full h-full object-contain" />
+                                            <Image src={formData.footerImageUrl} alt="Footer" fill className="object-contain" />
                                         </div>
                                         <div className="text-[10px] text-slate-400 break-all bg-slate-50 p-2 rounded border border-slate-100">
                                             URL: {formData.footerImageUrl}

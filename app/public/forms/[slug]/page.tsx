@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
+import Image from "next/image";
 import PublicFormRenderer from "@/components/PublicFormRenderer";
 import { MapPin, Phone, Mail, Clock, Instagram, Globe } from "lucide-react";
 import { incrementFormViews } from "@/actions/form";
@@ -94,8 +95,13 @@ export default async function PublicFormPage({ params }: { params: { slug: strin
                     
                     <div className="relative z-10">
                         <div className="flex items-center gap-3 mb-8">
-                            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center p-2">
-                                <img src={sidebarLogoSrc} alt={defaultBrandName} className="w-full h-full object-contain" />
+                            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-lg relative overflow-hidden">
+                                <Image 
+                                    src={sidebarLogoSrc} 
+                                    alt={defaultBrandName} 
+                                    fill
+                                    className="object-contain p-2"
+                                />
                             </div>
                             <div>
                                 <h2 className="text-xl font-judul font-bold leading-none tracking-wide">{form.sidebarTitle || defaultBrandName}</h2>
@@ -182,10 +188,11 @@ export default async function PublicFormPage({ params }: { params: { slug: strin
                     <div className="mb-10 border-b border-slate-100 pb-8 text-center">
                         {headerLogoSrc && (
                             <div className="mb-6 flex justify-center">
-                                <img 
+                                <Image 
                                     src={headerLogoSrc} 
                                     alt="Form Logo" 
-                                    style={{ width: form.logoWidth || 128 }}
+                                    width={form.logoWidth || 128}
+                                    height={form.logoWidth || 128}
                                     className="object-contain hover:scale-105 transition-transform duration-300" 
                                 />
                             </div>

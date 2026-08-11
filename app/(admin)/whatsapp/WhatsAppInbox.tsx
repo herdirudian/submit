@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import Image from "next/image";
 import { 
     Search, Phone, User, MoreVertical, Send, 
     Paperclip, Smile, Shield, Check, CheckCheck, 
@@ -47,18 +48,6 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    useEffect(() => {
-        const interval = setInterval(() => {
-            refreshChats();
-            if (selectedChat) {
-                refreshMessages(selectedChat.id);
-            }
-        }, 5000); // Poll every 5 seconds
-
-        loadQuickReplies();
-        return () => clearInterval(interval);
-    }, [selectedChat, selectedStatus, selectedTag]);
-
     const refreshChats = useCallback(async () => {
         try {
             const data = await getWaChats({ 
@@ -99,20 +88,29 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
         setMessageInput(content);
     };
 
-    const scrollToBottom = useCallback(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, []);
-
     useEffect(() => {
+        const scrollToBottom = () => {
+            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        };
         scrollToBottom();
-    }, [messages, scrollToBottom]);
+    }, [messages]);
 
     useEffect(() => {
         if (selectedChat) {
             setLoadingMessages(true);
-            refreshMessages(selectedChat.id).finally(() => setLoadingMessages(false));
+            getWaChatMessages(selectedChat.id)
+                .then(data => {
+                    setMessages(prev => {
+                        if (JSON.stringify(prev) !== JSON.stringify(data)) {
+                            return data;
+                        }
+                        return prev;
+                    });
+                })
+                .catch(error => console.error("Polling messages failed", error))
+                .finally(() => setLoadingMessages(false));
         }
-    }, [selectedChat, refreshMessages]);
+    }, [selectedChat]);
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -549,8 +547,14 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                                                 : "bg-white text-slate-800 border border-slate-100 rounded-tl-none"
                                             }`}>
                                                 {msg.type === 'IMAGE' && msg.mediaUrl && (
-                                                    <div className="mb-2 rounded-lg overflow-hidden border border-black/5">
-                                                        <img src={msg.mediaUrl} alt={msg.mediaCaption || "Image"} className="max-w-full h-auto object-contain cursor-pointer hover:opacity-90 transition-opacity" onClick={() => window.open(msg.mediaUrl, '_blank')} />
+                                                    <div className="mb-2 rounded-lg overflow-hidden border border-black/5 relative aspect-square max-w-full h-auto">
+                                                        <Image 
+                                                            src={msg.mediaUrl} 
+                                                            alt={msg.mediaCaption || "Image"} 
+                                                            fill
+                                                            className="object-contain cursor-pointer hover:opacity-90 transition-opacity" 
+                                                            onClick={() => window.open(msg.mediaUrl, '_blank')} 
+                                                        />
                                                     </div>
                                                 )}
                                                 {msg.type === 'VIDEO' && msg.mediaUrl && (

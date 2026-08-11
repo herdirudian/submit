@@ -5,6 +5,42 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { startOfDay, endOfDay, subDays, format } from "date-fns";
 
+/**
+ * Analytics Actions for WhatsApp CRM and System Stats
+ */
+
+export async function getSystemStats() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Unauthorized");
+
+  const [totalForms, totalResponses, totalUsers] = await Promise.all([
+    prisma.form.count(),
+    prisma.response.count(),
+    prisma.user.count(),
+  ]);
+
+  return {
+    totalForms,
+    totalResponses,
+    totalUsers,
+  };
+}
+
+export async function getRecentActivity(limit: number = 10) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Unauthorized");
+
+  return await prisma.response.findMany({
+    take: limit,
+    orderBy: { submittedAt: 'desc' },
+    include: {
+      form: {
+        select: { title: true }
+      }
+    }
+  });
+}
+
 export async function getWaAnalytics(days: number = 7) {
   const session = await getServerSession(authOptions);
   if (!session?.user) throw new Error("Unauthorized");
