@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { sendWaText } from "@/lib/whatsapp";
+import { sendWaText, getWaMediaUrl } from "@/lib/whatsapp";
 
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN;
 
@@ -94,22 +94,27 @@ export async function POST(req: NextRequest) {
               
               let bodyContent = "";
               let type: any = "TEXT";
+              let mediaId = "";
 
               // Extract content based on message type
               if (message.type === "text") {
                 bodyContent = message.text?.body || "";
               } else if (message.type === "image") {
-                bodyContent = "[Gambar]";
+                bodyContent = message.image?.caption || "[Gambar]";
                 type = "IMAGE";
+                mediaId = message.image?.id;
               } else if (message.type === "video") {
-                bodyContent = "[Video]";
+                bodyContent = message.video?.caption || "[Video]";
                 type = "VIDEO";
+                mediaId = message.video?.id;
               } else if (message.type === "document") {
-                bodyContent = "[Dokumen]";
+                bodyContent = message.document?.caption || message.document?.filename || "[Dokumen]";
                 type = "DOCUMENT";
+                mediaId = message.document?.id;
               } else if (message.type === "audio") {
                 bodyContent = "[Audio]";
                 type = "AUDIO";
+                mediaId = message.audio?.id;
               } else if (message.type === "button") {
                 bodyContent = message.button?.text || "[Tombol]";
                 type = "TEXT";
@@ -126,6 +131,15 @@ export async function POST(req: NextRequest) {
                 type = "TEXT";
               } else {
                 bodyContent = `[Pesan ${message.type}]`;
+              }
+
+              // Fetch media URL if it's a media message
+              let mediaUrl = null;
+              if (mediaId) {
+                const mediaRes = await getWaMediaUrl(mediaId);
+                if (mediaRes.success) {
+                  mediaUrl = mediaRes.url;
+                }
               }
 
               // Normalisasi waId (Hanya angka, biasanya 628...)
@@ -177,6 +191,8 @@ export async function POST(req: NextRequest) {
                       waMessageId: messageId,
                       body: bodyContent,
                       type,
+                      mediaUrl: mediaUrl,
+                      mediaCaption: type !== 'TEXT' ? bodyContent : null,
                       fromMe: false,
                       createdAt: timestamp,
                     },

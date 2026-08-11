@@ -67,6 +67,47 @@ export async function sendWaTemplate(to: string, templateName: string, languageC
   });
 }
 
+export async function sendWaMedia(to: string, type: 'image' | 'video' | 'document' | 'audio', url: string, caption?: string) {
+  const mediaObject: any = { link: url };
+  if (caption && (type === 'image' || type === 'video' || type === 'document')) {
+    mediaObject.caption = caption;
+  }
+  
+  // For documents, we might want to specify filename if we can extract it
+  if (type === 'document') {
+    const filename = url.split('/').pop();
+    if (filename) mediaObject.filename = filename;
+  }
+
+  return waRequest('/messages', {
+    messaging_product: 'whatsapp',
+    recipient_type: 'individual',
+    to,
+    type,
+    [type]: mediaObject,
+  });
+}
+
+export async function getWaMediaUrl(mediaId: string) {
+  if (!ACCESS_TOKEN) return { success: false, error: "Access token missing" };
+  
+  const url = `https://graph.facebook.com/${API_VERSION}/${mediaId}`;
+  
+  try {
+    const response = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${ACCESS_TOKEN}` },
+    });
+    
+    const result = await response.json();
+    if (!response.ok) return { success: false, error: result };
+    
+    return { success: true, url: result.url }; // This is the temporary URL to download the file
+  } catch (error) {
+    console.error("getWaMediaUrl Exception:", error);
+    return { success: false, error: "Error fetching media URL from Meta" };
+  }
+}
+
 export async function markWaAsRead(messageId: string) {
   return waRequest('/messages', {
     messaging_product: 'whatsapp',

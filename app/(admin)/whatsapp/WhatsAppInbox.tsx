@@ -6,13 +6,14 @@ import {
     Paperclip, Smile, Shield, Check, CheckCheck, 
     Clock, Filter, UserPlus, Info, Trash2, 
     MessageSquare, Hash, Tag, Plus, RefreshCw,
-    Building, MapPin, Mail, Ticket, UserCheck
+    Building, MapPin, UserCheck, FileText, Image as ImageIcon,
+    Play, Download
 } from "lucide-react";
 import { 
     getWaChats, getWaChatMessages, sendWaMessageAction, 
     assignChatAction, getAgents, getWaQuickReplies, 
     startNewChatAction, syncWaTemplatesAction, updateChatContactAction,
-    updateChatStatusAction
+    updateChatStatusAction, sendWaMediaAction
 } from "@/actions/whatsapp";
 import { updateContact, createContact } from "@/actions/contact";
 import { formatDistance } from "date-fns";
@@ -42,7 +43,9 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
     const [selectedStatus, setSelectedStatus] = useState<string>("");
     const [selectedTag, setSelectedTag] = useState<string>("");
     const [showFilters, setShowFilters] = useState(false);
+    const [uploading, setUploading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -130,6 +133,50 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
             ));
         } catch (error: any) {
             toast.error(error.message || "Gagal mengirim pesan");
+        }
+    };
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !selectedChat) return;
+
+        // Determine media type
+        let type: 'IMAGE' | 'VIDEO' | 'DOCUMENT' | 'AUDIO' = 'DOCUMENT';
+        if (file.type.startsWith('image/')) type = 'IMAGE';
+        else if (file.type.startsWith('video/')) type = 'VIDEO';
+        else if (file.type.startsWith('audio/')) type = 'AUDIO';
+
+        setUploading(true);
+        const toastId = toast.loading(`Mengunggah ${type.toLowerCase()}...`);
+
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const uploadRes = await fetch("/api/upload", {
+                method: "POST",
+                body: formData,
+            });
+
+            const uploadData = await uploadRes.json();
+            if (!uploadData.success) throw new Error(uploadData.error);
+
+            const newMsg = await sendWaMediaAction(selectedChat.id, type, uploadData.url, file.name);
+            setMessages(prev => [...prev, newMsg]);
+            
+            setChats(prevChats => prevChats.map(c => 
+                c.id === selectedChat.id 
+                ? { ...c, lastMessage: `[${type}] ${file.name}`, lastMessageAt: new Date() } 
+                : c
+            ));
+
+            toast.success(`${type} berhasil dikirim`, { id: toastId });
+        } catch (error: any) {
+            console.error(error);
+            toast.error(error.message || "Gagal mengirim media", { id: toastId });
+        } finally {
+            setUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = "";
         }
     };
 
@@ -489,7 +536,40 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                                                 ? "bg-primary-600 text-white rounded-tr-none" 
                                                 : "bg-white text-slate-800 border border-slate-100 rounded-tl-none"
                                             }`}>
-                                                <p className="whitespace-pre-wrap leading-relaxed">{msg.body}</p>
+                                                {msg.type === 'IMAGE' && msg.mediaUrl && (
+                                                    <div className="mb-2 rounded-lg overflow-hidden border border-black/5">
+                                                        <img src={msg.mediaUrl} alt={msg.mediaCaption || "Image"} className="max-w-full h-auto object-contain cursor-pointer hover:opacity-90 transition-opacity" onClick={() => window.open(msg.mediaUrl, '_blank')} />
+                                                    </div>
+                                                )}
+                                                {msg.type === 'VIDEO' && msg.mediaUrl && (
+                                                    <div className="mb-2 rounded-lg overflow-hidden border border-black/5 bg-black/5 aspect-video flex items-center justify-center relative group">
+                                                        <video src={msg.mediaUrl} className="max-w-full max-h-60" controls />
+                                                    </div>
+                                                )}
+                                                {msg.type === 'AUDIO' && msg.mediaUrl && (
+                                                    <div className="mb-2 w-full">
+                                                        <audio src={msg.mediaUrl} controls className="w-full h-8" />
+                                                    </div>
+                                                )}
+                                                {msg.type === 'DOCUMENT' && msg.mediaUrl && (
+                                                    <div className="mb-2 p-3 bg-black/5 rounded-xl border border-black/5 flex items-center gap-3 group/doc cursor-pointer hover:bg-black/10 transition-colors" onClick={() => window.open(msg.mediaUrl, '_blank')}>
+                                                        <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center text-primary-600 shadow-sm">
+                                                            <FileText size={20} />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className={`text-xs font-bold truncate ${msg.fromMe ? 'text-white' : 'text-slate-800'}`}>
+                                                                {msg.mediaCaption || msg.body || "Document"}
+                                                            </p>
+                                                            <p className={`text-[10px] ${msg.fromMe ? 'text-primary-100' : 'text-slate-400'}`}>Klik untuk mengunduh</p>
+                                                        </div>
+                                                        <Download size={16} className={msg.fromMe ? 'text-white/50' : 'text-slate-300'} />
+                                                    </div>
+                                                )}
+                                                
+                                                {msg.type === 'TEXT' || (msg.type !== 'TEXT' && msg.mediaCaption && msg.mediaCaption !== msg.body) ? (
+                                                    <p className="whitespace-pre-wrap leading-relaxed">{msg.body}</p>
+                                                ) : null}
+                                                
                                                 <div className={`flex items-center gap-1 mt-2 justify-end ${msg.fromMe ? "text-primary-200" : "text-slate-400"}`}>
                                                     <span className="text-[9px] font-medium">
                                                         {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -605,9 +685,21 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                                         <button type="button" className="p-2 text-slate-400 hover:text-primary-600 transition-all">
                                             <Smile size={20} />
                                         </button>
-                                        <button type="button" className="p-2 text-slate-400 hover:text-primary-600 transition-all">
+                                        <button 
+                                            type="button" 
+                                            onClick={() => fileInputRef.current?.click()}
+                                            disabled={uploading}
+                                            className={`p-2 transition-all ${uploading ? 'text-primary-400 animate-pulse' : 'text-slate-400 hover:text-primary-600'}`}
+                                        >
                                             <Paperclip size={20} />
                                         </button>
+                                        <input 
+                                            type="file"
+                                            ref={fileInputRef}
+                                            onChange={handleFileUpload}
+                                            className="hidden"
+                                            accept="image/*,video/*,audio/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                                        />
                                         <button 
                                             type="submit"
                                             disabled={!messageInput.trim()}

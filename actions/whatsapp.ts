@@ -3,7 +3,7 @@
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { sendWaText, sendWaTemplate, getWaMetaTemplates } from "@/lib/whatsapp";
+import { sendWaText, sendWaTemplate, getWaMetaTemplates, sendWaMedia } from "@/lib/whatsapp";
 import { revalidatePath } from "next/cache";
 
 import { ChatStatus } from "@prisma/client";
@@ -117,6 +117,47 @@ export async function sendWaMessageAction(chatId: string, body: string, isIntern
     return msg;
   } else {
     throw new Error(result.error?.error?.message || "Gagal mengirim pesan");
+  }
+}
+
+export async function sendWaMediaAction(chatId: string, type: any, url: string, caption?: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Unauthorized");
+
+  const chat = await prisma.waChat.findUnique({
+    where: { id: chatId },
+  });
+
+  if (!chat) throw new Error("Chat not found");
+
+  const result = await sendWaMedia(chat.waId, type.toLowerCase(), url, caption);
+  
+  if (result.success) {
+    const msg = await prisma.waMessage.create({
+      data: {
+        chatId,
+        waMessageId: result.data.messages[0].id,
+        body: caption || `[${type}]`,
+        type: type,
+        mediaUrl: url,
+        mediaCaption: caption,
+        fromMe: true,
+        senderId: (session.user as any).id,
+      },
+    });
+
+    await prisma.waChat.update({
+      where: { id: chatId },
+      data: {
+        lastMessage: caption || `[${type}]`,
+        lastMessageAt: new Date(),
+      },
+    });
+
+    revalidatePath("/whatsapp");
+    return msg;
+  } else {
+    throw new Error(result.error?.error?.message || "Gagal mengirim media");
   }
 }
 

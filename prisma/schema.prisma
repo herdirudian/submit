@@ -329,6 +329,8 @@ model WaMessage {
   fromMe      Boolean     @default(false)
   type        MessageType @default(TEXT)
   body        String      @db.Text
+  mediaUrl    String?     @db.Text
+  mediaCaption String?    @db.Text
   status      MessageStatus @default(SENT)
   isInternal  Boolean     @default(false)
   createdAt   DateTime    @default(now())
