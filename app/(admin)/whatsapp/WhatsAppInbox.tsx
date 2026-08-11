@@ -6,13 +6,14 @@ import {
     Paperclip, Smile, Shield, Check, CheckCheck, 
     Clock, Filter, UserPlus, Info, Trash2, 
     MessageSquare, Hash, Tag, Plus, RefreshCw,
-    Building, MapPin
+    Building, MapPin, Mail, Ticket, UserCheck
 } from "lucide-react";
 import { 
     getWaChats, getWaChatMessages, sendWaMessageAction, 
     assignChatAction, getAgents, getWaQuickReplies, 
     startNewChatAction, syncWaTemplatesAction 
 } from "@/actions/whatsapp";
+import { updateContact } from "@/actions/contact";
 import { formatDistance } from "date-fns";
 import { id } from "date-fns/locale";
 import { X } from "lucide-react";
@@ -33,6 +34,9 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
     const [syncing, setSyncing] = useState(false);
     const [showQuickReplyMenu, setShowQuickReplyMenu] = useState(false);
     const [quickReplyFilter, setQuickReplyFilter] = useState("");
+    const [showProfileSidebar, setShowProfileSidebar] = useState(true);
+    const [isEditingContact, setIsEditingContact] = useState(false);
+    const [editContactData, setEditContactData] = useState<any>({});
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -174,6 +178,39 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
         }
     };
 
+    const handleUpdateContact = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedChat?.contact?.id) return;
+
+        const toastId = toast.loading("Memperbarui data kontak...");
+        try {
+            const updated = await updateContact(selectedChat.contact.id, editContactData);
+            toast.success("Kontak berhasil diperbarui!", { id: toastId });
+            setIsEditingContact(false);
+            
+            // Update local state
+            const updatedChat = { ...selectedChat, contact: updated };
+            setSelectedChat(updatedChat);
+            setChats(prev => prev.map(c => c.id === selectedChat.id ? updatedChat : c));
+        } catch (error: any) {
+            toast.error(error.message || "Gagal memperbarui kontak", { id: toastId });
+        }
+    };
+
+    const startEditing = () => {
+        if (!selectedChat?.contact) return;
+        setEditContactData({
+            name: selectedChat.contact.name || "",
+            email: selectedChat.contact.email || "",
+            company: selectedChat.contact.company || "",
+            city: selectedChat.contact.city || "",
+            tags: selectedChat.contact.tags || "",
+            ticketType: selectedChat.contact.ticketType || "",
+            customerType: selectedChat.contact.customerType || "",
+        });
+        setIsEditingContact(true);
+    };
+
     const filteredChats = chats.filter(c => 
         c.waId.includes(searchTerm) || 
         c.contact?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -290,8 +327,12 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                                         </div>
                                     ))}
                                 </div>
-                                <button className="p-2 text-slate-400 hover:text-primary-600 hover:bg-slate-50 rounded-xl transition-all">
-                                    <UserPlus size={20} />
+                                <button 
+                                    onClick={() => setShowProfileSidebar(!showProfileSidebar)}
+                                    className={`p-2 rounded-xl transition-all ${showProfileSidebar ? 'text-primary-600 bg-primary-50' : 'text-slate-400 hover:text-primary-600 hover:bg-slate-50'}`}
+                                    title="Toggle Profil Pelanggan"
+                                >
+                                    <Info size={20} />
                                 </button>
                                 <button className="p-2 text-slate-400 hover:text-primary-600 hover:bg-slate-50 rounded-xl transition-all">
                                     <MoreVertical size={20} />
@@ -466,81 +507,243 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
             </div>
 
             {/* Right Sidebar: Details & Assignment */}
-            {selectedChat && (
-                <div className="w-72 border-l border-slate-100 bg-white p-6 space-y-8 overflow-y-auto hidden xl:block">
-                    <div className="text-center space-y-3">
-                        <div className="w-20 h-20 rounded-full bg-primary-50 text-primary-600 flex items-center justify-center font-bold text-2xl mx-auto shadow-sm">
-                            {selectedChat.contact?.name?.[0] || <Phone size={32} />}
-                        </div>
-                        <div>
-                            <h4 className="font-bold text-slate-800 text-lg">{selectedChat.contact?.name || "Anonim"}</h4>
-                            <p className="text-sm text-slate-400 font-medium">+{selectedChat.waId}</p>
-                        </div>
-                        <div className="flex justify-center gap-2 pt-2">
-                            <span className="text-[10px] font-bold px-2 py-1 bg-slate-100 text-slate-500 rounded-full uppercase tracking-wider">Pelanggan</span>
-                            {selectedChat.contact?.ticketType && (
-                                <span className="text-[10px] font-bold px-2 py-1 bg-primary-50 text-primary-600 rounded-full uppercase tracking-wider">
-                                    {selectedChat.contact.ticketType}
+            {selectedChat && showProfileSidebar && (
+                <div className="w-80 border-l border-slate-100 bg-white flex flex-col overflow-hidden animate-in slide-in-from-right duration-300">
+                    <div className="p-6 border-b border-slate-50 flex items-center justify-between">
+                        <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest">Profil Pelanggan</h3>
+                        <button onClick={() => setShowProfileSidebar(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                            <X size={18} />
+                        </button>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                        {/* Avatar & Basic Info */}
+                        <div className="text-center space-y-3">
+                            <div className="w-24 h-24 rounded-3xl bg-primary-50 text-primary-600 flex items-center justify-center font-bold text-3xl mx-auto shadow-sm ring-4 ring-primary-50/50">
+                                {selectedChat.contact?.name?.[0] || <Phone size={36} />}
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-slate-800 text-xl leading-tight">{selectedChat.contact?.name || "Anonim"}</h4>
+                                <p className="text-sm text-slate-400 font-medium mt-1">+{selectedChat.waId}</p>
+                            </div>
+                            <div className="flex justify-center flex-wrap gap-2 pt-2">
+                                <span className="text-[10px] font-bold px-2.5 py-1 bg-slate-100 text-slate-500 rounded-lg uppercase tracking-wider">
+                                    {selectedChat.contact?.customerType || "Pelanggan"}
                                 </span>
+                                {selectedChat.contact?.ticketType && (
+                                    <span className="text-[10px] font-bold px-2.5 py-1 bg-primary-50 text-primary-600 rounded-lg uppercase tracking-wider">
+                                        {selectedChat.contact.ticketType}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Assignment Section */}
+                        <div className="space-y-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                            <h5 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                <UserCheck size={14} className="text-primary-500" />
+                                Penugasan Agen
+                            </h5>
+                            <select 
+                                value={selectedChat.assignedTo?.id || ""}
+                                onChange={(e) => handleAssign(e.target.value || null)}
+                                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all bg-white"
+                            >
+                                <option value="">Belum Ditugaskan</option>
+                                {agents.map(agent => (
+                                    <option key={agent.id} value={agent.id}>{agent.name}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Contact Details Section */}
+                        <div className="space-y-6">
+                            <div className="flex items-center justify-between">
+                                <h5 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                    <Info size={14} className="text-primary-500" />
+                                    Detail Informasi
+                                </h5>
+                                {!isEditingContact && selectedChat.contact && (
+                                    <button 
+                                        onClick={startEditing}
+                                        className="text-[10px] font-bold text-primary-600 hover:text-primary-700 uppercase transition-colors"
+                                    >
+                                        Edit
+                                    </button>
+                                )}
+                            </div>
+
+                            {isEditingContact ? (
+                                <form onSubmit={handleUpdateContact} className="space-y-4">
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-bold text-slate-500 uppercase px-1">Nama</label>
+                                        <input 
+                                            type="text"
+                                            value={editContactData.name}
+                                            onChange={e => setEditContactData({...editContactData, name: e.target.value})}
+                                            className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-bold text-slate-500 uppercase px-1">Email</label>
+                                        <input 
+                                            type="email"
+                                            value={editContactData.email}
+                                            onChange={e => setEditContactData({...editContactData, email: e.target.value})}
+                                            className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all"
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-bold text-slate-500 uppercase px-1">Perusahaan</label>
+                                            <input 
+                                                type="text"
+                                                value={editContactData.company}
+                                                onChange={e => setEditContactData({...editContactData, company: e.target.value})}
+                                                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all"
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-bold text-slate-500 uppercase px-1">Kota</label>
+                                            <input 
+                                                type="text"
+                                                value={editContactData.city}
+                                                onChange={e => setEditContactData({...editContactData, city: e.target.value})}
+                                                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-bold text-slate-500 uppercase px-1">Tipe Tiket</label>
+                                            <input 
+                                                type="text"
+                                                value={editContactData.ticketType}
+                                                onChange={e => setEditContactData({...editContactData, ticketType: e.target.value})}
+                                                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all"
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-bold text-slate-500 uppercase px-1">Tipe Customer</label>
+                                            <input 
+                                                type="text"
+                                                value={editContactData.customerType}
+                                                onChange={e => setEditContactData({...editContactData, customerType: e.target.value})}
+                                                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-bold text-slate-500 uppercase px-1">Tags (Pisahkan Koma)</label>
+                                        <input 
+                                            type="text"
+                                            value={editContactData.tags}
+                                            onChange={e => setEditContactData({...editContactData, tags: e.target.value})}
+                                            className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all"
+                                            placeholder="VIP, Agent, Promo"
+                                        />
+                                    </div>
+                                    <div className="flex gap-2 pt-2">
+                                        <button 
+                                            type="button"
+                                            onClick={() => setIsEditingContact(false)}
+                                            className="flex-1 px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors"
+                                        >
+                                            Batal
+                                        </button>
+                                        <button 
+                                            type="submit"
+                                            className="flex-1 px-3 py-2 bg-primary-600 text-white rounded-xl text-xs font-bold hover:bg-primary-700 shadow-lg shadow-primary-100 transition-all"
+                                        >
+                                            Simpan
+                                        </button>
+                                    </div>
+                                </form>
+                            ) : (
+                                <div className="space-y-2">
+                                    <div className="flex items-start gap-4 p-3 rounded-2xl hover:bg-slate-50 transition-colors group">
+                                        <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center shrink-0 group-hover:bg-blue-100 transition-colors">
+                                            <Mail size={16} />
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase">Email</p>
+                                            <p className="text-sm font-bold text-slate-700 truncate">{selectedChat.contact?.email || "-"}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-start gap-4 p-3 rounded-2xl hover:bg-slate-50 transition-colors group">
+                                        <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center shrink-0 group-hover:bg-indigo-100 transition-colors">
+                                            <Building size={16} />
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase">Perusahaan</p>
+                                            <p className="text-sm font-bold text-slate-700 truncate">{selectedChat.contact?.company || "-"}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-start gap-4 p-3 rounded-2xl hover:bg-slate-50 transition-colors group">
+                                        <div className="w-8 h-8 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center shrink-0 group-hover:bg-orange-100 transition-colors">
+                                            <MapPin size={16} />
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase">Kota</p>
+                                            <p className="text-sm font-bold text-slate-700 truncate">{selectedChat.contact?.city || "-"}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-start gap-4 p-3 rounded-2xl hover:bg-slate-50 transition-colors group">
+                                        <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-500 flex items-center justify-center shrink-0 group-hover:bg-emerald-100 transition-colors">
+                                            <Ticket size={16} />
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase">Tipe Tiket</p>
+                                            <p className="text-sm font-bold text-slate-700 truncate">{selectedChat.contact?.ticketType || "-"}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-start gap-4 p-3 rounded-2xl hover:bg-slate-50 transition-colors group">
+                                        <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-500 flex items-center justify-center shrink-0 group-hover:bg-purple-100 transition-colors">
+                                            <Tag size={16} />
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase">Tags / Label</p>
+                                            <div className="flex flex-wrap gap-1 mt-1">
+                                                {selectedChat.contact?.tags ? selectedChat.contact.tags.split(',').map((tag: string, i: number) => (
+                                                    <span key={i} className="text-[9px] font-bold px-2 py-0.5 bg-purple-50 text-purple-600 rounded-md border border-purple-100">
+                                                        {tag.trim()}
+                                                    </span>
+                                                )) : <span className="text-sm font-bold text-slate-700">-</span>}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-start gap-4 p-3 rounded-2xl hover:bg-slate-50 transition-colors group">
+                                        <div className="w-8 h-8 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center shrink-0 group-hover:bg-slate-100 transition-colors">
+                                            <Hash size={16} />
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase">ID Database</p>
+                                            <p className="text-[10px] font-mono text-slate-500 mt-0.5 truncate">{selectedChat.contact?.id || "Belum Terdaftar"}</p>
+                                        </div>
+                                    </div>
+                                </div>
                             )}
                         </div>
+
+                        {!selectedChat.contact && (
+                            <div className="bg-primary-50 p-4 rounded-2xl border border-primary-100 space-y-3">
+                                <p className="text-xs text-primary-700 leading-relaxed">
+                                    Nomor ini belum terdaftar di database kontak Anda.
+                                </p>
+                                <button 
+                                    onClick={() => {
+                                        setNewWaId(selectedChat.waId);
+                                        setShowNewChatModal(true);
+                                    }}
+                                    className="w-full py-2 bg-primary-600 text-white rounded-xl text-xs font-bold hover:bg-primary-700 transition-all shadow-md shadow-primary-100"
+                                >
+                                    Daftarkan Kontak
+                                </button>
+                            </div>
+                        )}
                     </div>
 
-                    <div className="space-y-4">
-                        <h5 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                            <User size={14} />
-                            Penugasan Agen
-                        </h5>
-                        <select 
-                            value={selectedChat.assignedTo?.id || ""}
-                            onChange={(e) => handleAssign(e.target.value || null)}
-                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all bg-slate-50"
-                        >
-                            <option value="">Belum Ditugaskan</option>
-                            {agents.map(agent => (
-                                <option key={agent.id} value={agent.id}>{agent.name}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div className="space-y-4">
-                        <h5 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                            <Info size={14} />
-                            Informasi Kontak
-                        </h5>
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-3">
-                                <Building size={14} className="text-slate-300" />
-                                <div className="text-xs">
-                                    <p className="text-slate-400">Perusahaan</p>
-                                    <p className="font-bold text-slate-700">{selectedChat.contact?.company || "-"}</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <MapPin size={14} className="text-slate-300" />
-                                <div className="text-xs">
-                                    <p className="text-slate-400">Kota</p>
-                                    <p className="font-bold text-slate-700">{selectedChat.contact?.city || "-"}</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <Hash size={14} className="text-slate-300" />
-                                <div className="text-xs">
-                                    <p className="text-slate-400">ID Kontak</p>
-                                    <p className="font-bold text-slate-700">{selectedChat.contact?.id || "N/A"}</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <Tag size={14} className="text-slate-300" />
-                                <div className="text-xs">
-                                    <p className="text-slate-400">Label/Tag</p>
-                                    <p className="font-bold text-slate-700">{selectedChat.contact?.tags || "-"}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="pt-4">
+                    <div className="p-6 border-t border-slate-50">
                         <button className="w-full flex items-center justify-center gap-2 px-4 py-3 text-red-500 hover:bg-red-50 rounded-xl transition-all text-sm font-bold">
                             <Trash2 size={18} />
                             Hapus Percakapan
