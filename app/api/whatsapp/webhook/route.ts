@@ -30,7 +30,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const url = new URL(req.url);
+  const cfRay = req.headers.get("cf-ray") || "none";
   console.log(`=== [WEBHOOK] INCOMING POST REQUEST ===`);
+  console.log(`[WEBHOOK] CF-Ray: ${cfRay}`);
   console.log(`[WEBHOOK] Path: ${url.pathname}`);
   console.log(`[WEBHOOK] Headers: ${JSON.stringify(Object.fromEntries(req.headers.entries()))}`);
   

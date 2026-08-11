@@ -112,10 +112,11 @@ export async function getWaMetaTemplates() {
 
       if (!infoData.whatsapp_business_account) {
         console.warn("[WA-API] WABA ID not found in Meta response. Check your App permissions.");
+        console.log("[WA-API] Available fields in response:", Object.keys(infoData));
         return { 
-          success: true, 
+          success: false, 
           data: [], 
-          warning: "WABA ID tidak ditemukan. Pastikan Token memiliki izin 'whatsapp_business_management'." 
+          error: "WABA ID tidak ditemukan dalam respon Meta. Pastikan Token memiliki izin 'whatsapp_business_management'." 
         };
       }
 
