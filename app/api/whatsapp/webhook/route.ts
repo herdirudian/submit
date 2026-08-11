@@ -29,16 +29,15 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const headers = Object.fromEntries(req.headers.entries());
+  const url = new URL(req.url);
   console.log(`=== [WEBHOOK] INCOMING POST REQUEST ===`);
-  console.log(`[WEBHOOK] IP: ${headers['x-forwarded-for'] || 'unknown'}`);
-  console.log(`[WEBHOOK] CF-Ray: ${headers['cf-ray'] || 'Not via Cloudflare'}`);
-  console.log(`[WEBHOOK] User-Agent: ${headers['user-agent']}`);
+  console.log(`[WEBHOOK] Path: ${url.pathname}`);
+  console.log(`[WEBHOOK] Headers: ${JSON.stringify(Object.fromEntries(req.headers.entries()))}`);
   
   try {
     const body = await req.json();
-    // Log full payload for debugging - very important for first-time setup
-    console.log("[WEBHOOK] Full Payload:", JSON.stringify(body, null, 2));
+    console.log("=== [WEBHOOK] FULL PAYLOAD BODY ===");
+    console.log(JSON.stringify(body, null, 2));
 
     if (body.object === "whatsapp_business_account") {
       if (!body.entry || !Array.isArray(body.entry)) {
