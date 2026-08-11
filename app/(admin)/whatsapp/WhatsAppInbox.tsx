@@ -11,7 +11,8 @@ import {
 import { 
     getWaChats, getWaChatMessages, sendWaMessageAction, 
     assignChatAction, getAgents, getWaQuickReplies, 
-    startNewChatAction, syncWaTemplatesAction, updateChatContactAction
+    startNewChatAction, syncWaTemplatesAction, updateChatContactAction,
+    updateChatStatusAction
 } from "@/actions/whatsapp";
 import { updateContact, createContact } from "@/actions/contact";
 import { formatDistance } from "date-fns";
@@ -38,6 +39,9 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
     const [isEditingContact, setIsEditingContact] = useState(false);
     const [isRegisteringContact, setIsRegisteringContact] = useState(false);
     const [editContactData, setEditContactData] = useState<any>({});
+    const [selectedStatus, setSelectedStatus] = useState<string>("");
+    const [selectedTag, setSelectedTag] = useState<string>("");
+    const [showFilters, setShowFilters] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -50,11 +54,14 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
 
         loadQuickReplies();
         return () => clearInterval(interval);
-    }, [selectedChat]);
+    }, [selectedChat, selectedStatus, selectedTag]);
 
     async function refreshChats() {
         try {
-            const data = await getWaChats();
+            const data = await getWaChats({ 
+                status: selectedStatus as any || undefined, 
+                tag: selectedTag || undefined 
+            });
             setChats(data);
         } catch (error) {
             console.error("Polling chats failed", error);
@@ -162,6 +169,25 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
         }
     };
 
+    const handleUpdateStatus = async (status: any) => {
+        if (!selectedChat) return;
+        const toastId = toast.loading("Memperbarui status chat...");
+        try {
+            await updateChatStatusAction(selectedChat.id, status);
+            const updatedChat = { ...selectedChat, status };
+            setSelectedChat(updatedChat);
+            setChats(prev => prev.map(c => 
+                c.id === selectedChat.id 
+                ? updatedChat
+                : c
+            ));
+            toast.success(`Status chat diubah menjadi ${status}`, { id: toastId });
+        } catch (error) {
+            console.error(error);
+            toast.error("Gagal memperbarui status chat", { id: toastId });
+        }
+    };
+
     const handleSyncTemplates = async () => {
         setSyncing(true);
         const toastId = toast.loading("Menyinkronkan template dari Meta...");
@@ -264,7 +290,11 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                             >
                                 <RefreshCw size={18} className={syncing ? "animate-spin" : ""} />
                             </button>
-                            <button className="p-2 text-slate-400 hover:text-primary-600 hover:bg-white rounded-xl transition-all">
+                            <button 
+                                onClick={() => setShowFilters(!showFilters)}
+                                className={`p-2 rounded-xl transition-all ${showFilters ? 'text-primary-600 bg-primary-50' : 'text-slate-400 hover:text-primary-600 hover:bg-white'}`}
+                                title="Filter Chat"
+                            >
                                 <Filter size={18} />
                             </button>
                             <button 
@@ -275,6 +305,41 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                             </button>
                         </div>
                     </div>
+                    {showFilters && (
+                        <div className="space-y-3 p-3 bg-white rounded-2xl border border-slate-100 shadow-sm animate-in fade-in slide-in-from-top-2 duration-200">
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-bold text-slate-400 uppercase px-1">Status Chat</label>
+                                <select 
+                                    value={selectedStatus}
+                                    onChange={(e) => setSelectedStatus(e.target.value)}
+                                    className="w-full px-3 py-1.5 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                >
+                                    <option value="">Semua Status</option>
+                                    <option value="OPEN">Open</option>
+                                    <option value="PENDING">Pending</option>
+                                    <option value="RESOLVED">Resolved</option>
+                                </select>
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-bold text-slate-400 uppercase px-1">Tag Kontak</label>
+                                <input 
+                                    type="text"
+                                    placeholder="Filter berdasarkan tag..."
+                                    value={selectedTag}
+                                    onChange={(e) => setSelectedTag(e.target.value)}
+                                    className="w-full px-3 py-1.5 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                />
+                            </div>
+                            {(selectedStatus || selectedTag) && (
+                                <button 
+                                    onClick={() => { setSelectedStatus(""); setSelectedTag(""); }}
+                                    className="w-full py-1.5 text-[10px] font-bold text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                >
+                                    Reset Filter
+                                </button>
+                            )}
+                        </div>
+                    )}
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                         <input 
@@ -298,8 +363,15 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                                 : "border-transparent hover:bg-white/50"
                             }`}
                         >
-                            <div className="w-12 h-12 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-bold text-lg shrink-0">
-                                {chat.contact?.name?.[0] || <Phone size={20} />}
+                            <div className="relative shrink-0">
+                                <div className="w-12 h-12 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-bold text-lg">
+                                    {chat.contact?.name?.[0] || <Phone size={20} />}
+                                </div>
+                                <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white ${
+                                    chat.status === 'OPEN' ? 'bg-green-500' : 
+                                    chat.status === 'PENDING' ? 'bg-amber-500' : 
+                                    'bg-slate-400'
+                                }`} />
                             </div>
                             <div className="flex-1 min-w-0">
                                 <div className="flex justify-between items-baseline mb-1">
@@ -313,14 +385,23 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                                 <p className="text-xs text-slate-500 line-clamp-1">
                                     {chat.lastMessage || "Belum ada pesan"}
                                 </p>
-                                {chat.assignedTo && (
-                                    <div className="mt-2 flex items-center gap-1">
-                                        <div className="w-4 h-4 rounded-full bg-slate-200 flex items-center justify-center text-[8px] font-bold text-slate-600">
-                                            {chat.assignedTo.name[0]}
+                                <div className="mt-2 flex items-center gap-2">
+                                    {chat.assignedTo && (
+                                        <div className="flex items-center gap-1">
+                                            <div className="w-4 h-4 rounded-full bg-slate-200 flex items-center justify-center text-[8px] font-bold text-slate-600">
+                                                {chat.assignedTo.name[0]}
+                                            </div>
+                                            <span className="text-[10px] text-slate-400 font-medium">{chat.assignedTo.name}</span>
                                         </div>
-                                        <span className="text-[10px] text-slate-400 font-medium">{chat.assignedTo.name}</span>
-                                    </div>
-                                )}
+                                    )}
+                                    {chat.status !== 'OPEN' && (
+                                        <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider ${
+                                            chat.status === 'PENDING' ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'bg-slate-50 text-slate-500 border border-slate-200'
+                                        }`}>
+                                            {chat.status}
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                             {chat._count.messages > 0 && (
                                 <div className="w-5 h-5 bg-primary-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold shadow-lg shadow-primary-100">
@@ -345,7 +426,20 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                                 <div>
                                     <h3 className="text-sm font-bold text-slate-800">{selectedChat.contact?.name || `+${selectedChat.waId}`}</h3>
                                     <div className="flex items-center gap-2 mt-0.5">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+                                        <select 
+                                            value={selectedChat.status}
+                                            onChange={(e) => handleUpdateStatus(e.target.value)}
+                                            className={`text-[9px] font-bold px-2 py-0.5 rounded-md border outline-none transition-all cursor-pointer ${
+                                                selectedChat.status === 'OPEN' ? 'bg-green-50 text-green-600 border-green-100' : 
+                                                selectedChat.status === 'PENDING' ? 'bg-amber-50 text-amber-600 border-amber-100' : 
+                                                'bg-slate-50 text-slate-500 border-slate-200'
+                                            }`}
+                                        >
+                                            <option value="OPEN">🟢 OPEN</option>
+                                            <option value="PENDING">🟠 PENDING</option>
+                                            <option value="RESOLVED">⚪ RESOLVED</option>
+                                        </select>
+                                        <span className="text-[10px] text-slate-300">|</span>
                                         <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">WhatsApp Cloud API</span>
                                     </div>
                                 </div>

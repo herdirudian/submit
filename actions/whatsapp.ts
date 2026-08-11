@@ -6,12 +6,25 @@ import { authOptions } from "@/lib/auth";
 import { sendWaText, sendWaTemplate, getWaMetaTemplates } from "@/lib/whatsapp";
 import { revalidatePath } from "next/cache";
 
-export async function getWaChats() {
+import { ChatStatus } from "@prisma/client";
+
+export async function getWaChats(params: { status?: ChatStatus; tag?: string } = {}) {
   const session = await getServerSession(authOptions);
   if (!session?.user) throw new Error("Unauthorized");
 
-  console.log(`[ACTION] Fetching chats for user: ${session.user.email}`);
+  const { status, tag } = params;
+  const where: any = {};
+  
+  if (status) where.status = status;
+  if (tag) {
+    where.contact = {
+      tags: { contains: tag }
+    };
+  }
+
+  console.log(`[ACTION] Fetching chats for user: ${session.user.email} with params:`, params);
   const chats = await prisma.waChat.findMany({
+    where,
     orderBy: { lastMessageAt: 'desc' },
     include: {
       contact: true,
@@ -27,6 +40,18 @@ export async function getWaChats() {
   });
   console.log(`[ACTION] Found ${chats.length} chats.`);
   return chats;
+}
+
+export async function updateChatStatusAction(chatId: string, status: ChatStatus) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Unauthorized");
+
+  await prisma.waChat.update({
+    where: { id: chatId },
+    data: { status },
+  });
+
+  revalidatePath("/whatsapp");
 }
 
 export async function getWaChatMessages(chatId: string) {
