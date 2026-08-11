@@ -250,3 +250,15 @@ export async function syncWaTemplatesAction() {
     return { success: false, error: error.message || "Terjadi kesalahan sistem saat sinkronisasi." };
   }
 }
+
+export async function updateChatContactAction(chatId: string, contactId: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Unauthorized");
+
+  await prisma.waChat.update({
+    where: { id: chatId },
+    data: { contactId },
+  });
+
+  revalidatePath("/whatsapp");
+}
