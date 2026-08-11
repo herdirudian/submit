@@ -32,6 +32,12 @@ export default function SettingsPage() {
   const [whatsappApiUrl, setWhatsappApiUrl] = useState("");
   const [whatsappApiKey, setWhatsappApiKey] = useState("");
 
+  const [waAutoReplyEnabled, setWaAutoReplyEnabled] = useState(false);
+  const [waAutoReplyMessage, setWaAutoReplyMessage] = useState("");
+  const [waWorkingHoursStart, setWaWorkingHoursStart] = useState("08:00");
+  const [waWorkingHoursEnd, setWaWorkingHoursEnd] = useState("17:00");
+  const [waWorkingDays, setWaWorkingDays] = useState("1,2,3,4,5,6,7");
+
   const [testWaNumber, setTestWaNumber] = useState("");
   const [isTestingWa, setIsTestingWa] = useState(false);
 
@@ -59,6 +65,11 @@ export default function SettingsPage() {
         setTiktokUrl(data.appSettings.tiktokUrl ?? "");
         setWhatsappApiUrl(data.appSettings.whatsappApiUrl ?? "");
         setWhatsappApiKey(data.appSettings.whatsappApiKey ?? "");
+        setWaAutoReplyEnabled(data.appSettings.waAutoReplyEnabled ?? false);
+        setWaAutoReplyMessage(data.appSettings.waAutoReplyMessage ?? "");
+        setWaWorkingHoursStart(data.appSettings.waWorkingHoursStart ?? "08:00");
+        setWaWorkingHoursEnd(data.appSettings.waWorkingHoursEnd ?? "17:00");
+        setWaWorkingDays(data.appSettings.waWorkingDays ?? "1,2,3,4,5,6,7");
       })
       .catch(() => {
         if (cancelled) return;
@@ -116,6 +127,11 @@ export default function SettingsPage() {
           tiktokUrl,
           whatsappApiUrl,
           whatsappApiKey,
+          waAutoReplyEnabled,
+          waAutoReplyMessage,
+          waWorkingHoursStart,
+          waWorkingHoursEnd,
+          waWorkingDays,
         });
         toast.success("Settings branding & footer tersimpan");
       } catch {
@@ -454,6 +470,110 @@ export default function SettingsPage() {
               >
                 {isPending ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
                 Simpan API WA
+              </button>
+            </div>
+          </div>
+
+          {/* WhatsApp Auto Reply & Jam Operasional */}
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+              <div className="text-lg font-bold text-slate-800">WhatsApp Auto-Reply & Jam Operasional</div>
+              <div className="text-sm text-slate-500">Otomatisasi balasan pesan saat di luar jam kerja.</div>
+            </div>
+            <div className="p-6 space-y-6">
+              <div className="flex items-center justify-between p-4 rounded-xl border border-slate-200 bg-slate-50">
+                <div>
+                  <div className="font-bold text-slate-800">Aktifkan Auto-Reply</div>
+                  <div className="text-xs text-slate-500">Kirim pesan otomatis jika ada chat masuk di luar jam operasional.</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setWaAutoReplyEnabled(!waAutoReplyEnabled)}
+                  className={`w-12 h-6 rounded-full transition-colors relative ${waAutoReplyEnabled ? 'bg-primary-600' : 'bg-slate-300'}`}
+                >
+                  <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${waAutoReplyEnabled ? 'left-7' : 'left-1'}`} />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Jam Mulai Operasional</label>
+                  <input
+                    type="time"
+                    value={waWorkingHoursStart}
+                    onChange={(e) => setWaWorkingHoursStart(e.target.value)}
+                    className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-100"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Jam Selesai Operasional</label>
+                  <input
+                    type="time"
+                    value={waWorkingHoursEnd}
+                    onChange={(e) => setWaWorkingHoursEnd(e.target.value)}
+                    className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-100"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Hari Operasional</label>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { id: '1', label: 'Sen' },
+                    { id: '2', label: 'Sel' },
+                    { id: '3', label: 'Rab' },
+                    { id: '4', label: 'Kam' },
+                    { id: '5', label: 'Jum' },
+                    { id: '6', label: 'Sab' },
+                    { id: '7', label: 'Min' },
+                  ].map((day) => {
+                    const isActive = waWorkingDays.split(',').includes(day.id);
+                    return (
+                      <button
+                        key={day.id}
+                        type="button"
+                        onClick={() => {
+                          const days = waWorkingDays.split(',').filter(d => d !== "");
+                          if (isActive) {
+                            setWaWorkingDays(days.filter(d => d !== day.id).join(','));
+                          } else {
+                            setWaWorkingDays([...days, day.id].sort().join(','));
+                          }
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+                          isActive 
+                          ? 'bg-primary-600 border-primary-600 text-white' 
+                          : 'bg-white border-slate-200 text-slate-600 hover:border-primary-300'
+                        }`}
+                      >
+                        {day.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Pesan Auto-Reply</label>
+                <textarea
+                  value={waAutoReplyMessage}
+                  onChange={(e) => setWaAutoReplyMessage(e.target.value)}
+                  rows={4}
+                  className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-100"
+                  placeholder="Contoh: Terima kasih sudah menghubungi The Lodge Maribaya. Saat ini kantor kami sudah tutup..."
+                />
+                <p className="text-[10px] text-slate-400 mt-1">Gunakan bahasa yang ramah dan informatif.</p>
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end">
+              <button
+                onClick={saveBranding}
+                disabled={!canSave || isPending}
+                className="flex items-center gap-2 px-6 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-primary-100 disabled:opacity-50"
+              >
+                {isPending ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                Simpan Auto-Reply
               </button>
             </div>
           </div>

@@ -166,6 +166,13 @@ model AppSettings {
   whatsappApiUrl        String?
   whatsappApiKey        String?
   
+  // WhatsApp Auto Reply & Working Hours
+  waAutoReplyEnabled    Boolean  @default(false)
+  waAutoReplyMessage    String?  @db.Text
+  waWorkingHoursStart   String?  @default("08:00")
+  waWorkingHoursEnd     String?  @default("17:00")
+  waWorkingDays         String?  @default("1,2,3,4,5,6,7") // 1=Mon, 7=Sun
+  
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 

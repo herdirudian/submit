@@ -186,23 +186,46 @@ export async function POST(req: NextRequest) {
                   console.log(`[WEBHOOK] Skipping duplicate message: ${messageId}`);
                 }
 
-                // Auto-reply logic (Jam Operasional: 17:00 - 08:00)
-                const hour = new Date().getHours();
-                if (isNewChat && (hour < 8 || hour > 17)) {
-                  console.log(`[WEBHOOK] Triggering off-hours auto-reply`);
-                  const autoMsg = "Halo! Terima kasih telah menghubungi The Lodge Maribaya. Saat ini kami sedang di luar jam operasional. Kami akan membalas pesan Anda segera setelah kami kembali bertugas (Jam 08:00 - 17:00).";
+                // Dynamic Auto-reply logic
+                try {
+                  const settings = await prisma.appSettings.findUnique({ where: { id: "singleton" } });
                   
-                  const sendResult = await sendWaText(cleanWaId, autoMsg);
-                  if (sendResult.success) {
-                    await prisma.waMessage.create({
-                      data: {
-                        chatId: chat.id,
-                        body: autoMsg,
-                        fromMe: true,
-                        status: 'SENT',
+                  if (settings?.waAutoReplyEnabled && settings.waAutoReplyMessage) {
+                    const now = new Date();
+                    // Meta sends timestamp, but let's use server time for operational hours check
+                    // Adjust to Asia/Bangkok if needed, but new Date() follows server time
+                    
+                    const day = now.getDay() === 0 ? 7 : now.getDay(); // 1=Mon, 7=Sun
+                    const timeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+                    
+                    const workingDays = settings.waWorkingDays?.split(',') || [];
+                    const isWorkingDay = workingDays.includes(day.toString());
+                    
+                    const isWithinHours = 
+                      timeStr >= (settings.waWorkingHoursStart || "08:00") && 
+                      timeStr <= (settings.waWorkingHoursEnd || "17:00");
+
+                    // Trigger if it's NOT a working day OR NOT within working hours
+                    if (isNewChat && (!isWorkingDay || !isWithinHours)) {
+                      console.log(`[WEBHOOK] Triggering dynamic off-hours auto-reply`);
+                      const autoMsg = settings.waAutoReplyMessage;
+                      
+                      const sendResult = await sendWaText(cleanWaId, autoMsg);
+                      if (sendResult.success) {
+                        await prisma.waMessage.create({
+                          data: {
+                            chatId: chat.id,
+                            body: autoMsg,
+                            fromMe: true,
+                            status: 'SENT',
+                            waMessageId: sendResult.data?.messages?.[0]?.id,
+                          }
+                        });
                       }
-                    });
+                    }
                   }
+                } catch (settingsErr) {
+                  console.error("[WEBHOOK] Auto-reply settings error:", settingsErr);
                 }
               } catch (dbErr) {
                 console.error("[WEBHOOK] Database Operation Error:", dbErr);
