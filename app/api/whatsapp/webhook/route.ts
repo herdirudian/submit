@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { sendWaText, getWaMediaUrl } from "@/lib/whatsapp";
+import { sendWaText, getWaMediaUrl, downloadWaMedia } from "@/lib/whatsapp";
+import { writeFile, mkdir } from "fs/promises";
+import path from "path";
 
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN;
 
@@ -137,8 +139,22 @@ export async function POST(req: NextRequest) {
               let mediaUrl = null;
               if (mediaId) {
                 const mediaRes = await getWaMediaUrl(mediaId);
-                if (mediaRes.success) {
-                  mediaUrl = mediaRes.url;
+                if (mediaRes.success && mediaRes.url) {
+                  // Download and save locally because Meta URLs require Auth headers
+                  const buffer = await downloadWaMedia(mediaRes.url);
+                  if (buffer) {
+                    const ext = type === 'IMAGE' ? '.jpg' : type === 'VIDEO' ? '.mp4' : type === 'AUDIO' ? '.ogg' : '.pdf';
+                    const filename = `wa-${mediaId}${ext}`;
+                    const uploadDir = path.join(process.cwd(), "public", "uploads");
+                    
+                    await mkdir(uploadDir, { recursive: true });
+                    await writeFile(path.join(uploadDir, filename), buffer);
+                    
+                    // Construct local URL
+                    const host = req.headers.get("host");
+                    const protocol = req.headers.get("x-forwarded-proto") || "http";
+                    mediaUrl = `${protocol}://${host}/uploads/${filename}`;
+                  }
                 }
               }
 

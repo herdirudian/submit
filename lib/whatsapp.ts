@@ -108,6 +108,27 @@ export async function getWaMediaUrl(mediaId: string) {
   }
 }
 
+export async function downloadWaMedia(url: string) {
+  if (!ACCESS_TOKEN) return null;
+  
+  try {
+    const response = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${ACCESS_TOKEN}` },
+    });
+    
+    if (!response.ok) {
+      console.error("[WA-API] Failed to download media content");
+      return null;
+    }
+    
+    const arrayBuffer = await response.arrayBuffer();
+    return Buffer.from(arrayBuffer);
+  } catch (error) {
+    console.error("[WA-API] downloadWaMedia Exception:", error);
+    return null;
+  }
+}
+
 export async function markWaAsRead(messageId: string) {
   return waRequest('/messages', {
     messaging_product: 'whatsapp',
