@@ -26,7 +26,13 @@ async function waRequest(endpoint: string, data: any) {
     const result = await response.json();
     
     if (!response.ok) {
-      console.error(`WhatsApp API Error (${endpoint}):`, result);
+      console.error(`[WA-API] Error (${endpoint}):`, JSON.stringify(result, null, 2));
+      if (result.error?.message === "API access blocked.") {
+        return { 
+          success: false, 
+          error: "Akses API diblokir oleh Meta. Silakan cek status aplikasi Meta Anda dan pastikan Token valid." 
+        };
+      }
       return { success: false, error: result };
     }
 
@@ -93,12 +99,23 @@ export async function getWaMetaTemplates() {
       });
       const infoData = await infoRes.json();
       
-      if (!infoData.whatsapp_business_account) {
-        console.warn("[WA-API] Automatic WABA ID lookup failed. Meta Response:", JSON.stringify(infoData));
+      console.log("[WA-API] Account Info Response:", JSON.stringify(infoData, null, 2));
+
+      if (infoData.error) {
+        console.error("[WA-API] Meta API Error during lookup:", infoData.error.message);
         return { 
           success: true, 
           data: [], 
-          warning: "WhatsApp Business Account ID tidak ditemukan otomatis. Harap isi WHATSAPP_BUSINESS_ACCOUNT_ID di .env." 
+          error: `Meta API Error: ${infoData.error.message}` 
+        };
+      }
+
+      if (!infoData.whatsapp_business_account) {
+        console.warn("[WA-API] WABA ID not found in Meta response. Check your App permissions.");
+        return { 
+          success: true, 
+          data: [], 
+          warning: "WABA ID tidak ditemukan. Pastikan Token memiliki izin 'whatsapp_business_management'." 
         };
       }
 
