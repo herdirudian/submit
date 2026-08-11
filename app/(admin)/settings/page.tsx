@@ -406,7 +406,7 @@ export default function SettingsPage() {
                     className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-300"
                     placeholder="Contoh: 123456789012345"
                   />
-                  <p className="text-[10px] text-slate-400 mt-1">Dapatkan dari Dashboard Meta Developer > WhatsApp > Getting Started.</p>
+                  <p className="text-[10px] text-slate-400 mt-1">Dapatkan dari Dashboard Meta Developer &gt; WhatsApp &gt; Getting Started.</p>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">WABA ID (WhatsApp Business Account ID)</label>
