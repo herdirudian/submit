@@ -50,9 +50,9 @@ export default function WaCampaignList({ initialCampaigns }: { initialCampaigns:
                 <p className="text-sm mb-6">Mulai buat pesan massal pertama Anda untuk menjangkau pelanggan.</p>
                 <Link 
                     href="/campaigns/new?type=WHATSAPP"
-                    className="px-6 py-2 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition-all"
+                    className="px-6 py-2 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition-all shadow-lg shadow-primary-100"
                 >
-                    Buat Pesan WA Sekarang
+                    Buat Blast WA Sekarang
                 </Link>
             </div>
         );

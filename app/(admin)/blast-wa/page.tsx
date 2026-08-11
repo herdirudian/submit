@@ -13,35 +13,35 @@ export default async function BlastWaDashboard() {
             <div className="flex justify-between items-center">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-800">Blast WhatsApp</h1>
-                    <p className="text-slate-500 mt-1">Kirim pesan WhatsApp massal via OpenWA.</p>
+                    <p className="text-slate-500 mt-1">Kirim pesan WhatsApp massal menggunakan Template Resmi Meta.</p>
                 </div>
                 <div className="flex gap-3">
                     <Link 
-                        href="/settings"
+                        href="/whatsapp/templates"
                         className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-all shadow-sm"
                     >
-                        <Settings size={18} />
-                        Konfigurasi API
+                        <Megaphone size={18} />
+                        Kelola Template
                     </Link>
                     <Link 
                         href="/campaigns/new?type=WHATSAPP"
-                        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition-all shadow-sm"
+                        className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition-all shadow-lg shadow-primary-100"
                     >
                         <Send size={18} />
-                        Buat Pesan WA
+                        Buat Blast WA
                     </Link>
                 </div>
             </div>
 
-            <div className="bg-green-50 border border-green-200 p-6 rounded-2xl flex flex-col md:flex-row gap-6 items-center">
-                <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center shrink-0 text-green-600">
+            <div className="bg-primary-50 border border-primary-100 p-6 rounded-3xl flex flex-col md:flex-row gap-6 items-center">
+                <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shrink-0 text-primary-600 shadow-sm border border-primary-100">
                     <MessageCircle size={32} />
                 </div>
                 <div>
-                    <h2 className="text-lg font-bold text-green-800 mb-2">Integrasi OpenWA Aktif</h2>
-                    <p className="text-green-700 text-sm leading-relaxed">
-                        Fitur Blast WhatsApp sudah siap digunakan. Pastikan Anda telah memasukkan URL API OpenWA Anda di menu <b>Settings</b>.
-                        Sistem akan otomatis mengatur jeda (delay) secara natural untuk mencegah blokir.
+                    <h2 className="text-lg font-bold text-primary-800 mb-1">WhatsApp Cloud API Aktif</h2>
+                    <p className="text-primary-700/80 text-sm leading-relaxed">
+                        Fitur Blast WhatsApp menggunakan infrastruktur resmi Meta. Pastikan Anda telah mensinkronisasi template di menu <b>Template WA</b> sebelum membuat campaign baru.
+                        Sistem ini mendukung personalisasi variabel seperti nama pelanggan otomatis.
                     </p>
                 </div>
             </div>
