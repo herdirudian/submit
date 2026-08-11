@@ -103,29 +103,37 @@ export async function getWaMetaTemplates() {
 
       if (infoData.error) {
         console.error("[WA-API] Meta API Error during lookup:", infoData.error.message);
+        // If it's a permission error, let the user know
+        if (infoData.error.code === 200 || infoData.error.message.includes("permission")) {
+          return {
+            success: false,
+            error: "Token tidak memiliki izin untuk melihat info akun. Pastikan Token memiliki izin 'whatsapp_business_management' dan 'whatsapp_business_messaging'."
+          };
+        }
         return { 
-          success: true, 
-          data: [], 
+          success: false, 
           error: `Meta API Error: ${infoData.error.message}` 
         };
       }
 
       if (!infoData.whatsapp_business_account) {
         console.warn("[WA-API] WABA ID not found in Meta response. Check your App permissions.");
-        console.log("[WA-API] Available fields in response:", Object.keys(infoData));
         return { 
           success: false, 
-          data: [], 
-          error: "WABA ID tidak ditemukan dalam respon Meta. Pastikan Token memiliki izin 'whatsapp_business_management'." 
+          error: "WABA ID tidak ditemukan. Masukkan WHATSAPP_BUSINESS_ACCOUNT_ID secara manual di .env atau pastikan izin token lengkap." 
         };
       }
 
       wabaId = infoData.whatsapp_business_account.id;
       console.log(`[WA-API] Automatic WABA ID lookup successful: ${wabaId}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error("[WA-API] WABA ID lookup exception:", error);
-      return { success: true, data: [], error: "Error looking up WABA ID" };
+      return { success: false, error: `Gagal mencari WABA ID: ${error.message}` };
     }
+  }
+
+  if (!wabaId) {
+    return { success: false, error: "WhatsApp Business Account ID (WABA ID) tidak ditemukan." };
   }
 
   // 2. Fetch templates using WABA ID

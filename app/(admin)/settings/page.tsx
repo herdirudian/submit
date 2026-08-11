@@ -393,34 +393,41 @@ export default function SettingsPage() {
           {/* WhatsApp API Settings */}
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-              <div className="text-lg font-bold text-slate-800">WhatsApp API Integration (OpenWA)</div>
-              <div className="text-sm text-slate-500">Konfigurasi API endpoint untuk fitur WhatsApp Blast.</div>
+              <div className="text-lg font-bold text-slate-800">WhatsApp Cloud API (Meta)</div>
+              <div className="text-sm text-slate-500">Konfigurasi WhatsApp Business API resmi dari Meta.</div>
             </div>
             <div className="p-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">OpenWA API URL</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Phone Number ID</label>
                   <input
                     value={whatsappApiUrl}
                     onChange={(e) => setWhatsappApiUrl(e.target.value)}
                     className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-300"
-                    placeholder="http://localhost:3000 atau https://wa.domain.com"
+                    placeholder="Contoh: 123456789012345"
                   />
+                  <p className="text-[10px] text-slate-400 mt-1">Dapatkan dari Dashboard Meta Developer > WhatsApp > Getting Started.</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">API Key / Token (Opsional)</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">WABA ID (WhatsApp Business Account ID)</label>
                   <input
-                    type="password"
                     value={whatsappApiKey}
                     onChange={(e) => setWhatsappApiKey(e.target.value)}
                     className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-300"
-                    placeholder="Masukkan token rahasia jika diperlukan"
+                    placeholder="Contoh: 987654321098765"
                   />
+                  <p className="text-[10px] text-slate-400 mt-1">ID Akun Bisnis WhatsApp Anda.</p>
                 </div>
               </div>
 
+              <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl">
+                <p className="text-xs text-amber-800 leading-relaxed">
+                  <b>Catatan Penting:</b> Untuk menerima pesan dari pelanggan umum, pastikan App Mode di Meta Console diatur ke <b>"Live"</b> dan fitur <b>"whatsapp_business_messaging"</b> memiliki status <b>Advanced Access</b>.
+                </p>
+              </div>
+
               <div className="mt-6 p-4 border border-slate-200 rounded-xl bg-slate-50">
-                <div className="font-semibold text-sm mb-3">Test Koneksi WhatsApp</div>
+                <div className="font-semibold text-sm mb-3">Test Kirim Pesan</div>
                 <div className="flex gap-2">
                   <input
                     value={testWaNumber}

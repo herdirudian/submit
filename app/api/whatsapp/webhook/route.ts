@@ -32,13 +32,20 @@ export async function POST(req: NextRequest) {
   const url = new URL(req.url);
   const cfRay = req.headers.get("cf-ray") || "none";
   console.log(`=== [WEBHOOK] INCOMING POST REQUEST ===`);
+  console.log(`[WEBHOOK] Time: ${new Date().toISOString()}`);
   console.log(`[WEBHOOK] CF-Ray: ${cfRay}`);
-  console.log(`[WEBHOOK] Path: ${url.pathname}`);
-  console.log(`[WEBHOOK] Headers: ${JSON.stringify(Object.fromEntries(req.headers.entries()))}`);
   
   try {
-    const body = await req.json();
-    console.log("=== [WEBHOOK] FULL PAYLOAD BODY ===");
+    const rawBody = await req.text();
+    console.log(`[WEBHOOK] Raw Body Length: ${rawBody.length}`);
+    
+    if (!rawBody) {
+      console.warn("[WEBHOOK] Empty body received");
+      return new NextResponse("Empty body", { status: 200 });
+    }
+
+    const body = JSON.parse(rawBody);
+    console.log("=== [WEBHOOK] PAYLOAD RECEIVED ===");
     console.log(JSON.stringify(body, null, 2));
 
     if (body.object === "whatsapp_business_account") {
