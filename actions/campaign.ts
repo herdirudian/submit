@@ -221,13 +221,19 @@ export async function sendCampaignNow(id: string) {
         let result;
         
         // Find if this is a registered WhatsApp template
-        // We look for any language version of this template name
-        const waTemplate = await prisma.waTemplate.findFirst({
-          where: { name: campaign.subject },
-          orderBy: { language: 'desc' } // Often 'id' comes after 'en', or just pick one
+        // We look for all language versions of this template name
+        const templates = await prisma.waTemplate.findMany({
+          where: { name: campaign.subject.trim() }
         });
 
+        // Prioritize 'id', then 'en', then others
+        const waTemplate = templates.find(t => t.language === 'id') || 
+                          templates.find(t => t.language.startsWith('en')) || 
+                          templates[0];
+
         if (waTemplate) {
+          console.log(`[BLAST] Using template: ${waTemplate.name} with language: ${waTemplate.language}`);
+
           // Parse components to find variables in HEADER and BODY
           const components = JSON.parse(waTemplate.components);
           const finalComponents = [];
