@@ -374,7 +374,7 @@ model WaQuickReply {
 
 model WaTemplate {
   id         String   @id @default(cuid())
-  name       String   @unique
+  name       String
   category   String
   language   String
   content    String   @db.Text
@@ -383,6 +383,7 @@ model WaTemplate {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
+  @@unique([name, language])
   @@map("wa_templates")
 }
 

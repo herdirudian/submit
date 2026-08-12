@@ -221,8 +221,10 @@ export async function sendCampaignNow(id: string) {
         let result;
         
         // Find if this is a registered WhatsApp template
-        const waTemplate = await prisma.waTemplate.findUnique({
-          where: { name: campaign.subject }
+        // We look for any language version of this template name
+        const waTemplate = await prisma.waTemplate.findFirst({
+          where: { name: campaign.subject },
+          orderBy: { language: 'desc' } // Often 'id' comes after 'en', or just pick one
         });
 
         if (waTemplate) {

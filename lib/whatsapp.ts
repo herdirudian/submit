@@ -11,6 +11,7 @@ async function waRequest(endpoint: string, data: any) {
   }
 
   console.log(`[WA-API] Request to ${endpoint} with PhoneID: ${PHONE_NUMBER_ID}`);
+  console.log(`[WA-API] Payload:`, JSON.stringify(data));
   const url = `https://graph.facebook.com/${API_VERSION}/${PHONE_NUMBER_ID}${endpoint}`;
   
   try {

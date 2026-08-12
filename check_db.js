@@ -1,0 +1,14 @@
+
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+
+async function main() {
+  const templates = await prisma.waTemplate.findMany({
+    where: { name: 'welcome_message_thelodge_camp' }
+  });
+  console.log(JSON.stringify(templates, null, 2));
+}
+
+main()
+  .catch(e => console.error(e))
+  .finally(async () => await prisma.$disconnect());

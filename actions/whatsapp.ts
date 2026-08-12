@@ -299,10 +299,14 @@ export async function syncWaTemplatesAction() {
       const content = bodyComponent?.text || "";
 
       await prisma.waTemplate.upsert({
-        where: { name: template.name },
+        where: { 
+          name_language: {
+            name: template.name,
+            language: template.language
+          }
+        },
         update: {
           category: template.category,
-          language: template.language,
           content: content,
           components: JSON.stringify(template.components),
           status: template.status,
