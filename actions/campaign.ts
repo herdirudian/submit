@@ -219,20 +219,44 @@ export async function sendCampaignNow(id: string) {
 
       try {
         let result;
-        // If content looks like a template name (no spaces, or matches WaTemplate), use template
-        // For now, if subject is provided as template name, use that.
-        const isTemplate = campaign.subject && !campaign.subject.includes(' ');
         
-        if (isTemplate) {
-          result = await sendWaTemplate(cleanNumber, campaign.subject, 'id', [
-            {
-              type: 'body',
-              parameters: [
-                { type: 'text', text: contact.name || "Sobat" }
-              ]
+        // Find if this is a registered WhatsApp template
+        const waTemplate = await prisma.waTemplate.findUnique({
+          where: { name: campaign.subject }
+        });
+
+        if (waTemplate) {
+          // Parse components to find body variables
+          const components = JSON.parse(waTemplate.components);
+          const bodyComponent = components.find((c: any) => c.type === 'BODY');
+          const bodyText = bodyComponent?.text || "";
+          
+          // Count occurrences of {{n}}
+          const variableCount = (bodyText.match(/\{\{\d+\}\}/g) || []).length;
+          
+          const parameters = [];
+          // If the template has variables, we try to fill them
+          // Default behavior: {{1}} = name, others = empty or placeholder
+          if (variableCount > 0) {
+            parameters.push({ type: 'text', text: contact.name || "Pelanggan" });
+            
+            // If there are more variables, fill with placeholders to avoid #132001 error
+            for (let i = 1; i < variableCount; i++) {
+              parameters.push({ type: 'text', text: "-" });
             }
-          ]);
+          }
+
+          result = await sendWaTemplate(
+            cleanNumber, 
+            waTemplate.name, 
+            waTemplate.language, 
+            parameters.length > 0 ? [{
+              type: 'body',
+              parameters: parameters
+            }] : []
+          );
         } else {
+          // Fallback to regular text if not a template name
           result = await sendWaText(cleanNumber, bodyContent);
         }
 
