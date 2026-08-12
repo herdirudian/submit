@@ -226,23 +226,49 @@ export async function sendCampaignNow(id: string) {
         });
 
         if (waTemplate) {
-          // Parse components to find body variables
+          // Parse components to find variables in HEADER and BODY
           const components = JSON.parse(waTemplate.components);
+          const finalComponents = [];
+
+          // 1. Handle HEADER
+          const headerComponent = components.find((c: any) => c.type === 'HEADER');
+          if (headerComponent) {
+            if (headerComponent.format === 'TEXT') {
+              const headerText = headerComponent.text || "";
+              const headerVarCount = (headerText.match(/\{\{\d+\}\}/g) || []).length;
+              if (headerVarCount > 0) {
+                const headerParams = [];
+                for (let i = 0; i < headerVarCount; i++) {
+                  headerParams.push({ type: 'text', text: brandName }); // Use brand name for header variable by default
+                }
+                finalComponents.push({ type: 'header', parameters: headerParams });
+              }
+            } else if (headerComponent.format === 'IMAGE') {
+              // If template has image header, we MUST provide a link
+              finalComponents.push({
+                type: 'header',
+                parameters: [{
+                  type: 'image',
+                  image: { link: heroImage || brandLogo }
+                }]
+              });
+            }
+          }
+
+          // 2. Handle BODY
           const bodyComponent = components.find((c: any) => c.type === 'BODY');
-          const bodyText = bodyComponent?.text || "";
-          
-          // Count occurrences of {{n}}
-          const variableCount = (bodyText.match(/\{\{\d+\}\}/g) || []).length;
-          
-          const parameters = [];
-          // If the template has variables, we try to fill them
-          // Default behavior: {{1}} = name, others = empty or placeholder
-          if (variableCount > 0) {
-            parameters.push({ type: 'text', text: contact.name || "Pelanggan" });
-            
-            // If there are more variables, fill with placeholders to avoid #132001 error
-            for (let i = 1; i < variableCount; i++) {
-              parameters.push({ type: 'text', text: "-" });
+          if (bodyComponent) {
+            const bodyText = bodyComponent.text || "";
+            const bodyVarCount = (bodyText.match(/\{\{\d+\}\}/g) || []).length;
+            if (bodyVarCount > 0) {
+              const bodyParams = [];
+              // {{1}} = name, {{2}} = brand, others = "-"
+              if (bodyVarCount >= 1) bodyParams.push({ type: 'text', text: contact.name || "Pelanggan" });
+              if (bodyVarCount >= 2) bodyParams.push({ type: 'text', text: brandName });
+              for (let i = 2; i < bodyVarCount; i++) {
+                bodyParams.push({ type: 'text', text: "-" });
+              }
+              finalComponents.push({ type: 'body', parameters: bodyParams });
             }
           }
 
@@ -250,10 +276,7 @@ export async function sendCampaignNow(id: string) {
             cleanNumber, 
             waTemplate.name, 
             waTemplate.language, 
-            parameters.length > 0 ? [{
-              type: 'body',
-              parameters: parameters
-            }] : []
+            finalComponents
           );
         } else {
           // Fallback to regular text if not a template name
