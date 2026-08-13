@@ -293,7 +293,7 @@ export async function submitForm(formId: string, data: Record<string, any>) {
                                                     name: customerName,
                                                     phone: phone,
                                                     waNumber: phone,
-                                                    source: `Form: ${response.form.title}`
+                                                    infoSource: `Form: ${response.form.title}`
                                                 }
                                             });
                                         }
