@@ -170,22 +170,56 @@ export async function submitForm(formId: string, data: Record<string, any>) {
 
                     if (template) {
                         const components = JSON.parse(template.components);
+                        const finalComponents = [];
+
+                        // 1. Handle HEADER (Media)
+                        const headerComponent = components.find((c: any) => c.type === 'HEADER');
+                        if (headerComponent && (headerComponent.format === 'IMAGE' || headerComponent.format === 'VIDEO' || headerComponent.format === 'DOCUMENT')) {
+                            const mediaExample = headerComponent.example?.header_handle?.[0] || "";
+                            
+                            // If there's an example handle or link, we can use it. 
+                            // In a real scenario, we might need a specific URL for each template.
+                            // For now, let's try to pass the media if it exists in the example.
+                            if (mediaExample) {
+                                finalComponents.push({
+                                    type: 'header',
+                                    parameters: [
+                                        {
+                                            type: headerComponent.format.toLowerCase(),
+                                            [headerComponent.format.toLowerCase()]: {
+                                                link: mediaExample
+                                            }
+                                        }
+                                    ]
+                                });
+                            }
+                        }
+
+                        // 2. Handle BODY (Text Variables)
                         const bodyComponent = components.find((c: any) => c.type === 'BODY');
                         const bodyVarCount = bodyComponent?.text ? (bodyComponent.text.match(/\{\{\d+\}\}/g) || []).length : 0;
                         
-                        const params = [];
-                        if (bodyVarCount >= 1) params.push({ type: 'text', text: customerName });
-                        if (bodyVarCount >= 2) params.push({ type: 'text', text: response.form.sidebarTitle || "The Lodge" });
-                        for (let i = 2; i < bodyVarCount; i++) {
-                            params.push({ type: 'text', text: "-" });
+                        if (bodyVarCount > 0) {
+                            const bodyParams = [];
+                            if (bodyVarCount >= 1) bodyParams.push({ type: 'text', text: customerName });
+                            if (bodyVarCount >= 2) bodyParams.push({ type: 'text', text: response.form.sidebarTitle || "The Lodge" });
+                            for (let i = 2; i < bodyVarCount; i++) {
+                                bodyParams.push({ type: 'text', text: "-" });
+                            }
+                            
+                            finalComponents.push({
+                                type: 'body',
+                                parameters: bodyParams
+                            });
                         }
 
                         // Send async
+                        console.log(`[WA-SUBMIT] Sending template "${template.name}" to ${phone} with components:`, JSON.stringify(finalComponents));
                         sendWaTemplate(
                             phone,
                             template.name,
                             template.language,
-                            params.length > 0 ? [{ type: 'body', parameters: params }] : []
+                            finalComponents
                         ).catch(err => console.error("[WA-SUBMIT-ERROR]", err));
                     }
                 }
