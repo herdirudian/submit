@@ -268,9 +268,73 @@ export async function submitForm(formId: string, data: Record<string, any>) {
                             template.name,
                             template.language,
                             finalComponents
-                        ).then(res => {
+                        ).then(async (res) => {
                             if (res.success) {
                                 console.log(`[WA-SUBMIT] SUCCESS: WhatsApp sent to ${phone}. ID: ${res.data?.messages?.[0]?.id}`);
+                                
+                                // Save to CRM Database
+                                try {
+                                    const waMessageId = res.data?.messages?.[0]?.id;
+                                    
+                                    // 1. Ensure Chat exists
+                                    let chat = await prisma.waChat.findUnique({
+                                        where: { waId: phone }
+                                    });
+
+                                    if (!chat) {
+                                        // Find or Create Contact
+                                        let contact = await prisma.contact.findFirst({
+                                            where: { OR: [{ phone: phone }, { waNumber: phone }] }
+                                        });
+
+                                        if (!contact) {
+                                            contact = await prisma.contact.create({
+                                                data: {
+                                                    name: customerName,
+                                                    phone: phone,
+                                                    waNumber: phone,
+                                                    source: `Form: ${response.form.title}`
+                                                }
+                                            });
+                                        }
+
+                                        chat = await prisma.waChat.create({
+                                            data: {
+                                                waId: phone,
+                                                contactId: contact.id,
+                                                status: 'OPEN',
+                                                lastMessage: template.content || `Template: ${template.name}`,
+                                                lastMessageAt: new Date()
+                                            }
+                                        });
+                                    }
+
+                                    // 2. Create Message
+                                    await prisma.waMessage.create({
+                                        data: {
+                                            chatId: chat.id,
+                                            waMessageId: waMessageId,
+                                            body: template.content || `Template: ${template.name}`,
+                                            fromMe: true,
+                                            type: headerComponent ? headerComponent.format : 'TEXT',
+                                            templateName: template.name,
+                                            status: 'SENT'
+                                        }
+                                    });
+
+                                    // 3. Update Chat Last Message
+                                    await prisma.waChat.update({
+                                        where: { id: chat.id },
+                                        data: {
+                                            lastMessage: template.content || `Template: ${template.name}`,
+                                            lastMessageAt: new Date()
+                                        }
+                                    });
+
+                                    console.log(`[WA-SUBMIT] CRM Sync: Message saved to chat history for ${phone}`);
+                                } catch (dbErr) {
+                                    console.error(`[WA-SUBMIT] CRM Sync Error:`, dbErr);
+                                }
                             } else {
                                 console.error(`[WA-SUBMIT] FAILED: Meta API Error:`, JSON.stringify(res.error, null, 2));
                             }
