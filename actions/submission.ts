@@ -188,7 +188,13 @@ export async function submitForm(formId: string, data: Record<string, any>) {
                             // Meta examples can be header_handle (ID) or a link
                             // We check multiple possible locations for the media identifier
                             const mediaHandle = headerComponent.example?.header_handle?.[0];
-                            const mediaLink = headerComponent.example?.header_text?.[0] || headerComponent.example?.header_url?.[0];
+                            const mediaLink = headerComponent.example?.header_text?.[0] || 
+                                             headerComponent.example?.header_url?.[0] || 
+                                             headerComponent.example?.header_handle?.[0]; // Fallback
+                            
+                            // Debugging more fields
+                            console.log(`[WA-SUBMIT] Media detection: handle=${mediaHandle}, link=${mediaLink}`);
+                            console.log(`[WA-SUBMIT] Full Example data:`, JSON.stringify(headerComponent.example, null, 2));
                             
                             const mediaType = headerComponent.format.toLowerCase();
                             const mediaData: any = {};

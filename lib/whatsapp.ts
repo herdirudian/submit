@@ -202,7 +202,7 @@ export async function getWaMetaTemplates() {
 
   // 2. Fetch templates using WABA ID
   try {
-    const urlTemplates = `https://graph.facebook.com/${API_VERSION}/${wabaId}/message_templates`;
+    const urlTemplates = `https://graph.facebook.com/${API_VERSION}/${wabaId}/message_templates?fields=name,status,components,language,category`;
     const templatesRes = await fetch(urlTemplates, {
       headers: { 'Authorization': `Bearer ${ACCESS_TOKEN}` }
     });
