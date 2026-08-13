@@ -205,8 +205,13 @@ export async function submitForm(formId: string, data: Record<string, any>) {
                             // Debugging more fields
                             console.log(`[WA-SUBMIT] Media detection: handle=${mediaHandle}, link=${mediaLink}`);
                             console.log(`[WA-SUBMIT] Full Example data:`, JSON.stringify(headerComponent.example, null, 2));
+
+                            let mediaType = headerComponent.format.toLowerCase();
+                            // Meta expects specific types: document, image, video
+                            if (headerComponent.format === 'DOCUMENT') mediaType = 'document';
+                            if (headerComponent.format === 'IMAGE') mediaType = 'image';
+                            if (headerComponent.format === 'VIDEO') mediaType = 'video';
                             
-                            const mediaType = headerComponent.format.toLowerCase();
                             const mediaData: any = {};
                             
                             if (mediaHandle) {
@@ -235,8 +240,6 @@ export async function submitForm(formId: string, data: Record<string, any>) {
                                 });
                             } else {
                                 console.error(`[WA-SUBMIT] CRITICAL: Template "${template.name}" requires ${headerComponent.format} header, but no example ID or Link was found in database. SKIPPING HEADER to avoid Meta rejection.`);
-                                // If header is required but we don't have data, Meta will reject anyway.
-                                // We add a dummy parameter to see if Meta accepts it, or just let it fail gracefully.
                             }
                         }
 
