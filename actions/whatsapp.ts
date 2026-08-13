@@ -297,12 +297,23 @@ export async function syncWaTemplatesAction() {
     }
 
     const templates = result.data;
+    console.log(`[SYNC-WA] Received ${templates.length} templates from Meta.`);
     
     // Upsert templates into database
     for (const template of templates) {
+      console.log(`[SYNC-WA] Processing template: ${template.name} (${template.language})`);
+      
       // Extract body content from components
       const bodyComponent = template.components?.find((c: any) => c.type === 'BODY');
       const content = bodyComponent?.text || "";
+
+      // Debugging: check if media header has example
+      const headerComponent = template.components?.find((c: any) => c.type === 'HEADER');
+      if (headerComponent && headerComponent.example) {
+        console.log(`[SYNC-WA] Template ${template.name} has HEADER example:`, JSON.stringify(headerComponent.example, null, 2));
+      } else if (headerComponent) {
+        console.warn(`[SYNC-WA] Template ${template.name} has HEADER but NO example data!`);
+      }
 
       await prisma.waTemplate.upsert({
         where: { 
