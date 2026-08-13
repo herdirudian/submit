@@ -2,6 +2,7 @@
 
 import prisma from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
+import { sendWaTemplate } from "@/lib/whatsapp";
 import { createNotification } from "./notification";
 
 export async function submitForm(formId: string, data: Record<string, any>) {
@@ -144,6 +145,49 @@ export async function submitForm(formId: string, data: Record<string, any>) {
                         fromName: appSettings?.notificationFromName,
                         fromEmail: appSettings?.notificationFromEmail
                     });
+                }
+            }
+
+            // 3. WhatsApp Integration
+            if (response.form.whatsappEnabled && response.form.whatsappTemplateName && response.form.whatsappPhoneFieldId) {
+                const phoneAnswer = validAnswers.find(a => a.questionId === response.form.whatsappPhoneFieldId);
+                if (phoneAnswer && phoneAnswer.value) {
+                    let phone = phoneAnswer.value.replace(/\D/g, '');
+                    if (phone.startsWith('0')) {
+                        phone = '62' + phone.substring(1);
+                    }
+                    
+                    // Find customer name if available
+                    const nameQuestion = validQuestions.find(q => q.label.toLowerCase().includes('nama'));
+                    const nameAnswer = nameQuestion ? validAnswers.find(a => a.questionId === nameQuestion.id) : null;
+                    const customerName = nameAnswer?.value || "Pelanggan";
+
+                    // Fetch template language
+                    const template = await prisma.waTemplate.findFirst({
+                        where: { name: response.form.whatsappTemplateName },
+                        orderBy: { language: 'desc' }
+                    });
+
+                    if (template) {
+                        const components = JSON.parse(template.components);
+                        const bodyComponent = components.find((c: any) => c.type === 'BODY');
+                        const bodyVarCount = bodyComponent?.text ? (bodyComponent.text.match(/\{\{\d+\}\}/g) || []).length : 0;
+                        
+                        const params = [];
+                        if (bodyVarCount >= 1) params.push({ type: 'text', text: customerName });
+                        if (bodyVarCount >= 2) params.push({ type: 'text', text: response.form.sidebarTitle || "The Lodge" });
+                        for (let i = 2; i < bodyVarCount; i++) {
+                            params.push({ type: 'text', text: "-" });
+                        }
+
+                        // Send async
+                        sendWaTemplate(
+                            phone,
+                            template.name,
+                            template.language,
+                            params.length > 0 ? [{ type: 'body', parameters: params }] : []
+                        ).catch(err => console.error("[WA-SUBMIT-ERROR]", err));
+                    }
                 }
             }
         }

@@ -197,6 +197,9 @@ export async function updateForm(id: string, data: {
     thankYouTitle?: string;
     thankYouMessage?: string;
     redirectUrl?: string;
+    whatsappEnabled?: boolean;
+    whatsappTemplateName?: string;
+    whatsappPhoneFieldId?: string;
 }) {
     try {
         const session = await getServerSession(authOptions);
@@ -341,6 +344,9 @@ export async function duplicateForm(id: string) {
       emailBody: source.emailBody,
       thankYouTitle: source.thankYouTitle,
       thankYouMessage: source.thankYouMessage,
+      whatsappEnabled: source.whatsappEnabled,
+      whatsappTemplateName: source.whatsappTemplateName,
+      whatsappPhoneFieldId: source.whatsappPhoneFieldId,
       slug,
       status: "DRAFT",
       questions: {

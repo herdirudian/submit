@@ -121,6 +121,16 @@ export async function sendWaMessageAction(chatId: string, body: string, isIntern
   }
 }
 
+export async function getWaTemplates() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Unauthorized");
+
+  return await prisma.waTemplate.findMany({
+    where: { status: "APPROVED" },
+    orderBy: { name: "asc" },
+  });
+}
+
 export async function sendWaMediaAction(chatId: string, type: any, url: string, caption?: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) throw new Error("Unauthorized");

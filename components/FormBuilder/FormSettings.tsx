@@ -2,12 +2,13 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { X, Upload, Loader2, Image as ImageIcon } from "lucide-react";
+import { X, Upload, Loader2, Image as ImageIcon, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import { checkSlugAvailability, updateForm, updateFormSlug } from "@/actions/form";
-import { Form } from "@prisma/client";
+import { getWaTemplates } from "@/actions/whatsapp";
+import { Form, Question } from "@prisma/client";
 
-export default function FormSettings({ form, isOpen, onClose }: { form: Form; isOpen: boolean; onClose: () => void }) {
+export default function FormSettings({ form, isOpen, onClose, questions }: { form: Form; isOpen: boolean; onClose: () => void; questions: Question[] }) {
   const [title, setTitle] = useState(form.title);
   const [description, setDescription] = useState(form.description || "");
   const [logo, setLogo] = useState(form.logo || "");
@@ -47,7 +48,14 @@ export default function FormSettings({ form, isOpen, onClose }: { form: Form; is
   const [thankYouMessage, setThankYouMessage] = useState(form.thankYouMessage || "Your response has been successfully recorded.");
   const [redirectUrl, setRedirectUrl] = useState(form.redirectUrl || "");
 
-  const [activeTab, setActiveTab] = useState<'general' | 'sidebar' | 'theme' | 'messages'>('general');
+  // WhatsApp Integration State
+  const [whatsappEnabled, setWhatsappEnabled] = useState(form.whatsappEnabled || false);
+  const [whatsappTemplateName, setWhatsappTemplateName] = useState(form.whatsappTemplateName || "");
+  const [whatsappPhoneFieldId, setWhatsappPhoneFieldId] = useState(form.whatsappPhoneFieldId || "");
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
+
+  const [activeTab, setActiveTab] = useState<'general' | 'sidebar' | 'theme' | 'messages' | 'whatsapp'>('general');
 
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -88,6 +96,16 @@ export default function FormSettings({ form, isOpen, onClose }: { form: Form; is
       clearTimeout(t);
     };
   }, [form.id, isOpen, slug]);
+
+  useEffect(() => {
+    if (activeTab === 'whatsapp' && templates.length === 0) {
+        setLoadingTemplates(true);
+        getWaTemplates()
+            .then(setTemplates)
+            .catch(() => toast.error("Gagal mengambil template WhatsApp"))
+            .finally(() => setLoadingTemplates(false));
+    }
+  }, [activeTab, templates.length]);
 
   if (!isOpen) return null;
 
@@ -149,7 +167,10 @@ export default function FormSettings({ form, isOpen, onClose }: { form: Form; is
               emailSubject,
               emailBody,
               thankYouTitle,
-              thankYouMessage
+              thankYouMessage,
+              whatsappEnabled,
+              whatsappTemplateName,
+              whatsappPhoneFieldId
           });
           toast.success("Form settings saved");
           onClose();
@@ -195,6 +216,12 @@ export default function FormSettings({ form, isOpen, onClose }: { form: Form; is
                 onClick={() => setActiveTab('messages')}
             >
                 Messages & Email
+            </button>
+            <button 
+                className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'whatsapp' ? 'border-primary-600 text-primary-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+                onClick={() => setActiveTab('whatsapp')}
+            >
+                WhatsApp
             </button>
         </div>
 
@@ -265,6 +292,73 @@ export default function FormSettings({ form, isOpen, onClose }: { form: Form; is
                             </div>
                         </div>
                     </div>
+                </div>
+            ) : activeTab === 'whatsapp' ? (
+                <div className="space-y-6">
+                    <div className="flex items-center justify-between bg-primary-50 p-4 rounded-xl border border-primary-100">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-primary-600 text-white rounded-full flex items-center justify-center">
+                                <MessageSquare size={20} />
+                            </div>
+                            <div>
+                                <h4 className="text-sm font-bold text-primary-900">WhatsApp Integration</h4>
+                                <p className="text-xs text-primary-700">Kirim pesan otomatis setelah submit.</p>
+                            </div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input 
+                                type="checkbox" 
+                                checked={whatsappEnabled} 
+                                onChange={(e) => setWhatsappEnabled(e.target.checked)} 
+                                className="sr-only peer" 
+                            />
+                            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-100 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+                        </label>
+                    </div>
+
+                    {whatsappEnabled && (
+                        <div className="space-y-4 animate-in slide-in-from-top-2 duration-200">
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Pilih Template WhatsApp</label>
+                                <select 
+                                    value={whatsappTemplateName}
+                                    onChange={(e) => setWhatsappTemplateName(e.target.value)}
+                                    className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary-500 outline-none"
+                                    disabled={loadingTemplates}
+                                >
+                                    <option value="">-- Pilih Template --</option>
+                                    {templates.map(t => (
+                                        <option key={t.id} value={t.name}>{t.name} ({t.language})</option>
+                                    ))}
+                                </select>
+                                {loadingTemplates && <p className="text-xs text-slate-500 mt-1 flex items-center gap-1"><Loader2 size={12} className="animate-spin" /> Mengambil template...</p>}
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Field Nomor WhatsApp Pelanggan</label>
+                                <select 
+                                    value={whatsappPhoneFieldId}
+                                    onChange={(e) => setWhatsappPhoneFieldId(e.target.value)}
+                                    className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary-500 outline-none"
+                                >
+                                    <option value="">-- Pilih Field --</option>
+                                    {questions
+                                        .filter(q => q.type === 'PHONE' || q.type === 'SHORT_TEXT')
+                                        .map(q => (
+                                            <option key={q.id} value={q.id}>{q.label}</option>
+                                        ))
+                                    }
+                                </select>
+                                <p className="text-xs text-slate-500 mt-1">Pilih pertanyaan mana yang berisi nomor WhatsApp tamu.</p>
+                            </div>
+                            
+                            <div className="p-4 bg-yellow-50 border border-yellow-100 rounded-lg">
+                                <p className="text-xs text-yellow-800">
+                                    <strong>Catatan:</strong> Pastikan template yang dipilih sudah di-approve oleh Meta. Pesan akan dikirim menggunakan variabel <code>{"{{1}}"}</code> sebagai Nama Pelanggan jika tersedia di template.
+                                </p>
+                            </div>
+                        </div>
+                    )}
                 </div>
             ) : activeTab === 'theme' ? (
                 <div className="space-y-6">

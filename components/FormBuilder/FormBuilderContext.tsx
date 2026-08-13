@@ -262,6 +262,7 @@ export default function FormBuilderContext({ form }: { form: FormWithQuestions }
         
         <FormSettings 
             form={form} 
+            questions={questions}
             isOpen={isSettingsOpen} 
             onClose={() => setIsSettingsOpen(false)} 
         />

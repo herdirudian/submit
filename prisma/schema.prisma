@@ -132,6 +132,11 @@ model Form {
   thankYouMessage     String?    @db.Text
   redirectUrl         String?    // Optional redirect after submit
 
+  // WhatsApp Integration Settings
+  whatsappEnabled     Boolean    @default(false)
+  whatsappTemplateName String?
+  whatsappPhoneFieldId String?   // ID of the question that stores the phone number
+
   slug        String     @unique // Public URL identifier e.g. /forms/my-survey
   status      FormStatus @default(DRAFT)
   views       Int        @default(0) // Track number of visits
