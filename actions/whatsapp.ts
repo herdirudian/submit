@@ -242,10 +242,6 @@ export async function deleteWaQuickReply(id: string) {
   revalidatePath("/whatsapp/quick-replies");
 }
 
-export async function getWaTemplates() {
-  return await prisma.waTemplate.findMany();
-}
-
 export async function startNewChatAction(waId: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) throw new Error("Unauthorized");
