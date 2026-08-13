@@ -175,20 +175,30 @@ export async function submitForm(formId: string, data: Record<string, any>) {
                         // 1. Handle HEADER (Media)
                         const headerComponent = components.find((c: any) => c.type === 'HEADER');
                         if (headerComponent && (headerComponent.format === 'IMAGE' || headerComponent.format === 'VIDEO' || headerComponent.format === 'DOCUMENT')) {
+                            console.log(`[WA-SUBMIT] Template "${template.name}" has HEADER component:`, JSON.stringify(headerComponent, null, 2));
+                            
                             // Meta examples can be header_handle (ID) or a link
+                            // We check multiple possible locations for the media identifier
                             const mediaHandle = headerComponent.example?.header_handle?.[0];
-                            const mediaLink = headerComponent.example?.header_text?.[0]; // Sometimes it's here for some types
+                            const mediaLink = headerComponent.example?.header_text?.[0] || headerComponent.example?.header_url?.[0];
                             
                             const mediaType = headerComponent.format.toLowerCase();
                             const mediaData: any = {};
                             
                             if (mediaHandle) {
                                 mediaData.id = mediaHandle;
+                                console.log(`[WA-SUBMIT] Using media ID (handle) from example: ${mediaHandle}`);
                             } else if (mediaLink && mediaLink.startsWith('http')) {
                                 mediaData.link = mediaLink;
+                                console.log(`[WA-SUBMIT] Using media Link from example: ${mediaLink}`);
                             }
 
                             if (mediaData.id || mediaData.link) {
+                                // For documents, Meta sometimes expects a filename
+                                if (mediaType === 'document' && !mediaData.filename) {
+                                    mediaData.filename = `${template.name}.pdf`;
+                                }
+
                                 finalComponents.push({
                                     type: 'header',
                                     parameters: [
@@ -199,7 +209,7 @@ export async function submitForm(formId: string, data: Record<string, any>) {
                                     ]
                                 });
                             } else {
-                                console.warn(`[WA-SUBMIT] Template "${template.name}" has ${headerComponent.format} header but no example handle/link found.`);
+                                console.error(`[WA-SUBMIT] CRITICAL: Template "${template.name}" requires ${headerComponent.format} header, but no example ID or Link was found in database. Payload might be rejected by Meta.`);
                             }
                         }
 
