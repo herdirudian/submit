@@ -175,23 +175,31 @@ export async function submitForm(formId: string, data: Record<string, any>) {
                         // 1. Handle HEADER (Media)
                         const headerComponent = components.find((c: any) => c.type === 'HEADER');
                         if (headerComponent && (headerComponent.format === 'IMAGE' || headerComponent.format === 'VIDEO' || headerComponent.format === 'DOCUMENT')) {
-                            const mediaExample = headerComponent.example?.header_handle?.[0] || "";
+                            // Meta examples can be header_handle (ID) or a link
+                            const mediaHandle = headerComponent.example?.header_handle?.[0];
+                            const mediaLink = headerComponent.example?.header_text?.[0]; // Sometimes it's here for some types
                             
-                            // If there's an example handle or link, we can use it. 
-                            // In a real scenario, we might need a specific URL for each template.
-                            // For now, let's try to pass the media if it exists in the example.
-                            if (mediaExample) {
+                            const mediaType = headerComponent.format.toLowerCase();
+                            const mediaData: any = {};
+                            
+                            if (mediaHandle) {
+                                mediaData.id = mediaHandle;
+                            } else if (mediaLink && mediaLink.startsWith('http')) {
+                                mediaData.link = mediaLink;
+                            }
+
+                            if (mediaData.id || mediaData.link) {
                                 finalComponents.push({
                                     type: 'header',
                                     parameters: [
                                         {
-                                            type: headerComponent.format.toLowerCase(),
-                                            [headerComponent.format.toLowerCase()]: {
-                                                link: mediaExample
-                                            }
+                                            type: mediaType,
+                                            [mediaType]: mediaData
                                         }
                                     ]
                                 });
+                            } else {
+                                console.warn(`[WA-SUBMIT] Template "${template.name}" has ${headerComponent.format} header but no example handle/link found.`);
                             }
                         }
 
