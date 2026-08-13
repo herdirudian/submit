@@ -201,14 +201,17 @@ export async function updateForm(id: string, data: {
     whatsappTemplateName?: string;
     whatsappPhoneFieldId?: string;
 }) {
+    console.log(`[ACTION] Updating form ${id} with data:`, JSON.stringify(data, null, 2));
     try {
         const session = await getServerSession(authOptions);
         if (!session || !session.user) {
+            console.warn(`[ACTION] Unauthorized attempt to update form ${id}`);
             throw new Error("Unauthorized");
         }
 
         const owned = await prisma.form.findFirst({ where: { id, userId: session.user.id }, select: { id: true } });
         if (!owned) {
+            console.warn(`[ACTION] Form ${id} not found or not owned by user ${session.user.id}`);
             throw new Error("Form tidak ditemukan");
         }
 
@@ -217,6 +220,7 @@ export async function updateForm(id: string, data: {
             throw new Error("Redirect URL tidak valid");
         }
 
+        console.log(`[ACTION] Executing Prisma update for form ${id}`);
         const form = await prisma.form.update({
             where: { id },
             data: {
@@ -250,11 +254,13 @@ export async function updateForm(id: string, data: {
                 ...(data.redirectUrl !== undefined ? { redirectUrl } : {}),
             }
         });
+
+        console.log(`[ACTION] Form ${id} updated successfully. Revalidating path.`);
         revalidatePath(`/builder/${id}`);
-        return form;
+        return { success: true };
     } catch (error: any) {
-        console.error("Failed to update form:", error);
-        throw new Error(error.message || "Failed to update form");
+        console.error(`[ACTION] Failed to update form ${id}:`, error);
+        return { success: false, error: error.message || "Failed to update form" };
     }
 }
 

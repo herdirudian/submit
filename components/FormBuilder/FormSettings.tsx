@@ -142,7 +142,7 @@ export default function FormSettings({ form, isOpen, onClose, questions }: { for
           if (slug.trim() !== form.slug) {
               await updateFormSlug(form.id, slug);
           }
-          await updateForm(form.id, { 
+          const result = await updateForm(form.id, { 
               title, 
               description, 
               logo,
@@ -172,6 +172,11 @@ export default function FormSettings({ form, isOpen, onClose, questions }: { for
               whatsappTemplateName,
               whatsappPhoneFieldId
           });
+
+          if (!result.success) {
+              throw new Error(result.error);
+          }
+
           toast.success("Form settings saved");
           onClose();
       } catch (error: any) {

@@ -64,7 +64,7 @@ export async function getWaAnalytics(days: number = 7) {
 
   // 2. Most Used Templates
   const templateUsage = await prisma.waMessage.groupBy({
-    by: ['templateName'],
+    by: ['templateName'] as any,
     where: {
       fromMe: true,
       templateName: { not: null },
