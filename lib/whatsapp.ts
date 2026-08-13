@@ -10,9 +10,9 @@ async function waRequest(endpoint: string, data: any) {
     return { success: false, error: "WhatsApp credentials missing" };
   }
 
-  console.log(`[WA-API] Request to ${endpoint} with PhoneID: ${PHONE_NUMBER_ID}`);
-  console.log(`[WA-API] Payload:`, JSON.stringify(data));
   const url = `https://graph.facebook.com/${API_VERSION}/${PHONE_NUMBER_ID}${endpoint}`;
+  console.log(`[WA-API] URL: ${url}`);
+  console.log(`[WA-API] Payload:`, JSON.stringify(data, null, 2));
   
   try {
     const response = await fetch(url, {
@@ -25,9 +25,10 @@ async function waRequest(endpoint: string, data: any) {
     });
 
     const result = await response.json();
+    console.log(`[WA-API] Status: ${response.status} ${response.statusText}`);
     
     if (!response.ok) {
-      console.error(`[WA-API] Error (${endpoint}):`, JSON.stringify(result, null, 2));
+      console.error(`[WA-API] ERROR RESPONSE:`, JSON.stringify(result, null, 2));
       if (result.error?.message === "API access blocked.") {
         return { 
           success: false, 

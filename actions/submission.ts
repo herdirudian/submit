@@ -149,13 +149,19 @@ export async function submitForm(formId: string, data: Record<string, any>) {
             }
 
             // 3. WhatsApp Integration
+            console.log(`[WA-SUBMIT] Checking WhatsApp integration for form: ${formId}`);
             if (response.form.whatsappEnabled && response.form.whatsappTemplateName && response.form.whatsappPhoneFieldId) {
+                console.log(`[WA-SUBMIT] WhatsApp integration ENABLED. Template: ${response.form.whatsappTemplateName}, Phone Field: ${response.form.whatsappPhoneFieldId}`);
+                
                 const phoneAnswer = validAnswers.find(a => a.questionId === response.form.whatsappPhoneFieldId);
+                console.log(`[WA-SUBMIT] Phone answer found:`, phoneAnswer?.value);
+
                 if (phoneAnswer && phoneAnswer.value) {
                     let phone = phoneAnswer.value.replace(/\D/g, '');
                     if (phone.startsWith('0')) {
                         phone = '62' + phone.substring(1);
                     }
+                    console.log(`[WA-SUBMIT] Formatted phone: ${phone}`);
                     
                     // Find customer name if available
                     const nameQuestion = validQuestions.find(q => q.label.toLowerCase().includes('nama'));
@@ -163,12 +169,14 @@ export async function submitForm(formId: string, data: Record<string, any>) {
                     const customerName = nameAnswer?.value || "Pelanggan";
 
                     // Fetch template language
+                    console.log(`[WA-SUBMIT] Fetching template data from DB...`);
                     const template = await prisma.waTemplate.findFirst({
                         where: { name: response.form.whatsappTemplateName },
                         orderBy: { language: 'desc' }
                     });
 
                     if (template) {
+                        console.log(`[WA-SUBMIT] Template found in DB: ${template.name} (${template.language})`);
                         const components = JSON.parse(template.components);
                         const finalComponents = [];
 
@@ -232,15 +240,29 @@ export async function submitForm(formId: string, data: Record<string, any>) {
                         }
 
                         // Send async
-                        console.log(`[WA-SUBMIT] Sending template "${template.name}" to ${phone} with components:`, JSON.stringify(finalComponents));
+                        console.log(`[WA-SUBMIT] Final Payload Components:`, JSON.stringify(finalComponents, null, 2));
                         sendWaTemplate(
                             phone,
                             template.name,
                             template.language,
                             finalComponents
-                        ).catch(err => console.error("[WA-SUBMIT-ERROR]", err));
+                        ).then(res => {
+                            if (res.success) {
+                                console.log(`[WA-SUBMIT] SUCCESS: WhatsApp sent to ${phone}. ID: ${res.data?.messages?.[0]?.id}`);
+                            } else {
+                                console.error(`[WA-SUBMIT] FAILED: Meta API Error:`, JSON.stringify(res.error, null, 2));
+                            }
+                        }).catch(err => {
+                            console.error("[WA-SUBMIT] CRITICAL ERROR during sendWaTemplate:", err);
+                        });
+                    } else {
+                        console.error(`[WA-SUBMIT] Template "${response.form.whatsappTemplateName}" NOT FOUND in database.`);
                     }
+                } else {
+                    console.warn(`[WA-SUBMIT] Phone number not found in submission data for field ${response.form.whatsappPhoneFieldId}`);
                 }
+            } else {
+                console.log(`[WA-SUBMIT] WhatsApp integration is disabled or not configured for this form.`);
             }
         }
     }
