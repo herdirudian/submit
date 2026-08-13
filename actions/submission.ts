@@ -194,8 +194,9 @@ export async function submitForm(formId: string, data: Record<string, any>) {
                             const mediaData: any = {};
                             
                             if (mediaHandle) {
-                                mediaData.id = mediaHandle;
-                                console.log(`[WA-SUBMIT] Using media ID (handle) from example: ${mediaHandle}`);
+                                // Meta expects the ID (handle) to be an integer
+                                mediaData.id = parseInt(mediaHandle, 10);
+                                console.log(`[WA-SUBMIT] Using media ID (handle) as integer: ${mediaData.id}`);
                             } else if (mediaLink && mediaLink.startsWith('http')) {
                                 mediaData.link = mediaLink;
                                 console.log(`[WA-SUBMIT] Using media Link from example: ${mediaLink}`);
