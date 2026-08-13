@@ -174,8 +174,9 @@ export default function FormSettings({ form, isOpen, onClose, questions }: { for
           });
           toast.success("Form settings saved");
           onClose();
-      } catch (error) {
-          toast.error("Failed to save settings");
+      } catch (error: any) {
+          console.error(error);
+          toast.error(error.message || "Failed to save settings");
       } finally {
           setIsSaving(false);
       }

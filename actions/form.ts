@@ -220,15 +220,41 @@ export async function updateForm(id: string, data: {
         const form = await prisma.form.update({
             where: { id },
             data: {
-                ...data,
+                title: data.title,
+                description: data.description,
+                logo: data.logo,
+                logoWidth: data.logoWidth,
+                titleFontSize: data.titleFontSize,
+                descriptionFontSize: data.descriptionFontSize,
+                sidebarTitle: data.sidebarTitle,
+                sidebarSubtitle: data.sidebarSubtitle,
+                sidebarDescription: data.sidebarDescription,
+                contactAddress: data.contactAddress,
+                contactPhone: data.contactPhone,
+                contactEmail: data.contactEmail,
+                contactWorkingHours: data.contactWorkingHours,
+                socialInstagram: data.socialInstagram,
+                socialTiktok: data.socialTiktok,
+                socialWebsite: data.socialWebsite,
+                showSidebar: data.showSidebar,
+                primaryColor: data.primaryColor,
+                backgroundColor: data.backgroundColor,
+                fontFamily: data.fontFamily,
+                emailSubject: data.emailSubject,
+                emailBody: data.emailBody,
+                thankYouTitle: data.thankYouTitle,
+                thankYouMessage: data.thankYouMessage,
+                whatsappEnabled: data.whatsappEnabled,
+                whatsappTemplateName: data.whatsappTemplateName,
+                whatsappPhoneFieldId: data.whatsappPhoneFieldId,
                 ...(data.redirectUrl !== undefined ? { redirectUrl } : {}),
             }
         });
         revalidatePath(`/builder/${id}`);
         return form;
-    } catch (error) {
+    } catch (error: any) {
         console.error("Failed to update form:", error);
-        throw new Error("Failed to update form");
+        throw new Error(error.message || "Failed to update form");
     }
 }
 
