@@ -215,8 +215,9 @@ export async function updateForm(id: string, data: {
             throw new Error("Form tidak ditemukan");
         }
 
-        const redirectUrl = sanitizeRedirectUrl(data.redirectUrl);
-        if (data.redirectUrl !== undefined && redirectUrl === null) {
+        const sanitizedRedirectUrlValue = sanitizeRedirectUrl(data.redirectUrl);
+        // Throw error only if redirectUrl was provided, is not empty, but is invalid
+        if (data.redirectUrl !== undefined && data.redirectUrl.trim() !== "" && sanitizedRedirectUrlValue === null) {
             throw new Error("Redirect URL tidak valid");
         }
 
@@ -251,7 +252,7 @@ export async function updateForm(id: string, data: {
                 whatsappEnabled: data.whatsappEnabled,
                 whatsappTemplateName: data.whatsappTemplateName,
                 whatsappPhoneFieldId: data.whatsappPhoneFieldId,
-                ...(data.redirectUrl !== undefined ? { redirectUrl } : {}),
+                ...(data.redirectUrl !== undefined ? { redirectUrl: sanitizedRedirectUrlValue } : {}),
             }
         });
 
