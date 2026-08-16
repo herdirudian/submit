@@ -68,6 +68,7 @@ export async function updateAppSettings(data: {
   tiktokUrl?: string;
   whatsappApiUrl?: string;
   whatsappApiKey?: string;
+  whatsappProvider?: string;
   waAutoReplyEnabled?: boolean;
   waAutoReplyMessage?: string;
   waWorkingHoursStart?: string;
@@ -95,6 +96,7 @@ export async function updateAppSettings(data: {
     tiktokUrl,
     whatsappApiUrl,
     whatsappApiKey,
+    whatsappProvider,
     waAutoReplyEnabled,
     waAutoReplyMessage,
     waWorkingHoursStart,
@@ -124,6 +126,7 @@ export async function updateAppSettings(data: {
       tiktokUrl,
       whatsappApiUrl,
       whatsappApiKey,
+      whatsappProvider,
       waAutoReplyEnabled,
       waAutoReplyMessage,
       waWorkingHoursStart,
@@ -147,6 +150,7 @@ export async function updateAppSettings(data: {
       tiktokUrl,
       whatsappApiUrl,
       whatsappApiKey,
+      whatsappProvider,
       waAutoReplyEnabled,
       waAutoReplyMessage,
       waWorkingHoursStart,

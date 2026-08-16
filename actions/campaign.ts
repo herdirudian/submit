@@ -177,157 +177,263 @@ export async function sendCampaignNow(id: string) {
   let failCount = 0;
 
   if (campaign.type === 'WHATSAPP') {
-    // Check for Meta WhatsApp Cloud API credentials
-    if (!process.env.WHATSAPP_PHONE_NUMBER_ID || !process.env.WHATSAPP_ACCESS_TOKEN) {
-      await prisma.campaign.update({
-        where: { id },
-        data: { status: 'FAILED' }
-      });
-      throw new Error("WhatsApp Cloud API credentials (.env) belum dikonfigurasi.");
-    }
+    const waProvider = settings?.whatsappProvider || "OPENWA";
 
-    for (const contact of contacts) {
-      const rawNumber = contact.waNumber || contact.phone;
-      if (!rawNumber) {
-        failCount++;
-        await prisma.emailLog.create({
-          data: {
-            campaignId: id,
-            contactId: contact.id,
-            type: 'WHATSAPP',
-            status: 'FAILED',
-            errorMessage: "Kontak tidak memiliki nomor WhatsApp"
-          }
+    if (waProvider === "OPENWA") {
+      const apiUrl = settings?.whatsappApiUrl;
+      const apiKey = settings?.whatsappApiKey;
+
+      if (!apiUrl) {
+        await prisma.campaign.update({
+          where: { id },
+          data: { status: 'FAILED' }
         });
-        continue;
+        throw new Error("WhatsApp API URL (OpenWA) belum dikonfigurasi di Settings.");
       }
 
-      // Format number to international format (62xxx)
-      let cleanNumber = rawNumber.replace(/\D/g, '');
-      if (cleanNumber.startsWith('0')) {
-        cleanNumber = '62' + cleanNumber.substring(1);
-      }
-      if (!cleanNumber.startsWith('62') && cleanNumber.length > 8) {
-        // Assume Indonesian if not specified and looks like a local number
-        cleanNumber = '62' + cleanNumber;
+      let endpoint = apiUrl.trim();
+      if (!endpoint.endsWith('/messages/send-text')) {
+        endpoint = endpoint.replace(/\/$/, '') + '/messages/send-text';
       }
 
-      let bodyContent = campaign.content;
-      bodyContent = bodyContent.replace(/{{name}}/g, contact.name || "Sobat");
-      bodyContent = bodyContent.replace(/{{email}}/g, contact.email || "");
-      bodyContent = bodyContent.replace(/{{company}}/g, contact.company || "");
-
-      try {
-        let result;
-        
-        // Find if this is a registered WhatsApp template
-        // We look for all language versions of this template name
-        const templates = await prisma.waTemplate.findMany({
-          where: { name: campaign.subject.trim() }
-        });
-
-        // Prioritize 'id', then 'en', then others
-        const waTemplate = templates.find(t => t.language === 'id') || 
-                          templates.find(t => t.language.startsWith('en')) || 
-                          templates[0];
-
-        if (waTemplate) {
-          console.log(`[BLAST] Using template: ${waTemplate.name} with language: ${waTemplate.language}`);
-
-          // Parse components to find variables in HEADER and BODY
-          const components = JSON.parse(waTemplate.components);
-          const finalComponents = [];
-
-          // 1. Handle HEADER
-          const headerComponent = components.find((c: any) => c.type === 'HEADER');
-          if (headerComponent) {
-            if (headerComponent.format === 'TEXT') {
-              const headerText = headerComponent.text || "";
-              const headerVarCount = (headerText.match(/\{\{\d+\}\}/g) || []).length;
-              if (headerVarCount > 0) {
-                const headerParams = [];
-                for (let i = 0; i < headerVarCount; i++) {
-                  headerParams.push({ type: 'text', text: brandName }); // Use brand name for header variable by default
-                }
-                finalComponents.push({ type: 'header', parameters: headerParams });
-              }
-            } else if (headerComponent.format === 'IMAGE') {
-              // If template has image header, we MUST provide a link
-              finalComponents.push({
-                type: 'header',
-                parameters: [{
-                  type: 'image',
-                  image: { link: heroImage || brandLogo }
-                }]
-              });
-            }
-          }
-
-          // 2. Handle BODY
-          const bodyComponent = components.find((c: any) => c.type === 'BODY');
-          if (bodyComponent) {
-            const bodyText = bodyComponent.text || "";
-            const bodyVarCount = (bodyText.match(/\{\{\d+\}\}/g) || []).length;
-            if (bodyVarCount > 0) {
-              const bodyParams = [];
-              // {{1}} = name, {{2}} = brand, others = "-"
-              if (bodyVarCount >= 1) bodyParams.push({ type: 'text', text: contact.name || "Pelanggan" });
-              if (bodyVarCount >= 2) bodyParams.push({ type: 'text', text: brandName });
-              for (let i = 2; i < bodyVarCount; i++) {
-                bodyParams.push({ type: 'text', text: "-" });
-              }
-              finalComponents.push({ type: 'body', parameters: bodyParams });
-            }
-          }
-
-          result = await sendWaTemplate(
-            cleanNumber, 
-            waTemplate.name, 
-            waTemplate.language, 
-            finalComponents
-          );
-        } else {
-          // Fallback to regular text if not a template name
-          result = await sendWaText(cleanNumber, bodyContent);
-        }
-
-        if (result.success) {
-          successCount++;
-          await prisma.emailLog.create({
-            data: { 
-              campaignId: id, 
-              contactId: contact.id, 
-              type: 'WHATSAPP',
-              status: 'SENT' 
-            }
-          });
-        } else {
+      for (const contact of contacts) {
+        const rawNumber = contact.waNumber || contact.phone;
+        if (!rawNumber) {
           failCount++;
           await prisma.emailLog.create({
-            data: { 
-              campaignId: id, 
-              contactId: contact.id, 
+            data: {
+              campaignId: id,
+              contactId: contact.id,
               type: 'WHATSAPP',
-              status: 'FAILED', 
-              errorMessage: JSON.stringify(result.error) 
+              status: 'FAILED',
+              errorMessage: "Kontak tidak memiliki nomor WhatsApp"
             }
           });
+          continue;
         }
-      } catch (err: any) {
-        failCount++;
-        await prisma.emailLog.create({
-          data: { 
-            campaignId: id, 
-            contactId: contact.id, 
-            type: 'WHATSAPP',
-            status: 'FAILED', 
-            errorMessage: err.message 
+
+        // Format number to 628xxx@c.us
+        let cleanNumber = rawNumber.replace(/\D/g, '');
+        if (cleanNumber.startsWith('0')) {
+          cleanNumber = '62' + cleanNumber.substring(1);
+        }
+        const chatId = `${cleanNumber}@c.us`;
+
+        let bodyContent = campaign.content;
+        bodyContent = bodyContent.replace(/{{name}}/g, contact.name || "Sobat");
+        bodyContent = bodyContent.replace(/{{email}}/g, contact.email || "");
+        bodyContent = bodyContent.replace(/{{company}}/g, contact.company || "");
+
+        // Helper for natural delays
+        const getRandomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+        const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+        // 0. Simulate typing indicator BEFORE sending
+        const presenceEndpoint = endpoint.replace('/messages/send-text', '/presence');
+        try {
+          await fetch(presenceEndpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(apiKey ? { 'x-api-key': apiKey } : {})
+            },
+            body: JSON.stringify({
+              chatId,
+              presence: "composing"
+            })
+          });
+        } catch (e) {
+          // Ignore error if presence endpoint is not supported
+        }
+
+        // 1. Random delay between 15 to 25 seconds (Simulating typing duration)
+        const typingDelay = getRandomInt(15000, 25000);
+        await delay(typingDelay);
+
+        try {
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(apiKey ? { 'x-api-key': apiKey } : {})
+            },
+            body: JSON.stringify({
+              chatId,
+              text: bodyContent
+            })
+          });
+
+          if (res.ok) {
+            successCount++;
+            await prisma.emailLog.create({
+              data: { campaignId: id, contactId: contact.id, type: 'WHATSAPP', status: 'SENT' }
+            });
+          } else {
+            const errorText = await res.text();
+            failCount++;
+            await prisma.emailLog.create({
+              data: { campaignId: id, contactId: contact.id, type: 'WHATSAPP', status: 'FAILED', errorMessage: errorText }
+            });
           }
-        });
+        } catch (err: any) {
+          failCount++;
+          await prisma.emailLog.create({
+            data: { campaignId: id, contactId: contact.id, type: 'WHATSAPP', status: 'FAILED', errorMessage: err.message }
+          });
+        }
+
+        // Clear typing indicator
+        try {
+          await fetch(presenceEndpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(apiKey ? { 'x-api-key': apiKey } : {})
+            },
+            body: JSON.stringify({
+              chatId,
+              presence: "available"
+            })
+          });
+        } catch (e) {}
+
+        // 2. Batch resting (Human takes a break)
+        if (successCount > 0 && successCount % 10 === 0) {
+          const restDelay = getRandomInt(120000, 300000); // 120s to 300s
+          await delay(restDelay);
+        }
       }
+    } else {
+      // Logic for sending using OFFICIAL_META
+      const { sendWaText, sendWaTemplate } = await import('@/lib/whatsapp');
       
-      // Delay to avoid rate limits (WhatsApp Cloud API has limits, but small delays are good)
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Override .env with DB settings if available for Official Meta
+      if (settings?.whatsappApiUrl) process.env.WHATSAPP_PHONE_NUMBER_ID = settings.whatsappApiUrl;
+      if (settings?.whatsappApiKey) process.env.WHATSAPP_ACCESS_TOKEN = settings.whatsappApiKey;
+
+      if (!process.env.WHATSAPP_PHONE_NUMBER_ID || !process.env.WHATSAPP_ACCESS_TOKEN) {
+        await prisma.campaign.update({
+          where: { id },
+          data: { status: 'FAILED' }
+        });
+        throw new Error("WhatsApp Cloud API credentials belum dikonfigurasi.");
+      }
+
+      for (const contact of contacts) {
+        const rawNumber = contact.waNumber || contact.phone;
+        if (!rawNumber) {
+          failCount++;
+          await prisma.emailLog.create({
+            data: {
+              campaignId: id,
+              contactId: contact.id,
+              type: 'WHATSAPP',
+              status: 'FAILED',
+              errorMessage: "Kontak tidak memiliki nomor WhatsApp"
+            }
+          });
+          continue;
+        }
+
+        // Format number to international format (62xxx)
+        let cleanNumber = rawNumber.replace(/\D/g, '');
+        if (cleanNumber.startsWith('0')) {
+          cleanNumber = '62' + cleanNumber.substring(1);
+        }
+        if (!cleanNumber.startsWith('62') && cleanNumber.length > 8) {
+          cleanNumber = '62' + cleanNumber;
+        }
+
+        let bodyContent = campaign.content;
+        bodyContent = bodyContent.replace(/{{name}}/g, contact.name || "Sobat");
+        bodyContent = bodyContent.replace(/{{email}}/g, contact.email || "");
+        bodyContent = bodyContent.replace(/{{company}}/g, contact.company || "");
+
+        try {
+          let result;
+          
+          const templates = await prisma.waTemplate.findMany({
+            where: { name: campaign.subject.trim() }
+          });
+
+          const waTemplate = templates.find(t => t.language === 'id') || 
+                            templates.find(t => t.language.startsWith('en')) || 
+                            templates[0];
+
+          if (waTemplate) {
+            console.log(`[BLAST] Using template: ${waTemplate.name} with language: ${waTemplate.language}`);
+
+            const components = JSON.parse(waTemplate.components);
+            const finalComponents = [];
+
+            const headerComponent = components.find((c: any) => c.type === 'HEADER');
+            if (headerComponent) {
+              if (headerComponent.format === 'TEXT') {
+                const headerText = headerComponent.text || "";
+                const headerVarCount = (headerText.match(/\{\{\d+\}\}/g) || []).length;
+                if (headerVarCount > 0) {
+                  const headerParams = [];
+                  for (let i = 0; i < headerVarCount; i++) {
+                    headerParams.push({ type: 'text', text: brandName });
+                  }
+                  finalComponents.push({ type: 'header', parameters: headerParams });
+                }
+              } else if (headerComponent.format === 'IMAGE') {
+                finalComponents.push({
+                  type: 'header',
+                  parameters: [{
+                    type: 'image',
+                    image: { link: heroImage || brandLogo }
+                  }]
+                });
+              }
+            }
+
+            const bodyComponent = components.find((c: any) => c.type === 'BODY');
+            if (bodyComponent) {
+              const bodyText = bodyComponent.text || "";
+              const bodyVarCount = (bodyText.match(/\{\{\d+\}\}/g) || []).length;
+              if (bodyVarCount > 0) {
+                const bodyParams = [];
+                if (bodyVarCount >= 1) bodyParams.push({ type: 'text', text: contact.name || "Pelanggan" });
+                if (bodyVarCount >= 2) bodyParams.push({ type: 'text', text: brandName });
+                for (let i = 2; i < bodyVarCount; i++) {
+                  bodyParams.push({ type: 'text', text: "-" });
+                }
+                finalComponents.push({ type: 'body', parameters: bodyParams });
+              }
+            }
+
+            result = await sendWaTemplate(
+              cleanNumber, 
+              waTemplate.name, 
+              waTemplate.language, 
+              finalComponents
+            );
+          } else {
+            result = await sendWaText(cleanNumber, bodyContent);
+          }
+
+          if (result.success) {
+            successCount++;
+            await prisma.emailLog.create({
+              data: { campaignId: id, contactId: contact.id, type: 'WHATSAPP', status: 'SENT' }
+            });
+          } else {
+            failCount++;
+            await prisma.emailLog.create({
+              data: { campaignId: id, contactId: contact.id, type: 'WHATSAPP', status: 'FAILED', errorMessage: JSON.stringify(result.error) }
+            });
+          }
+        } catch (err: any) {
+          failCount++;
+          await prisma.emailLog.create({
+            data: { campaignId: id, contactId: contact.id, type: 'WHATSAPP', status: 'FAILED', errorMessage: err.message }
+          });
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
     }
   } else {
     // Logic for sending EMAIL

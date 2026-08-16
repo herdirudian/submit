@@ -170,6 +170,7 @@ model AppSettings {
   // WhatsApp Integration
   whatsappApiUrl        String?
   whatsappApiKey        String?
+  whatsappProvider      String?  @default("OPENWA") // OPENWA or OFFICIAL_META
   
   // WhatsApp Auto Reply & Working Hours
   waAutoReplyEnabled    Boolean  @default(false)
