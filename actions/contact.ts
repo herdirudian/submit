@@ -265,8 +265,22 @@ export async function importContacts(
 
   for (const contact of contacts) {
     try {
+      let whereClause: any = { id: 'placeholder-to-force-create' };
+      
+      if (contact.email) {
+        whereClause = { email: contact.email.toLowerCase().trim() };
+      } else if (contact.waNumber) {
+        // Find existing contact by waNumber
+        const existing = await prisma.contact.findFirst({ where: { waNumber: contact.waNumber } });
+        if (existing) whereClause = { id: existing.id };
+      } else if (contact.phone) {
+        // Find existing contact by phone
+        const existing = await prisma.contact.findFirst({ where: { phone: contact.phone } });
+        if (existing) whereClause = { id: existing.id };
+      }
+
       const saved = await prisma.contact.upsert({
-        where: { email: contact.email ? contact.email.toLowerCase().trim() : `no-email-${Date.now()}-${Math.random()}` },
+        where: whereClause,
         update: {
           name: contact.name,
           phone: contact.phone,

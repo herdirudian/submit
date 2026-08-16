@@ -190,7 +190,7 @@ export default function ContactsPage() {
                     obj[header] = values[i]?.trim();
                 });
                 return obj;
-            }).filter(item => item.email);
+            }).filter(item => item.email || item.phone || item.waNumber);
 
             try {
                 const listId = importTargetListId && importTargetListId !== "__new__" ? importTargetListId : undefined;
@@ -665,7 +665,7 @@ export default function ContactsPage() {
                         </div>
                         <div className="p-6 space-y-4">
                             <div className="text-sm text-slate-500">
-                                Format header minimal: <span className="font-semibold">email</span>. Opsional: name, phone, waNumber, visitors, infoSource, company, city, tags
+                                Format header minimal: <span className="font-semibold">email</span> atau <span className="font-semibold">phone</span>. Opsional: name, waNumber, visitors, infoSource, company, city, tags
                             </div>
 
                             <div className="space-y-2">
