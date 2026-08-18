@@ -344,6 +344,7 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
     };
 
     const handleSelectChat = async (chat: any) => {
+        if (!chat) return;
         setSelectedChat(chat);
         
         // Optimistically update unread count in chat list
@@ -497,7 +498,7 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                                     )}
                                 </div>
                             </div>
-                            {chat._count.messages > 0 && (
+                            {chat._count?.messages > 0 && (
                                 <div className="w-5 h-5 bg-primary-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold shadow-lg shadow-primary-100">
                                     {chat._count.messages}
                                 </div>

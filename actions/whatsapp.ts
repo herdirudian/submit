@@ -291,13 +291,49 @@ export async function startNewChatAction(waId: string, name?: string) {
           waId: cleanWaId,
           contactId: contact?.id,
         },
-        include: { contact: true }
+        include: { 
+          contact: true,
+          assignedTo: { select: { id: true, name: true } },
+          _count: {
+            select: {
+              messages: {
+                where: { fromMe: false, status: { not: 'READ' } }
+              }
+            }
+          }
+        }
       });
     } else if (contact && chat.contactId !== contact.id) {
       chat = await prisma.waChat.update({
         where: { id: chat.id },
         data: { contactId: contact.id },
-        include: { contact: true }
+        include: { 
+          contact: true,
+          assignedTo: { select: { id: true, name: true } },
+          _count: {
+            select: {
+              messages: {
+                where: { fromMe: false, status: { not: 'READ' } }
+              }
+            }
+          }
+        }
+      });
+    } else {
+      // Always ensure we include the _count even for existing chats
+      chat = await prisma.waChat.findUnique({
+        where: { id: chat.id },
+        include: { 
+          contact: true,
+          assignedTo: { select: { id: true, name: true } },
+          _count: {
+            select: {
+              messages: {
+                where: { fromMe: false, status: { not: 'READ' } }
+              }
+            }
+          }
+        }
       });
     }
 
