@@ -316,15 +316,21 @@ export default function PublicFormRenderer({ form }: { form: FormWithQuestions }
                  border-color: var(--primary-color) !important;
              }
              .phone-input-container .react-tel-input .country-list {
+                 background-color: white !important;
                  border-radius: 12px !important;
                  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1) !important;
                  border: 1px solid #e2e8f0 !important;
                  margin-top: 4px !important;
                  width: 300px !important;
+                 z-index: 100 !important;
              }
              .phone-input-container .react-tel-input .country-list .search {
                  padding: 10px !important;
                  background-color: #f8fafc !important;
+                 position: sticky !important;
+                 top: 0 !important;
+                 z-index: 101 !important;
+                 border-bottom: 1px solid #e2e8f0 !important;
              }
              .phone-input-container .react-tel-input .country-list .search-box {
                  width: 100% !important;
@@ -333,6 +339,8 @@ export default function PublicFormRenderer({ form }: { form: FormWithQuestions }
                  border-radius: 8px !important;
                  border: 1px solid #e2e8f0 !important;
                  font-size: 14px !important;
+                 background-color: white !important;
+                 color: #334155 !important;
              }
          `}} />
         {/* Stepper UI */}
