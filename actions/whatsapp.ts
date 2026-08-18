@@ -242,7 +242,7 @@ export async function deleteWaQuickReply(id: string) {
   revalidatePath("/whatsapp/quick-replies");
 }
 
-export async function startNewChatAction(waId: string) {
+export async function startNewChatAction(waId: string, name?: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) throw new Error("Unauthorized");
 
@@ -251,19 +251,45 @@ export async function startNewChatAction(waId: string) {
 
   let chat = await prisma.waChat.findUnique({
     where: { waId: cleanWaId },
+    include: { contact: true }
   });
 
   if (!chat) {
-    const contact = await prisma.contact.findFirst({
+    let contact = await prisma.contact.findFirst({
       where: { OR: [{ phone: cleanWaId }, { waNumber: cleanWaId }] },
     });
+
+    if (!contact && name) {
+      contact = await prisma.contact.create({
+        data: {
+          name,
+          phone: cleanWaId,
+          waNumber: cleanWaId,
+          customerType: "Pelanggan",
+          ticketType: "Umum"
+        }
+      });
+    }
 
     chat = await prisma.waChat.create({
       data: {
         waId: cleanWaId,
         contactId: contact?.id,
       },
+      include: { contact: true }
     });
+  } else if (name && chat.contact && !chat.contact.name) {
+    // Update existing contact name if it was empty
+    await prisma.contact.update({
+      where: { id: chat.contact.id },
+      data: { name }
+    });
+    
+    // Refresh chat object with updated contact
+    chat = await prisma.waChat.findUnique({
+      where: { id: chat.id },
+      include: { contact: true }
+    }) as any;
   }
 
   revalidatePath("/whatsapp");
