@@ -639,7 +639,6 @@ export default function FormSettings({ form, isOpen, onClose, questions }: { for
                                                 inputClassName="!w-full !px-4 !py-2 !rounded-lg !border !border-slate-200 !focus:border-primary-500 !outline-none !h-[42px]"
                                                 countrySelectorStyleProps={{
                                                     buttonClassName: "!rounded-l-lg !border-slate-200 !h-[42px]",
-                                                    dropdownClassName: "!rounded-lg !shadow-xl !border-slate-200",
                                                 }}
                                             />
                                             <style dangerouslySetInnerHTML={{ __html: `
@@ -648,6 +647,11 @@ export default function FormSettings({ form, isOpen, onClose, questions }: { for
                                                 }
                                                 .phone-input-settings .react-international-phone-input {
                                                     flex: 1;
+                                                }
+                                                .phone-input-settings .react-international-phone-country-selector-dropdown {
+                                                    border-radius: 8px !important;
+                                                    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1) !important;
+                                                    border: 1px solid #e2e8f0 !important;
                                                 }
                                             `}} />
                                         </div>

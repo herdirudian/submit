@@ -306,6 +306,11 @@ export default function PublicFormRenderer({ form }: { form: FormWithQuestions }
                 background-color: white !important;
                 border-color: var(--primary-color) !important;
             }
+            .phone-input-container .react-international-phone-country-selector-dropdown {
+                border-radius: 12px !important;
+                box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1) !important;
+                border: 1px solid #e2e8f0 !important;
+            }
         `}} />
         {/* Stepper UI */}
         {totalSteps > 1 && (
@@ -466,7 +471,6 @@ export default function PublicFormRenderer({ form }: { form: FormWithQuestions }
                                             inputClassName="!w-full !bg-slate-50 !border !border-slate-200 !rounded-xl !px-4 !py-3 !focus:ring-4 !focus:bg-white !transition-all !outline-none !placeholder:text-slate-300 !font-medium !text-slate-700 !text-lg !shadow-sm !h-[54px]"
                                             countrySelectorStyleProps={{
                                                 buttonClassName: "!bg-slate-50 !border !border-slate-200 !rounded-xl !mr-2 !px-3 !h-[54px] !flex !items-center !justify-center",
-                                                dropdownClassName: "!rounded-xl !shadow-xl !border-slate-200",
                                             }}
                                             style={{
                                                 '--react-international-phone-border-radius': '12px',
