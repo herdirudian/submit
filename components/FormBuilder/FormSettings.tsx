@@ -3,6 +3,8 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { X, Upload, Loader2, Image as ImageIcon, MessageSquare } from "lucide-react";
+import { PhoneInput } from 'react-international-phone';
+import 'react-international-phone/style.css';
 import { toast } from "sonner";
 import { checkSlugAvailability, updateForm, updateFormSlug } from "@/actions/form";
 import { getWaTemplates } from "@/actions/whatsapp";
@@ -628,13 +630,27 @@ export default function FormSettings({ form, isOpen, onClose, questions }: { for
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-semibold text-slate-700 mb-2">Phone</label>
-                                        <input 
-                                            type="text" 
-                                            value={contactPhone}
-                                            onChange={(e) => setContactPhone(e.target.value)}
-                                            className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary-500 outline-none"
-                                            placeholder="+62..."
-                                        />
+                                        <div className="phone-input-settings">
+                                            <PhoneInput 
+                                                defaultCountry="id"
+                                                value={contactPhone}
+                                                onChange={(phone) => setContactPhone(phone)}
+                                                className="w-full"
+                                                inputClassName="!w-full !px-4 !py-2 !rounded-lg !border !border-slate-200 !focus:border-primary-500 !outline-none !h-[42px]"
+                                                countrySelectorStyleProps={{
+                                                    buttonClassName: "!rounded-l-lg !border-slate-200 !h-[42px]",
+                                                    dropdownClassName: "!rounded-lg !shadow-xl !border-slate-200",
+                                                }}
+                                            />
+                                            <style jsx global>{`
+                                                .phone-input-settings .react-international-phone-input-container {
+                                                    width: 100%;
+                                                }
+                                                .phone-input-settings .react-international-phone-input {
+                                                    flex: 1;
+                                                }
+                                            `}</style>
+                                        </div>
                                     </div>
                                     <div>
                                         <label className="block text-sm font-semibold text-slate-700 mb-2">Email</label>

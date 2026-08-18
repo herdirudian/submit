@@ -6,6 +6,9 @@ import { submitForm } from "@/actions/submission";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Loader2, CheckCircle, ChevronDown, Check, ArrowRight, Upload, X, File } from "lucide-react";
+import { PhoneInput } from 'react-international-phone';
+import 'react-international-phone/style.css';
+import { Controller } from "react-hook-form";
 
 // ... existing code ...
 
@@ -20,7 +23,7 @@ export default function PublicFormRenderer({ form }: { form: FormWithQuestions }
 
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const { register, handleSubmit, trigger, setValue, watch, formState: { errors, isSubmitting } } = useForm<FormValues>();
+  const { register, handleSubmit, trigger, setValue, watch, control, formState: { errors, isSubmitting } } = useForm<FormValues>();
   const allValues = watch();
   
   // File upload state
@@ -275,6 +278,28 @@ export default function PublicFormRenderer({ form }: { form: FormWithQuestions }
   
   return (
     <div className="space-y-8" style={{ fontFamily }}>
+        <style jsx global>{`
+            .phone-input-container .react-international-phone-input-container {
+                width: 100%;
+                display: flex;
+                gap: 8px;
+            }
+            .phone-input-container .react-international-phone-input {
+                flex: 1;
+            }
+            .phone-input-container .react-international-phone-country-selector-button {
+                width: 70px !important;
+            }
+            .phone-input-container .react-international-phone-input:focus {
+                border-color: ${primaryColor} !important;
+                box-shadow: 0 0 0 4px ${primaryLight} !important;
+                background-color: white !important;
+            }
+            .phone-input-container .react-international-phone-country-selector-button:hover {
+                background-color: white !important;
+                border-color: ${primaryColor} !important;
+            }
+        `}</style>
         {/* Stepper UI */}
         {totalSteps > 1 && (
             <div className="mb-12">
@@ -417,23 +442,37 @@ export default function PublicFormRenderer({ form }: { form: FormWithQuestions }
 
                         {/* Phone */}
                         {question.type === 'PHONE' && (
-                            <input
-                                {...register(question.id, { 
-                                    required: question.required,
-                                    pattern: question.validation ? new RegExp(JSON.parse(question.validation).regex) : undefined
-                                })}
-                                type="tel"
-                                className="block w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:ring-4 focus:bg-white transition-all outline-none placeholder:text-slate-300 font-medium text-slate-700 text-lg shadow-sm"
-                                placeholder="(+62) 812-3456-7890"
-                                onFocus={(e) => {
-                                    e.currentTarget.style.borderColor = primaryColor;
-                                    e.currentTarget.style.boxShadow = `0 0 0 4px ${primaryLight}`;
-                                }}
-                                onBlur={(e) => {
-                                    e.currentTarget.style.borderColor = '';
-                                    e.currentTarget.style.boxShadow = '';
-                                }}
-                            />
+                            <div className="phone-input-container">
+                                <Controller
+                                    name={question.id}
+                                    control={control}
+                                    rules={{ 
+                                        required: question.required,
+                                    }}
+                                    render={({ field: { onChange, value } }) => (
+                                        <PhoneInput
+                                            defaultCountry="id"
+                                            value={value as string || ''}
+                                            onChange={onChange}
+                                            placeholder="Enter phone number"
+                                            className="w-full"
+                                            inputClassName="!w-full !bg-slate-50 !border !border-slate-200 !rounded-xl !px-4 !py-3 !focus:ring-4 !focus:bg-white !transition-all !outline-none !placeholder:text-slate-300 !font-medium !text-slate-700 !text-lg !shadow-sm !h-[54px]"
+                                            countrySelectorStyleProps={{
+                                                buttonClassName: "!bg-slate-50 !border !border-slate-200 !rounded-xl !mr-2 !px-3 !h-[54px] !flex !items-center !justify-center",
+                                                dropdownClassName: "!rounded-xl !shadow-xl !border-slate-200",
+                                            }}
+                                            style={{
+                                                '--react-international-phone-border-radius': '12px',
+                                                '--react-international-phone-border-color': '#e2e8f0',
+                                                '--react-international-phone-background-color': '#f8fafc',
+                                                '--react-international-phone-text-color': '#334155',
+                                                '--react-international-phone-font-size': '1.125rem',
+                                                '--react-international-phone-height': '54px',
+                                            } as React.CSSProperties}
+                                        />
+                                    )}
+                                />
+                            </div>
                         )}
 
                         {/* Date */}
