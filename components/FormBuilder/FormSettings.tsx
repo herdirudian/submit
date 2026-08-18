@@ -642,14 +642,14 @@ export default function FormSettings({ form, isOpen, onClose, questions }: { for
                                                     dropdownClassName: "!rounded-lg !shadow-xl !border-slate-200",
                                                 }}
                                             />
-                                            <style jsx global>{`
+                                            <style dangerouslySetInnerHTML={{ __html: `
                                                 .phone-input-settings .react-international-phone-input-container {
                                                     width: 100%;
                                                 }
                                                 .phone-input-settings .react-international-phone-input {
                                                     flex: 1;
                                                 }
-                                            `}</style>
+                                            `}} />
                                         </div>
                                     </div>
                                     <div>

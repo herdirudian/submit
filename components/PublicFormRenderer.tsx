@@ -277,8 +277,15 @@ export default function PublicFormRenderer({ form }: { form: FormWithQuestions }
   const primaryLight = `${primaryColor}1A`; // 10% opacity hex
   
   return (
-    <div className="space-y-8" style={{ fontFamily }}>
-        <style jsx global>{`
+    <div 
+        className="space-y-8" 
+        style={{ 
+            fontFamily,
+            '--primary-color': primaryColor,
+            '--primary-light': primaryLight
+        } as React.CSSProperties}
+    >
+        <style dangerouslySetInnerHTML={{ __html: `
             .phone-input-container .react-international-phone-input-container {
                 width: 100%;
                 display: flex;
@@ -291,15 +298,15 @@ export default function PublicFormRenderer({ form }: { form: FormWithQuestions }
                 width: 70px !important;
             }
             .phone-input-container .react-international-phone-input:focus {
-                border-color: ${primaryColor} !important;
-                box-shadow: 0 0 0 4px ${primaryLight} !important;
+                border-color: var(--primary-color) !important;
+                box-shadow: 0 0 0 4px var(--primary-light) !important;
                 background-color: white !important;
             }
             .phone-input-container .react-international-phone-country-selector-button:hover {
                 background-color: white !important;
-                border-color: ${primaryColor} !important;
+                border-color: var(--primary-color) !important;
             }
-        `}</style>
+        `}} />
         {/* Stepper UI */}
         {totalSteps > 1 && (
             <div className="mb-12">
