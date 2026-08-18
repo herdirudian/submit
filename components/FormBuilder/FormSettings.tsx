@@ -642,6 +642,13 @@ export default function FormSettings({ form, isOpen, onClose, questions }: { for
                                                 buttonClass="!rounded-l-lg !border-slate-200 !h-[42px] !bg-white"
                                             />
                                             <style dangerouslySetInnerHTML={{ __html: `
+                                                .phone-input-settings {
+                                                    position: relative !important;
+                                                    z-index: 50 !important;
+                                                }
+                                                .phone-input-settings:focus-within {
+                                                    z-index: 100 !important;
+                                                }
                                                 .phone-input-settings .react-tel-input .country-list {
                                                     background-color: #ffffff !important;
                                                     background: #ffffff !important;
@@ -650,8 +657,9 @@ export default function FormSettings({ form, isOpen, onClose, questions }: { for
                                                     box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.2), 0 8px 10px -6px rgb(0 0 0 / 0.2) !important;
                                                     border: 1px solid #cbd5e1 !important;
                                                     width: 250px !important;
-                                                    z-index: 9999 !important;
+                                                    z-index: 10000 !important;
                                                     overflow-x: hidden !important;
+                                                    position: absolute !important;
                                                 }
                                                 .phone-input-settings .react-tel-input .country-list .search {
                                                     background-color: #f1f5f9 !important;
@@ -659,7 +667,7 @@ export default function FormSettings({ form, isOpen, onClose, questions }: { for
                                                     padding: 8px !important;
                                                     position: sticky !important;
                                                     top: 0 !important;
-                                                    z-index: 10000 !important;
+                                                    z-index: 10001 !important;
                                                     border-bottom: 1px solid #cbd5e1 !important;
                                                     display: block !important;
                                                     opacity: 1 !important;
@@ -678,7 +686,9 @@ export default function FormSettings({ form, isOpen, onClose, questions }: { for
                                                 }
                                                 .phone-input-settings .react-tel-input .country-list .country {
                                                     background-color: #ffffff !important;
+                                                    background: #ffffff !important;
                                                     color: #334155 !important;
+                                                    opacity: 1 !important;
                                                 }
                                                 .phone-input-settings .react-tel-input .country-list .country.highlight {
                                                     background-color: #f1f5f9 !important;

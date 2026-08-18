@@ -286,6 +286,13 @@ export default function PublicFormRenderer({ form }: { form: FormWithQuestions }
         } as React.CSSProperties}
     >
         <style dangerouslySetInnerHTML={{ __html: `
+             .phone-input-container {
+                 position: relative !important;
+                 z-index: 50 !important;
+             }
+             .phone-input-container:focus-within {
+                 z-index: 100 !important;
+             }
              .phone-input-container .react-tel-input .form-control {
                  width: 100% !important;
                  height: 54px !important;
@@ -309,11 +316,13 @@ export default function PublicFormRenderer({ form }: { form: FormWithQuestions }
                  border-radius: 12px 0 0 12px !important;
                  transition: all 0.2s ease-in-out !important;
                  width: 48px !important;
+                 z-index: 10 !important;
              }
              .phone-input-container .react-tel-input .flag-dropdown.open,
              .phone-input-container .react-tel-input .flag-dropdown:hover {
                  background-color: white !important;
                  border-color: var(--primary-color) !important;
+                 z-index: 10001 !important;
              }
              .phone-input-container .react-tel-input .country-list {
                  background-color: #ffffff !important;
@@ -324,8 +333,9 @@ export default function PublicFormRenderer({ form }: { form: FormWithQuestions }
                  border: 1px solid #cbd5e1 !important;
                  margin-top: 4px !important;
                  width: 300px !important;
-                 z-index: 9999 !important;
+                 z-index: 10000 !important;
                  overflow-x: hidden !important;
+                 position: absolute !important;
              }
              .phone-input-container .react-tel-input .country-list .search {
                  padding: 12px !important;
@@ -333,7 +343,7 @@ export default function PublicFormRenderer({ form }: { form: FormWithQuestions }
                  background: #f1f5f9 !important;
                  position: sticky !important;
                  top: 0 !important;
-                 z-index: 10000 !important;
+                 z-index: 10002 !important;
                  border-bottom: 1px solid #cbd5e1 !important;
                  display: block !important;
                  opacity: 1 !important;
@@ -353,8 +363,10 @@ export default function PublicFormRenderer({ form }: { form: FormWithQuestions }
              }
              .phone-input-container .react-tel-input .country-list .country {
                  background-color: #ffffff !important;
+                 background: #ffffff !important;
                  color: #334155 !important;
                  padding: 10px 12px !important;
+                 opacity: 1 !important;
              }
              .phone-input-container .react-tel-input .country-list .country.highlight {
                  background-color: #f1f5f9 !important;
