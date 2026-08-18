@@ -14,7 +14,7 @@ import {
     getWaChats, getWaChatMessages, sendWaMessageAction, 
     assignChatAction, getAgents, getWaQuickReplies, 
     startNewChatAction, syncWaTemplatesAction, updateChatContactAction,
-    updateChatStatusAction, sendWaMediaAction
+    updateChatStatusAction, sendWaMediaAction, markMessagesAsReadAction
 } from "@/actions/whatsapp";
 import { updateContact, createContact } from "@/actions/contact";
 import { formatDistance } from "date-fns";
@@ -70,6 +70,18 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                 }
                 return prev;
             });
+
+            // If there are unread messages from customer while we are in this chat, mark as read
+            const hasUnread = data.some((m: any) => !m.fromMe && m.status !== 'READ');
+            if (hasUnread) {
+                await markMessagesAsReadAction(chatId);
+                // Clear unread count locally for better UX
+                setChats(prev => prev.map(c => 
+                    c.id === chatId 
+                    ? { ...c, _count: { ...c._count, messages: 0 } } 
+                    : c
+                ));
+            }
         } catch (error) {
             console.error("Polling messages failed", error);
         }
@@ -325,6 +337,25 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
         setIsEditingContact(true);
     };
 
+    const handleSelectChat = async (chat: any) => {
+        setSelectedChat(chat);
+        
+        // Optimistically update unread count in chat list
+        if (chat._count?.messages > 0) {
+            setChats(prev => prev.map(c => 
+                c.id === chat.id 
+                ? { ...c, _count: { ...c._count, messages: 0 } } 
+                : c
+            ));
+            
+            try {
+                await markMessagesAsReadAction(chat.id);
+            } catch (error) {
+                console.error("Failed to mark messages as read", error);
+            }
+        }
+    };
+
     const filteredChats = chats.filter(c => 
         c.waId.includes(searchTerm) || 
         c.contact?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -413,7 +444,7 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                     {filteredChats.map((chat) => (
                         <div 
                             key={chat.id}
-                            onClick={() => setSelectedChat(chat)}
+                            onClick={() => handleSelectChat(chat)}
                             className={`px-4 py-4 flex items-start gap-3 cursor-pointer transition-all border-l-4 ${
                                 selectedChat?.id === chat.id 
                                 ? "bg-white border-primary-500 shadow-sm" 

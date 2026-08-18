@@ -270,6 +270,45 @@ export async function startNewChatAction(waId: string) {
   return chat;
 }
 
+export async function markMessagesAsReadAction(chatId: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Unauthorized");
+
+  const unreadMessages = await prisma.waMessage.findMany({
+    where: {
+      chatId,
+      fromMe: false,
+      status: { not: 'READ' },
+      waMessageId: { not: null }
+    },
+    select: { waMessageId: true }
+  });
+
+  if (unreadMessages.length > 0) {
+    // Notify Meta Cloud API
+    const { markWaAsRead } = await import("@/lib/whatsapp");
+    for (const msg of unreadMessages) {
+      if (msg.waMessageId) {
+        await markWaAsRead(msg.waMessageId);
+      }
+    }
+
+    // Update local database
+    await prisma.waMessage.updateMany({
+      where: {
+        chatId,
+        fromMe: false,
+        status: { not: 'READ' }
+      },
+      data: {
+        status: 'READ'
+      }
+    });
+
+    revalidatePath("/whatsapp");
+  }
+}
+
 export async function updateChatContactAction(chatId: string, contactId: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) throw new Error("Unauthorized");
