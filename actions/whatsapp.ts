@@ -243,21 +243,29 @@ export async function deleteWaQuickReply(id: string) {
 }
 
 export async function startNewChatAction(waId: string, name?: string) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) throw new Error("Unauthorized");
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) throw new Error("Unauthorized");
 
-  // Clean waId (remove +, spaces, etc)
-  const cleanWaId = waId.replace(/\D/g, "");
+    // Clean waId (remove +, spaces, etc)
+    const cleanWaId = waId.replace(/\D/g, "");
+    if (!cleanWaId) throw new Error("Nomor WhatsApp tidak valid");
 
-  let chat = await prisma.waChat.findUnique({
-    where: { waId: cleanWaId },
-    include: { contact: true }
-  });
+    console.log(`[CRM] Starting new chat for: ${cleanWaId} (Name: ${name || 'N/A'})`);
 
-  if (!chat) {
-    let contact = await prisma.contact.findFirst({
-      where: { OR: [{ phone: cleanWaId }, { waNumber: cleanWaId }] },
+    // 1. Find existing chat
+    let chat = await prisma.waChat.findUnique({
+      where: { waId: cleanWaId },
+      include: { contact: true }
     });
+
+    // 2. Find or Create Contact
+    let contact = chat?.contact;
+    if (!contact) {
+      contact = await prisma.contact.findFirst({
+        where: { OR: [{ phone: cleanWaId }, { waNumber: cleanWaId }] },
+      });
+    }
 
     if (!contact && name) {
       contact = await prisma.contact.create({
@@ -269,31 +277,38 @@ export async function startNewChatAction(waId: string, name?: string) {
           ticketType: "Umum"
         }
       });
+    } else if (contact && name && !contact.name) {
+      contact = await prisma.contact.update({
+        where: { id: contact.id },
+        data: { name }
+      });
     }
 
-    chat = await prisma.waChat.create({
-      data: {
-        waId: cleanWaId,
-        contactId: contact?.id,
-      },
-      include: { contact: true }
-    });
-  } else if (name && chat.contact && !chat.contact.name) {
-    // Update existing contact name if it was empty
-    await prisma.contact.update({
-      where: { id: chat.contact.id },
-      data: { name }
-    });
-    
-    // Refresh chat object with updated contact
-    chat = await prisma.waChat.findUnique({
-      where: { id: chat.id },
-      include: { contact: true }
-    }) as any;
-  }
+    // 3. Create or Update Chat
+    if (!chat) {
+      chat = await prisma.waChat.create({
+        data: {
+          waId: cleanWaId,
+          contactId: contact?.id,
+        },
+        include: { contact: true }
+      });
+    } else if (contact && chat.contactId !== contact.id) {
+      chat = await prisma.waChat.update({
+        where: { id: chat.id },
+        data: { contactId: contact.id },
+        include: { contact: true }
+      });
+    }
 
-  revalidatePath("/whatsapp");
-  return chat;
+    revalidatePath("/whatsapp");
+    
+    // Return a clean object to avoid serialization issues
+    return JSON.parse(JSON.stringify(chat));
+  } catch (error: any) {
+    console.error("[CRM-ERROR] startNewChatAction:", error);
+    throw new Error(error.message || "Gagal memulai chat");
+  }
 }
 
 export async function markMessagesAsReadAction(chatId: string) {
