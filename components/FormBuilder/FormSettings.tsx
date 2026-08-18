@@ -3,8 +3,8 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { X, Upload, Loader2, Image as ImageIcon, MessageSquare } from "lucide-react";
-import { PhoneInput } from 'react-international-phone';
-import 'react-international-phone/style.css';
+import PhoneInput from 'react-phone-input-2';
+import 'react-phone-input-2/lib/style.css';
 import { toast } from "sonner";
 import { checkSlugAvailability, updateForm, updateFormSlug } from "@/actions/form";
 import { getWaTemplates } from "@/actions/whatsapp";
@@ -632,26 +632,27 @@ export default function FormSettings({ form, isOpen, onClose, questions }: { for
                                         <label className="block text-sm font-semibold text-slate-700 mb-2">Phone</label>
                                         <div className="phone-input-settings">
                                             <PhoneInput 
-                                                defaultCountry="id"
+                                                country="id"
                                                 value={contactPhone}
                                                 onChange={(phone) => setContactPhone(phone)}
-                                                className="w-full"
-                                                inputClassName="!w-full !px-4 !py-2 !rounded-lg !border !border-slate-200 !focus:border-primary-500 !outline-none !h-[42px]"
-                                                countrySelectorStyleProps={{
-                                                    buttonClassName: "!rounded-l-lg !border-slate-200 !h-[42px]",
-                                                }}
+                                                enableSearch={true}
+                                                searchPlaceholder="Cari negara..."
+                                                containerClass="!w-full"
+                                                inputClass="!w-full !px-4 !py-2 !rounded-lg !border !border-slate-200 !focus:border-primary-500 !outline-none !h-[42px] !pl-[48px]"
+                                                buttonClass="!rounded-l-lg !border-slate-200 !h-[42px] !bg-white"
                                             />
                                             <style dangerouslySetInnerHTML={{ __html: `
-                                                .phone-input-settings .react-international-phone-input-container {
-                                                    width: 100%;
-                                                }
-                                                .phone-input-settings .react-international-phone-input {
-                                                    flex: 1;
-                                                }
-                                                .phone-input-settings .react-international-phone-country-selector-dropdown {
+                                                .phone-input-settings .react-tel-input .country-list {
                                                     border-radius: 8px !important;
                                                     box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1) !important;
                                                     border: 1px solid #e2e8f0 !important;
+                                                    width: 250px !important;
+                                                }
+                                                .phone-input-settings .react-tel-input .country-list .search-box {
+                                                    width: 90% !important;
+                                                    margin: 8px !important;
+                                                    padding: 6px 10px !important;
+                                                    border-radius: 6px !important;
                                                 }
                                             `}} />
                                         </div>

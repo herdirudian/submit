@@ -6,8 +6,8 @@ import { submitForm } from "@/actions/submission";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Loader2, CheckCircle, ChevronDown, Check, ArrowRight, Upload, X, File } from "lucide-react";
-import { PhoneInput } from 'react-international-phone';
-import 'react-international-phone/style.css';
+import PhoneInput from 'react-phone-input-2';
+import 'react-phone-input-2/lib/style.css';
 import { Controller } from "react-hook-form";
 
 // ... existing code ...
@@ -286,32 +286,55 @@ export default function PublicFormRenderer({ form }: { form: FormWithQuestions }
         } as React.CSSProperties}
     >
         <style dangerouslySetInnerHTML={{ __html: `
-            .phone-input-container .react-international-phone-input-container {
-                width: 100%;
-                display: flex;
-                gap: 8px;
-            }
-            .phone-input-container .react-international-phone-input {
-                flex: 1;
-            }
-            .phone-input-container .react-international-phone-country-selector-button {
-                width: 70px !important;
-            }
-            .phone-input-container .react-international-phone-input:focus {
-                border-color: var(--primary-color) !important;
-                box-shadow: 0 0 0 4px var(--primary-light) !important;
-                background-color: white !important;
-            }
-            .phone-input-container .react-international-phone-country-selector-button:hover {
-                background-color: white !important;
-                border-color: var(--primary-color) !important;
-            }
-            .phone-input-container .react-international-phone-country-selector-dropdown {
-                border-radius: 12px !important;
-                box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1) !important;
-                border: 1px solid #e2e8f0 !important;
-            }
-        `}} />
+             .phone-input-container .react-tel-input .form-control {
+                 width: 100% !important;
+                 height: 54px !important;
+                 background-color: #f8fafc !important;
+                 border: 1px solid #e2e8f0 !important;
+                 border-radius: 12px !important;
+                 padding-left: 58px !important;
+                 font-size: 1.125rem !important;
+                 font-weight: 500 !important;
+                 color: #334155 !important;
+                 transition: all 0.2s ease-in-out !important;
+             }
+             .phone-input-container .react-tel-input .form-control:focus {
+                 border-color: var(--primary-color) !important;
+                 box-shadow: 0 0 0 4px var(--primary-light) !important;
+                 background-color: white !important;
+             }
+             .phone-input-container .react-tel-input .flag-dropdown {
+                 background-color: transparent !important;
+                 border: 1px solid #e2e8f0 !important;
+                 border-radius: 12px 0 0 12px !important;
+                 transition: all 0.2s ease-in-out !important;
+                 width: 48px !important;
+             }
+             .phone-input-container .react-tel-input .flag-dropdown.open,
+             .phone-input-container .react-tel-input .flag-dropdown:hover {
+                 background-color: white !important;
+                 border-color: var(--primary-color) !important;
+             }
+             .phone-input-container .react-tel-input .country-list {
+                 border-radius: 12px !important;
+                 box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1) !important;
+                 border: 1px solid #e2e8f0 !important;
+                 margin-top: 4px !important;
+                 width: 300px !important;
+             }
+             .phone-input-container .react-tel-input .country-list .search {
+                 padding: 10px !important;
+                 background-color: #f8fafc !important;
+             }
+             .phone-input-container .react-tel-input .country-list .search-box {
+                 width: 100% !important;
+                 margin: 0 !important;
+                 padding: 8px 12px !important;
+                 border-radius: 8px !important;
+                 border: 1px solid #e2e8f0 !important;
+                 font-size: 14px !important;
+             }
+         `}} />
         {/* Stepper UI */}
         {totalSteps > 1 && (
             <div className="mb-12">
@@ -463,23 +486,17 @@ export default function PublicFormRenderer({ form }: { form: FormWithQuestions }
                                     }}
                                     render={({ field: { onChange, value } }) => (
                                         <PhoneInput
-                                            defaultCountry="id"
+                                            country="id"
                                             value={value as string || ''}
                                             onChange={onChange}
+                                            enableSearch={true}
+                                            searchPlaceholder="Cari negara..."
                                             placeholder="Enter phone number"
-                                            className="w-full"
-                                            inputClassName="!w-full !bg-slate-50 !border !border-slate-200 !rounded-xl !px-4 !py-3 !focus:ring-4 !focus:bg-white !transition-all !outline-none !placeholder:text-slate-300 !font-medium !text-slate-700 !text-lg !shadow-sm !h-[54px]"
-                                            countrySelectorStyleProps={{
-                                                buttonClassName: "!bg-slate-50 !border !border-slate-200 !rounded-xl !mr-2 !px-3 !h-[54px] !flex !items-center !justify-center",
+                                            inputProps={{
+                                                name: question.id,
+                                                required: question.required,
                                             }}
-                                            style={{
-                                                '--react-international-phone-border-radius': '12px',
-                                                '--react-international-phone-border-color': '#e2e8f0',
-                                                '--react-international-phone-background-color': '#f8fafc',
-                                                '--react-international-phone-text-color': '#334155',
-                                                '--react-international-phone-font-size': '1.125rem',
-                                                '--react-international-phone-height': '54px',
-                                            } as React.CSSProperties}
+                                            containerClass="!w-full"
                                         />
                                     )}
                                 />
