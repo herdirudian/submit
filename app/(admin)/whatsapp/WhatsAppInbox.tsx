@@ -210,11 +210,15 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
         setStartingChat(true);
         try {
             const chat = await startNewChatAction(newWaId, newContactName);
-            setChats(prev => [chat, ...prev.filter(c => c.id !== chat.id)]);
-            setSelectedChat(chat);
-            setShowNewChatModal(false);
-            setNewWaId("");
-            setNewContactName("");
+            if (chat) {
+                setChats(prev => [chat, ...prev.filter(c => c.id !== chat.id)]);
+                setSelectedChat(chat);
+                setShowNewChatModal(false);
+                setNewWaId("");
+                setNewContactName("");
+            } else {
+                toast.error("Gagal membuat percakapan baru");
+            }
         } catch (error: any) {
             toast.error(error.message || "Gagal memulai chat");
         } finally {
