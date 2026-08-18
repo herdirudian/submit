@@ -643,29 +643,45 @@ export default function FormSettings({ form, isOpen, onClose, questions }: { for
                                             />
                                             <style dangerouslySetInnerHTML={{ __html: `
                                                 .phone-input-settings .react-tel-input .country-list {
-                                                    background-color: white !important;
+                                                    background-color: #ffffff !important;
+                                                    background: #ffffff !important;
+                                                    opacity: 1 !important;
                                                     border-radius: 8px !important;
-                                                    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1) !important;
-                                                    border: 1px solid #e2e8f0 !important;
+                                                    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.2), 0 8px 10px -6px rgb(0 0 0 / 0.2) !important;
+                                                    border: 1px solid #cbd5e1 !important;
                                                     width: 250px !important;
-                                                    z-index: 100 !important;
+                                                    z-index: 9999 !important;
+                                                    overflow-x: hidden !important;
                                                 }
                                                 .phone-input-settings .react-tel-input .country-list .search {
-                                                    background-color: #f8fafc !important;
+                                                    background-color: #f1f5f9 !important;
+                                                    background: #f1f5f9 !important;
                                                     padding: 8px !important;
                                                     position: sticky !important;
                                                     top: 0 !important;
-                                                    z-index: 101 !important;
-                                                    border-bottom: 1px solid #e2e8f0 !important;
+                                                    z-index: 10000 !important;
+                                                    border-bottom: 1px solid #cbd5e1 !important;
+                                                    display: block !important;
+                                                    opacity: 1 !important;
                                                 }
                                                 .phone-input-settings .react-tel-input .country-list .search-box {
                                                     width: 100% !important;
                                                     margin: 0 !important;
                                                     padding: 6px 10px !important;
                                                     border-radius: 6px !important;
-                                                    border: 1px solid #e2e8f0 !important;
-                                                    background-color: white !important;
+                                                    border: 1px solid #cbd5e1 !important;
+                                                    background-color: #ffffff !important;
+                                                    background: #ffffff !important;
+                                                    color: #0f172a !important;
+                                                    opacity: 1 !important;
+                                                    display: block !important;
+                                                }
+                                                .phone-input-settings .react-tel-input .country-list .country {
+                                                    background-color: #ffffff !important;
                                                     color: #334155 !important;
+                                                }
+                                                .phone-input-settings .react-tel-input .country-list .country.highlight {
+                                                    background-color: #f1f5f9 !important;
                                                 }
                                             `}} />
                                         </div>
