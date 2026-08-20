@@ -93,7 +93,12 @@ export async function sendWaMessageAction(chatId: string, body: string, isIntern
   }
 
   // External WhatsApp message
-  const result = await sendWaText(chat.waId, body);
+  let toWaId = chat.waId;
+  if (toWaId.startsWith('0')) {
+    toWaId = '62' + toWaId.substring(1);
+  }
+  
+  const result = await sendWaText(toWaId, body);
   
   if (result.success) {
     const msg = await prisma.waMessage.create({
@@ -154,7 +159,12 @@ export async function sendWaMediaAction(chatId: string, type: any, url: string, 
     absoluteUrl = `${protocol}://${host}${url}`;
   }
   
-  const result = await sendWaMedia(chat.waId, type.toLowerCase(), absoluteUrl, caption);
+  let toWaId = chat.waId;
+  if (toWaId.startsWith('0')) {
+    toWaId = '62' + toWaId.substring(1);
+  }
+
+  const result = await sendWaMedia(toWaId, type.toLowerCase(), absoluteUrl, caption);
   
   if (result.success) {
     const msg = await prisma.waMessage.create({
@@ -195,7 +205,12 @@ export async function sendWaTemplateAction(chatId: string, templateName: string,
 
   if (!chat) throw new Error("Chat not found");
 
-  const result = await sendWaTemplate(chat.waId, templateName, languageCode, components);
+  let toWaId = chat.waId;
+  if (toWaId.startsWith('0')) {
+    toWaId = '62' + toWaId.substring(1);
+  }
+
+  const result = await sendWaTemplate(toWaId, templateName, languageCode, components);
   
   if (result.success) {
     const msg = await prisma.waMessage.create({
