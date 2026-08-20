@@ -8,13 +8,14 @@ import {
     Clock, Filter, UserPlus, Info, Trash2, 
     MessageSquare, Hash, Tag, Plus, RefreshCw,
     Building, MapPin, UserCheck, FileText, Image as ImageIcon,
-    Play, Download, Mail, Ticket
+    Play, Download, Mail, Ticket, Layout
 } from "lucide-react";
 import { 
     getWaChats, getWaChatMessages, sendWaMessageAction, 
     assignChatAction, getAgents, getWaQuickReplies, 
     startNewChatAction, syncWaTemplatesAction, updateChatContactAction,
-    updateChatStatusAction, sendWaMediaAction, markMessagesAsReadAction
+    updateChatStatusAction, sendWaMediaAction, markMessagesAsReadAction,
+    getWaTemplates, sendWaTemplateAction
 } from "@/actions/whatsapp";
 import { updateContact, createContact } from "@/actions/contact";
 import { formatDistance } from "date-fns";
@@ -46,6 +47,11 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
     const [selectedTag, setSelectedTag] = useState<string>("");
     const [showFilters, setShowFilters] = useState(false);
     const [uploading, setUploading] = useState(false);
+    const [showTemplateModal, setShowTemplateModal] = useState(false);
+    const [templates, setTemplates] = useState<any[]>([]);
+    const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
+    const [templateVars, setTemplateVars] = useState<string[]>([]);
+    const [sendingTemplate, setSendingTemplate] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -97,6 +103,59 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
         }
     }, []);
 
+    const loadTemplates = useCallback(async () => {
+        try {
+            const data = await getWaTemplates();
+            setTemplates(data);
+        } catch (error) {
+            console.error(error);
+        }
+    }, []);
+
+    const handleSendTemplate = async () => {
+        if (!selectedChat || !selectedTemplate) return;
+
+        setSendingTemplate(true);
+        try {
+            const components: any[] = [];
+            
+            // Extract body variables from template vars
+            if (templateVars.length > 0) {
+                components.push({
+                    type: "body",
+                    parameters: templateVars.map(val => ({
+                        type: "text",
+                        text: val
+                    }))
+                });
+            }
+
+            // Generate preview text
+            let bodyPreview = selectedTemplate.components.find((c: any) => c.type === 'BODY')?.text || "";
+            templateVars.forEach((val, i) => {
+                bodyPreview = bodyPreview.replace(`{{${i + 1}}}`, val);
+            });
+
+            const msg = await sendWaTemplateAction(
+                selectedChat.id,
+                selectedTemplate.name,
+                selectedTemplate.language,
+                components,
+                bodyPreview
+            );
+
+            setMessages(prev => [...prev, msg]);
+            setShowTemplateModal(false);
+            setSelectedTemplate(null);
+            setTemplateVars([]);
+            toast.success("Template berhasil dikirim");
+        } catch (error: any) {
+            toast.error(error.message || "Gagal mengirim template");
+        } finally {
+            setSendingTemplate(false);
+        }
+    };
+
     const handleQuickReply = (content: string) => {
         setMessageInput(content);
     };
@@ -134,8 +193,9 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
         }, 5000); // Poll every 5 seconds
 
         loadQuickReplies();
+        loadTemplates();
         return () => clearInterval(interval);
-    }, [selectedChat, refreshChats, refreshMessages, loadQuickReplies]);
+    }, [selectedChat, refreshChats, refreshMessages, loadQuickReplies, loadTemplates]);
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -737,6 +797,16 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                                         }`}
                                     />
                                     <div className="absolute right-3 bottom-3 flex items-center gap-2">
+                                        {!isInternal && (
+                                            <button 
+                                                type="button" 
+                                                onClick={() => setShowTemplateModal(true)}
+                                                className="p-2 text-slate-400 hover:text-primary-600 transition-all"
+                                                title="Kirim Template Meta"
+                                            >
+                                                <Layout size={20} />
+                                            </button>
+                                        )}
                                         <button type="button" className="p-2 text-slate-400 hover:text-primary-600 transition-all">
                                             <Smile size={20} />
                                         </button>
@@ -1097,6 +1167,113 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Template Modal */}
+            {showTemplateModal && (
+                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-primary-50/50">
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-800">Kirim Template Meta</h3>
+                                <p className="text-xs text-slate-500 mt-0.5">Pilih template resmi untuk memulai percakapan.</p>
+                            </div>
+                            <button onClick={() => {
+                                setShowTemplateModal(false);
+                                setSelectedTemplate(null);
+                                setTemplateVars([]);
+                            }} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-white rounded-xl transition-all">
+                                <X size={20} />
+                            </button>
+                        </div>
+                        
+                        <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-500 uppercase px-1">Pilih Template</label>
+                                <select 
+                                    className="w-full px-4 py-3 rounded-2xl border border-slate-200 outline-none focus:ring-4 focus:ring-primary-50 focus:border-primary-500 transition-all text-sm font-medium"
+                                    onChange={(e) => {
+                                        const template = templates.find(t => t.id === e.target.value);
+                                        setSelectedTemplate(template);
+                                        if (template) {
+                                            const body = template.components.find((c: any) => c.type === 'BODY');
+                                            const matches = body?.text.match(/{{(\d+)}}/g) || [];
+                                            setTemplateVars(new Array(matches.length).fill(""));
+                                        } else {
+                                            setTemplateVars([]);
+                                        }
+                                    }}
+                                    value={selectedTemplate?.id || ""}
+                                >
+                                    <option value="">-- Pilih Template --</option>
+                                    {templates.map(t => (
+                                        <option key={t.id} value={t.id}>{t.name} ({t.language})</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {selectedTemplate && (
+                                <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
+                                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Pratinjau Pesan</label>
+                                        <div className="bg-white p-4 rounded-xl border border-slate-100 text-sm text-slate-700 whitespace-pre-wrap leading-relaxed shadow-sm">
+                                            {(() => {
+                                                let body = selectedTemplate.components.find((c: any) => c.type === 'BODY')?.text || "";
+                                                templateVars.forEach((val, i) => {
+                                                    body = body.replace(`{{${i + 1}}}`, val || `[Variabel ${i + 1}]`);
+                                                });
+                                                return body;
+                                            })()}
+                                        </div>
+                                    </div>
+
+                                    {templateVars.length > 0 && (
+                                        <div className="space-y-4">
+                                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block px-1">Isi Variabel</label>
+                                            {templateVars.map((val, i) => (
+                                                <div key={i} className="space-y-1.5">
+                                                    <label className="text-xs font-bold text-slate-600 px-1">Variabel {"{{"}{i + 1}{"}}"}</label>
+                                                    <input 
+                                                        type="text"
+                                                        value={val}
+                                                        onChange={(e) => {
+                                                            const newVars = [...templateVars];
+                                                            newVars[i] = e.target.value;
+                                                            setTemplateVars(newVars);
+                                                        }}
+                                                        placeholder={`Masukkan nilai untuk variabel ${i + 1}`}
+                                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none focus:ring-4 focus:ring-primary-50 focus:border-primary-500 transition-all text-sm"
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="p-6 bg-slate-50 border-t border-slate-100 flex gap-3">
+                            <button 
+                                onClick={() => {
+                                    setShowTemplateModal(false);
+                                    setSelectedTemplate(null);
+                                    setTemplateVars([]);
+                                }}
+                                className="flex-1 px-4 py-3 border border-slate-200 rounded-2xl font-bold text-slate-600 hover:bg-white transition-all text-sm"
+                            >
+                                Batal
+                            </button>
+                            <button 
+                                onClick={handleSendTemplate}
+                                disabled={!selectedTemplate || sendingTemplate || templateVars.some(v => !v.trim())}
+                                className="flex-[2] px-4 py-3 bg-primary-600 text-white rounded-2xl font-bold hover:bg-primary-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-primary-100 text-sm"
+                            >
+                                {sendingTemplate ? <Clock size={18} className="animate-spin" /> : <Send size={18} />}
+                                Kirim Template
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

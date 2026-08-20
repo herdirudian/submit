@@ -180,6 +180,44 @@ export async function sendWaMediaAction(chatId: string, type: any, url: string, 
   }
 }
 
+export async function sendWaTemplateAction(chatId: string, templateName: string, languageCode: string, components: any[], bodyPreview: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Unauthorized");
+
+  const chat = await prisma.waChat.findUnique({
+    where: { id: chatId },
+  });
+
+  if (!chat) throw new Error("Chat not found");
+
+  const result = await sendWaTemplate(chat.waId, templateName, languageCode, components);
+  
+  if (result.success) {
+    const msg = await prisma.waMessage.create({
+      data: {
+        chatId,
+        waMessageId: result.data.messages[0].id,
+        body: bodyPreview,
+        fromMe: true,
+        senderId: (session.user as any).id,
+      },
+    });
+
+    await prisma.waChat.update({
+      where: { id: chatId },
+      data: {
+        lastMessage: bodyPreview,
+        lastMessageAt: new Date(),
+      },
+    });
+
+    revalidatePath("/whatsapp");
+    return msg;
+  } else {
+    throw new Error(result.error?.error?.message || "Gagal mengirim template");
+  }
+}
+
 export async function assignChatAction(chatId: string, userId: string | null) {
   const session = await getServerSession(authOptions);
   if (!session?.user) throw new Error("Unauthorized");
