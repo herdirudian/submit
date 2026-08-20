@@ -125,10 +125,15 @@ export async function getWaTemplates() {
   const session = await getServerSession(authOptions);
   if (!session?.user) throw new Error("Unauthorized");
 
-  return await prisma.waTemplate.findMany({
+  const templates = await prisma.waTemplate.findMany({
     where: { status: "APPROVED" },
     orderBy: { name: "asc" },
   });
+
+  return templates.map(t => ({
+    ...t,
+    components: t.components ? (typeof t.components === 'string' ? JSON.parse(t.components) : t.components) : []
+  }));
 }
 
 export async function sendWaMediaAction(chatId: string, type: any, url: string, caption?: string) {

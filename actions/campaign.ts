@@ -363,7 +363,7 @@ export async function sendCampaignNow(id: string) {
           if (waTemplate) {
             console.log(`[BLAST] Using template: ${waTemplate.name} with language: ${waTemplate.language}`);
 
-            const components = JSON.parse(waTemplate.components);
+            const components = typeof waTemplate.components === 'string' ? JSON.parse(waTemplate.components) : waTemplate.components;
             const finalComponents = [];
 
             const headerComponent = components.find((c: any) => c.type === 'HEADER');

@@ -177,7 +177,7 @@ export async function submitForm(formId: string, data: Record<string, any>) {
 
                     if (template) {
                         console.log(`[WA-SUBMIT] Template found in DB: ${template.name} (${template.language})`);
-                        const components = JSON.parse(template.components);
+                        const components = typeof template.components === 'string' ? JSON.parse(template.components) : template.components;
                         const finalComponents = [];
 
                         // 1. Handle HEADER (Media)
