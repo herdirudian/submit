@@ -513,6 +513,23 @@ export async function syncWaTemplatesAction() {
       });
     }
 
+    // Hapus template lokal yang sudah tidak ada di Meta (dihapus/di-archive di Meta dan tidak direturn oleh API)
+    if (templates.length > 0) {
+      await prisma.waTemplate.deleteMany({
+        where: {
+          NOT: {
+            OR: templates.map((t: any) => ({
+              name: t.name,
+              language: t.language
+            }))
+          }
+        }
+      });
+    } else {
+      // Jika tidak ada template sama sekali dari Meta, hapus semua template lokal
+      await prisma.waTemplate.deleteMany({});
+    }
+
     revalidatePath("/whatsapp");
     return { success: true, count: templates.length };
   } catch (error: any) {
