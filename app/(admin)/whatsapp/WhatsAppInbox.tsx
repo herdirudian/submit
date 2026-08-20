@@ -51,6 +51,7 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
     const [templates, setTemplates] = useState<any[]>([]);
     const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
     const [templateVars, setTemplateVars] = useState<string[]>([]);
+    const [templateHeaderMediaUrl, setTemplateHeaderMediaUrl] = useState<string>("");
     const [sendingTemplate, setSendingTemplate] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -119,13 +120,44 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
         try {
             const components: any[] = [];
             
+            // Extract header variables
+            const headerComponent = selectedTemplate.components.find((c: any) => c.type === 'HEADER');
+            if (headerComponent && ['IMAGE', 'VIDEO', 'DOCUMENT'].includes(headerComponent.format)) {
+                if (!templateHeaderMediaUrl) {
+                    throw new Error(`Template ini membutuhkan media ${headerComponent.format}. Silakan masukkan URL media.`);
+                }
+                
+                let mediaType = headerComponent.format.toLowerCase();
+                let mediaLink = templateHeaderMediaUrl;
+                if (mediaLink.startsWith("/")) {
+                    mediaLink = window.location.origin + mediaLink;
+                }
+                
+                components.push({
+                    type: "header",
+                    parameters: [{
+                        type: mediaType,
+                        [mediaType]: { link: mediaLink }
+                    }]
+                });
+            } else if (headerComponent && headerComponent.format === 'TEXT') {
+                const headerText = headerComponent.text || "";
+                const headerVarCount = (headerText.match(/\{\{\d+\}\}/g) || []).length;
+                if (headerVarCount > 0) {
+                    components.push({
+                        type: "header",
+                        parameters: Array(headerVarCount).fill({ type: 'text', text: "Info" })
+                    });
+                }
+            }
+
             // Extract body variables from template vars
             if (templateVars.length > 0) {
                 components.push({
                     type: "body",
                     parameters: templateVars.map(val => ({
                         type: "text",
-                        text: val
+                        text: val || "-"
                     }))
                 });
             }
@@ -133,7 +165,7 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
             // Generate preview text
             let bodyPreview = selectedTemplate.components.find((c: any) => c.type === 'BODY')?.text || "";
             templateVars.forEach((val, i) => {
-                bodyPreview = bodyPreview.replace(`{{${i + 1}}}`, val);
+                bodyPreview = bodyPreview.replace(`{{${i + 1}}}`, val || "-");
             });
 
             const msg = await sendWaTemplateAction(
@@ -148,6 +180,7 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
             setShowTemplateModal(false);
             setSelectedTemplate(null);
             setTemplateVars([]);
+            setTemplateHeaderMediaUrl("");
             toast.success("Template berhasil dikirim");
         } catch (error: any) {
             toast.error(error.message || "Gagal mengirim template");
@@ -1184,6 +1217,7 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                                 setShowTemplateModal(false);
                                 setSelectedTemplate(null);
                                 setTemplateVars([]);
+                                setTemplateHeaderMediaUrl("");
                             }} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-white rounded-xl transition-all">
                                 <X size={20} />
                             </button>
@@ -1197,6 +1231,7 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                                     onChange={(e) => {
                                         const template = templates.find(t => t.id === e.target.value);
                                         setSelectedTemplate(template);
+                                        setTemplateHeaderMediaUrl("");
                                         if (template) {
                                             const body = template.components.find((c: any) => c.type === 'BODY');
                                             const matches = body?.text.match(/{{(\d+)}}/g) || [];
@@ -1228,6 +1263,22 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                                             })()}
                                         </div>
                                     </div>
+
+                                    {selectedTemplate.components.find((c: any) => c.type === 'HEADER' && ['IMAGE', 'VIDEO', 'DOCUMENT'].includes(c.format)) && (
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block px-1">
+                                                URL Media Header ({selectedTemplate.components.find((c: any) => c.type === 'HEADER').format})
+                                            </label>
+                                            <input 
+                                                type="url"
+                                                value={templateHeaderMediaUrl}
+                                                onChange={(e) => setTemplateHeaderMediaUrl(e.target.value)}
+                                                placeholder="https://example.com/image.jpg"
+                                                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none focus:ring-4 focus:ring-primary-50 focus:border-primary-500 transition-all text-sm"
+                                            />
+                                            <p className="text-[10px] text-slate-400 px-1">Meta mewajibkan URL media publik (JPG, PNG, PDF, MP4).</p>
+                                        </div>
+                                    )}
 
                                     {templateVars.length > 0 && (
                                         <div className="space-y-4">
