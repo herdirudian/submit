@@ -42,6 +42,7 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
     const [showProfileSidebar, setShowProfileSidebar] = useState(false); // Default false for better mobile/small screen exp
     const [isMobileView, setIsMobileView] = useState(false);
     const [mobileActiveView, setMobileActiveView] = useState<'list' | 'chat'>('list');
+    const [isEditingContact, setIsEditingContact] = useState(false);
 
     // Handle mobile view detection
     useEffect(() => {
