@@ -1,0 +1,23 @@
+{
+  "name": "The Lodge CRM",
+  "short_name": "TLM CRM",
+  "description": "Customer Relationship Management for The Lodge Maribaya",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0284c7",
+  "icons": [
+    {
+      "src": "/logotlm.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logotlm.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

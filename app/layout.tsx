@@ -24,8 +24,19 @@ const fontDeskripsi = localFont({
 })
 
 export const metadata: Metadata = {
-  title: 'Form Builder - The Lodge Maribaya',
-  description: 'Custom Form Builder for The Lodge Maribaya',
+  title: 'The Lodge CRM',
+  description: 'Custom CRM and Form Builder for The Lodge Maribaya',
+  manifest: '/manifest.json',
+  themeColor: '#0284c7',
+  viewport: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'The Lodge CRM',
+  },
+  formatDetection: {
+    telephone: false,
+  },
   icons: {
     icon: '/logotlm.png',
     apple: '/logotlm.png',
