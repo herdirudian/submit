@@ -8,7 +8,7 @@ import {
     Clock, Filter, UserPlus, Info, Trash2, 
     MessageSquare, Hash, Tag, Plus, RefreshCw,
     Building, MapPin, UserCheck, FileText, Image as ImageIcon,
-    Play, Download, Mail, Ticket, Layout
+    Play, Download, Mail, Ticket, Layout, MessageCircle
 } from "lucide-react";
 import { 
     getWaChats, getWaChatMessages, sendWaMessageAction, 
