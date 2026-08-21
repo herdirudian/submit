@@ -21,13 +21,14 @@ const parseDate = (value?: string) => {
 
 const endOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
 
-export default async function ResponsesPage({ searchParams }: { searchParams?: SearchParams }) {
-  const q = (searchParams?.q ?? "").trim();
-  const from = parseDate(searchParams?.from ?? undefined);
-  const toRaw = parseDate(searchParams?.to ?? undefined);
+export default async function ResponsesPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
+  const sParams = await searchParams;
+  const q = (sParams?.q ?? "").trim();
+  const from = parseDate(sParams?.from ?? undefined);
+  const toRaw = parseDate(sParams?.to ?? undefined);
   const to = toRaw ? endOfDay(toRaw) : null;
-  const statusRaw = (searchParams?.status ?? "all").toLowerCase();
-  const page = Math.max(1, Number(searchParams?.page ?? "1") || 1);
+  const statusRaw = (sParams?.status ?? "all").toLowerCase();
+  const page = Math.max(1, Number(sParams?.page ?? "1") || 1);
 
   const where: any = {};
   if (from || to) {
@@ -63,7 +64,7 @@ export default async function ResponsesPage({ searchParams }: { searchParams?: S
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const buildHref = (next: Partial<SearchParams>) => {
     const params = new URLSearchParams();
-    const merged: SearchParams = { ...searchParams, ...next };
+    const merged: SearchParams = { ...sParams, ...next };
     if (merged.q) params.set("q", merged.q);
     if (merged.from) params.set("from", merged.from);
     if (merged.to) params.set("to", merged.to);
@@ -98,13 +99,13 @@ export default async function ResponsesPage({ searchParams }: { searchParams?: S
           <input
             type="date"
             name="from"
-            defaultValue={searchParams?.from ?? ""}
+            defaultValue={sParams?.from ?? ""}
             className="px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-300"
           />
           <input
             type="date"
             name="to"
-            defaultValue={searchParams?.to ?? ""}
+            defaultValue={sParams?.to ?? ""}
             className="px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-300"
           />
           <select

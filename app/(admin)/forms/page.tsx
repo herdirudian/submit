@@ -8,9 +8,10 @@ import { Calendar, Edit, Eye, FileText } from "lucide-react";
 
 type FormsSearchParams = { status?: string };
 
-export default async function FormsPage({ searchParams }: { searchParams?: FormsSearchParams }) {
+export default async function FormsPage({ searchParams }: { searchParams: Promise<FormsSearchParams> }) {
   const forms = await getForms();
-  const activeStatus = (searchParams?.status ?? "all").toLowerCase();
+  const sParams = await searchParams;
+  const activeStatus = (sParams?.status ?? "all").toLowerCase();
   const counts = {
     all: forms.length,
     draft: forms.filter((f) => f.status === "DRAFT").length,

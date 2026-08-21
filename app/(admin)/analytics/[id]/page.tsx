@@ -29,13 +29,13 @@ export default async function AnalyticsPage({
   params,
   searchParams,
 }: {
-  params: { id: string };
-  searchParams?: SearchParams;
+  params: Promise<{ id: string }>;
+  searchParams: Promise<SearchParams>;
 }) {
-  // Await params before accessing its properties
   const { id } = await params;
-  const fromRaw = parseDate(searchParams?.from ?? undefined) ?? defaultFrom();
-  const toRaw = parseDate(searchParams?.to ?? undefined) ?? new Date();
+  const sParams = await searchParams;
+  const fromRaw = parseDate(sParams?.from ?? undefined) ?? defaultFrom();
+  const toRaw = parseDate(sParams?.to ?? undefined) ?? new Date();
   const from = new Date(fromRaw.getFullYear(), fromRaw.getMonth(), fromRaw.getDate(), 0, 0, 0, 0);
   const to = endOfDay(toRaw);
 

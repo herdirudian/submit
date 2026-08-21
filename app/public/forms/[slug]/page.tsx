@@ -23,8 +23,8 @@ function safeExternalUrl(raw?: string | null): string | null {
   }
 }
 
-export default async function PublicFormPage({ params }: { params: { slug: string } }) {
-  const { slug } = params;
+export default async function PublicFormPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
 
   const appSettings = await prisma.appSettings.findUnique({ where: { id: "singleton" } });
 

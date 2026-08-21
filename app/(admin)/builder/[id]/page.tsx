@@ -2,8 +2,8 @@ import { getFormById } from "@/actions/form";
 import FormBuilderContext from "@/components/FormBuilder/FormBuilderContext";
 import { notFound } from "next/navigation";
 
-export default async function BuilderPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default async function BuilderPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   
   console.log(`[BUILDER] Rendering builder for form ID: ${id}`);
   
