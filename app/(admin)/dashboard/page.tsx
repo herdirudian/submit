@@ -19,15 +19,17 @@ export default async function DashboardPage() {
             <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
             <p className="text-slate-500 mt-1">Ringkasan aktivitas dan form terbaru.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 w-full md:w-auto">
             <Link 
                 href="/blast-email" 
-                className="flex items-center gap-2 bg-white text-slate-700 hover:text-primary-700 border border-slate-200 hover:border-primary-200 px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm"
+                className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white text-slate-700 hover:text-primary-700 border border-slate-200 hover:border-primary-200 px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm"
             >
                 <Mail size={18} />
                 Blast Email
             </Link>
-            <CreateFormButton />
+            <div className="flex-1 md:flex-none">
+              <CreateFormButton />
+            </div>
         </div>
       </div>
 

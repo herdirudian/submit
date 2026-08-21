@@ -162,23 +162,23 @@ function NewCampaignForm() {
     };
 
     return (
-        <div className="max-w-5xl mx-auto space-y-6 pb-20">
-            <div className="flex justify-between items-center">
-                <div className="flex items-center gap-4">
-                    <Link href={isWa ? "/blast-wa" : "/campaigns"} className="w-10 h-10 flex items-center justify-center bg-white border border-slate-200 rounded-xl text-slate-500 hover:bg-slate-50 transition-all shadow-sm">
+        <div className="max-w-5xl mx-auto space-y-6 pb-20 px-4 md:px-0">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div className="flex items-center gap-3 md:gap-4">
+                    <Link href={isWa ? "/blast-wa" : "/campaigns"} className="w-10 h-10 flex items-center justify-center bg-white border border-slate-200 rounded-xl text-slate-500 hover:bg-slate-50 transition-all shadow-sm shrink-0">
                         <ArrowLeft size={20} />
                     </Link>
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-800">{isWa ? "Buat Pesan WA" : "Buat Campaign Baru"}</h1>
-                        <p className="text-slate-500 mt-1">{isWa ? "Kirim pesan WhatsApp massal ke pelanggan." : "Rancang dan kirim email massal ke pelanggan Anda."}</p>
+                        <h1 className="text-xl md:text-2xl font-bold text-slate-800">{isWa ? "Buat Pesan WA" : "Buat Campaign Baru"}</h1>
+                        <p className="text-slate-500 text-xs md:text-sm mt-1">{isWa ? "Kirim pesan WhatsApp massal ke pelanggan." : "Rancang dan kirim email massal ke pelanggan Anda."}</p>
                     </div>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex gap-3 w-full md:w-auto">
                     {!isWa && (
                         <button 
                             type="button"
                             onClick={handlePreview}
-                            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-all shadow-sm"
+                            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-all shadow-sm text-sm"
                         >
                             <Eye size={18} />
                             Preview Email

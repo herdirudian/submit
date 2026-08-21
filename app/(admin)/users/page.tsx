@@ -11,7 +11,7 @@ export default async function UsersPage() {
 
     return (
         <div>
-            <div className="mb-8 flex justify-between items-center">
+            <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <div className="flex items-center gap-2 text-xs text-slate-400 font-medium mb-2">
                         <Link href="/dashboard" className="hover:text-slate-600 transition-colors">
@@ -23,7 +23,9 @@ export default async function UsersPage() {
                     <h1 className="text-2xl font-bold text-slate-800">Users</h1>
                     <p className="text-slate-500 mt-1">Kelola user dan akses di sistem.</p>
                 </div>
-                <CreateUserButton />
+                <div className="w-full md:w-auto">
+                    <CreateUserButton />
+                </div>
             </div>
 
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">

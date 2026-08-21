@@ -39,8 +39,26 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
     const [syncing, setSyncing] = useState(false);
     const [showQuickReplyMenu, setShowQuickReplyMenu] = useState(false);
     const [quickReplyFilter, setQuickReplyFilter] = useState("");
-    const [showProfileSidebar, setShowProfileSidebar] = useState(true);
-    const [isEditingContact, setIsEditingContact] = useState(false);
+    const [showProfileSidebar, setShowProfileSidebar] = useState(false); // Default false for better mobile/small screen exp
+    const [isMobileView, setIsMobileView] = useState(false);
+    const [mobileActiveView, setMobileActiveView] = useState<'list' | 'chat'>('list');
+
+    // Handle mobile view detection
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobileView(window.innerWidth < 768);
+        };
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    // Switch view on mobile when chat is selected
+    useEffect(() => {
+        if (selectedChat && isMobileView) {
+            setMobileActiveView('chat');
+        }
+    }, [selectedChat, isMobileView]);
     const [isRegisteringContact, setIsRegisteringContact] = useState(false);
     const [editContactData, setEditContactData] = useState<any>({});
     const [selectedStatus, setSelectedStatus] = useState<string>("");
@@ -463,9 +481,12 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
     );
 
     return (
-        <div className="flex h-[calc(100vh-140px)] bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="flex h-[calc(100vh-100px)] md:h-[calc(100vh-140px)] bg-white rounded-2xl md:rounded-3xl border border-slate-100 shadow-sm overflow-hidden relative">
             {/* Left Sidebar: Chat List */}
-            <div className="w-80 border-r border-slate-100 flex flex-col bg-slate-50/50">
+            <div className={`
+                ${isMobileView && mobileActiveView === 'chat' ? 'hidden' : 'flex'}
+                w-full md:w-80 border-r border-slate-100 flex-col bg-slate-50/50
+            `}>
                 <div className="p-4 space-y-4">
                     <div className="flex items-center justify-between">
                         <h2 className="text-lg font-bold text-slate-800">WhatsApp CRM</h2>
@@ -602,22 +623,33 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
             </div>
 
             {/* Main Content: Chat Window */}
-            <div className="flex-1 flex flex-col bg-white">
+            <div className={`
+                ${isMobileView && mobileActiveView === 'list' ? 'hidden' : 'flex'}
+                flex-1 flex-col bg-white min-w-0
+            `}>
                 {selectedChat ? (
                     <>
                         {/* Chat Header */}
-                        <div className="h-20 px-6 border-b border-slate-100 flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-full bg-primary-50 text-primary-600 flex items-center justify-center font-bold">
-                                    {selectedChat.contact?.name?.[0] || <Phone size={18} />}
+                        <div className="h-16 md:h-20 px-4 md:px-6 border-b border-slate-100 flex items-center justify-between shrink-0">
+                            <div className="flex items-center gap-2 md:gap-4 min-w-0">
+                                {isMobileView && (
+                                    <button 
+                                        onClick={() => setMobileActiveView('list')}
+                                        className="p-2 -ml-2 text-slate-400 hover:text-slate-600"
+                                    >
+                                        <X size={20} />
+                                    </button>
+                                )}
+                                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-primary-50 text-primary-600 flex items-center justify-center font-bold shrink-0">
+                                    {selectedChat.contact?.name?.[0] || <Phone size={16} />}
                                 </div>
-                                <div>
-                                    <h3 className="text-sm font-bold text-slate-800">{selectedChat.contact?.name || `+${selectedChat.waId}`}</h3>
-                                    <div className="flex items-center gap-2 mt-0.5">
+                                <div className="min-w-0">
+                                    <h3 className="text-sm font-bold text-slate-800 truncate">{selectedChat.contact?.name || `+${selectedChat.waId}`}</h3>
+                                    <div className="flex items-center gap-2 mt-0.5 overflow-x-auto no-scrollbar">
                                         <select 
                                             value={selectedChat.status}
                                             onChange={(e) => handleUpdateStatus(e.target.value)}
-                                            className={`text-[9px] font-bold px-2 py-0.5 rounded-md border outline-none transition-all cursor-pointer ${
+                                            className={`text-[9px] font-bold px-1.5 md:py-0.5 rounded-md border outline-none transition-all cursor-pointer whitespace-nowrap ${
                                                 selectedChat.status === 'OPEN' ? 'bg-green-50 text-green-600 border-green-100' : 
                                                 selectedChat.status === 'PENDING' ? 'bg-amber-50 text-amber-600 border-amber-100' : 
                                                 'bg-slate-50 text-slate-500 border-slate-200'
@@ -627,13 +659,13 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                                             <option value="PENDING">🟠 PENDING</option>
                                             <option value="RESOLVED">⚪ RESOLVED</option>
                                         </select>
-                                        <span className="text-[10px] text-slate-300">|</span>
-                                        <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">WhatsApp Cloud API</span>
+                                        <span className="hidden sm:inline text-[10px] text-slate-300">|</span>
+                                        <span className="hidden sm:inline text-[10px] text-slate-400 font-medium uppercase tracking-wider truncate">WhatsApp Cloud API</span>
                                     </div>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-3">
-                                <div className="flex -space-x-2 mr-2">
+                            <div className="flex items-center gap-1 md:gap-3">
+                                <div className="hidden sm:flex -space-x-2 mr-2">
                                     {agents.slice(0, 3).map((agent, i) => (
                                         <div key={agent.id} className="w-7 h-7 rounded-full bg-white border-2 border-white shadow-sm ring-1 ring-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-600" title={agent.name}>
                                             {agent.name[0]}
@@ -642,19 +674,16 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                                 </div>
                                 <button 
                                     onClick={() => setShowProfileSidebar(!showProfileSidebar)}
-                                    className={`p-2 rounded-xl transition-all ${showProfileSidebar ? 'text-primary-600 bg-primary-50' : 'text-slate-400 hover:text-primary-600 hover:bg-slate-50'}`}
+                                    className={`p-1.5 md:p-2 rounded-xl transition-all ${showProfileSidebar ? 'text-primary-600 bg-primary-50' : 'text-slate-400 hover:text-primary-600 hover:bg-slate-50'}`}
                                     title="Toggle Profil Pelanggan"
                                 >
-                                    <Info size={20} />
-                                </button>
-                                <button className="p-2 text-slate-400 hover:text-primary-600 hover:bg-slate-50 rounded-xl transition-all">
-                                    <MoreVertical size={20} />
+                                    <Info size={18} md:size={20} />
                                 </button>
                             </div>
                         </div>
 
                         {/* Messages Area */}
-                        <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/30">
+                        <div className="flex-1 overflow-y-auto p-3 md:p-6 space-y-4 bg-slate-50/30">
                             {loadingMessages ? (
                                 <div className="flex items-center justify-center h-full text-slate-400">
                                     <Clock className="animate-spin mr-2" size={20} />
@@ -663,14 +692,14 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                             ) : (
                                 messages.map((msg, i) => (
                                     <div key={msg.id} className={`flex ${msg.fromMe ? "justify-end" : "justify-start"}`}>
-                                        <div className={`max-w-[70%] group ${msg.isInternal ? "w-full" : ""}`}>
+                                        <div className={`max-w-[85%] md:max-w-[70%] group ${msg.isInternal ? "w-full" : ""}`}>
                                             {msg.isInternal && (
                                                 <div className="flex items-center gap-2 mb-1 px-2">
                                                     <Shield size={12} className="text-amber-500" />
                                                     <span className="text-[10px] font-bold text-amber-600 uppercase">Catatan Internal</span>
                                                 </div>
                                             )}
-                                            <div className={`p-4 rounded-2xl shadow-sm text-sm relative ${
+                                            <div className={`p-3 md:p-4 rounded-xl md:rounded-2xl shadow-sm text-sm relative ${
                                                 msg.isInternal 
                                                 ? "bg-amber-50 border border-amber-100 text-amber-900 rounded-lg"
                                                 : msg.fromMe 
@@ -737,40 +766,40 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                         </div>
 
                         {/* Input Area */}
-                        <div className="p-6 border-t border-slate-100">
+                        <div className="p-3 md:p-6 border-t border-slate-100 shrink-0">
                             {quickReplies.length > 0 && !isInternal && (
-                                <div className="flex flex-wrap gap-2 mb-4">
+                                <div className="flex flex-wrap gap-2 mb-3 md:mb-4 overflow-x-auto no-scrollbar">
                                     {quickReplies.map(qr => (
                                         <button 
                                             key={qr.id}
                                             onClick={() => handleQuickReply(qr.content)}
-                                            className="text-[10px] font-bold px-3 py-1 bg-white border border-slate-200 text-slate-500 hover:border-primary-500 hover:text-primary-600 rounded-full transition-all"
+                                            className="text-[10px] font-bold px-2.5 py-1 bg-white border border-slate-200 text-slate-500 hover:border-primary-500 hover:text-primary-600 rounded-full transition-all whitespace-nowrap"
                                         >
                                             {qr.shortcut}
                                         </button>
                                     ))}
                                 </div>
                             )}
-                            <form onSubmit={handleSendMessage} className="space-y-4">
-                                <div className="flex items-center gap-4 px-2">
+                            <form onSubmit={handleSendMessage} className="space-y-3 md:space-y-4">
+                                <div className="flex items-center gap-2 md:gap-4 px-1 md:px-2 overflow-x-auto no-scrollbar">
                                     <button 
                                         type="button"
                                         onClick={() => setIsInternal(false)}
-                                        className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${!isInternal ? 'bg-primary-50 text-primary-700 shadow-sm ring-1 ring-primary-100' : 'text-slate-400 hover:text-slate-600'}`}
+                                        className={`whitespace-nowrap text-[10px] md:text-xs font-bold px-2.5 md:px-3 py-1.5 rounded-lg transition-all ${!isInternal ? 'bg-primary-50 text-primary-700 shadow-sm ring-1 ring-primary-100' : 'text-slate-400 hover:text-slate-600'}`}
                                     >
                                         Balas Pelanggan
                                     </button>
                                     <button 
                                         type="button"
                                         onClick={() => setIsInternal(true)}
-                                        className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${isInternal ? 'bg-amber-50 text-amber-700 shadow-sm ring-1 ring-amber-100' : 'text-slate-400 hover:text-slate-600'}`}
+                                        className={`whitespace-nowrap text-[10px] md:text-xs font-bold px-2.5 md:px-3 py-1.5 rounded-lg transition-all ${isInternal ? 'bg-amber-50 text-amber-700 shadow-sm ring-1 ring-amber-100' : 'text-slate-400 hover:text-slate-600'}`}
                                     >
                                         Catatan Internal
                                     </button>
                                 </div>
                                 <div className="relative">
                                     {showQuickReplyMenu && !isInternal && (
-                                        <div className="absolute bottom-full left-0 w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl mb-2 z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2">
+                                        <div className="absolute bottom-full left-0 w-full md:w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl mb-2 z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2">
                                             <div className="p-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
                                                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Balasan Cepat</span>
                                                 <button onClick={() => setShowQuickReplyMenu(false)}><X size={14} className="text-slate-400" /></button>
@@ -822,34 +851,31 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                                                 handleSendMessage(e);
                                             }
                                         }}
-                                        placeholder={isInternal ? "Tulis catatan internal untuk tim..." : "Ketik pesan ke pelanggan..."}
-                                        className={`w-full pl-4 pr-32 py-4 rounded-2xl border border-slate-200 focus:outline-none focus:ring-4 transition-all min-h-[60px] max-h-[200px] resize-none text-sm ${
+                                        placeholder={isInternal ? "Tulis catatan internal..." : "Ketik pesan..."}
+                                        className={`w-full pl-4 pr-24 md:pr-32 py-3 md:py-4 rounded-xl md:rounded-2xl border border-slate-200 focus:outline-none focus:ring-4 transition-all min-h-[50px] md:min-h-[60px] max-h-[150px] md:max-h-[200px] resize-none text-sm ${
                                             isInternal 
                                             ? "bg-amber-50/50 focus:ring-amber-50 focus:border-amber-400" 
                                             : "focus:ring-primary-50 focus:border-primary-500"
                                         }`}
                                     />
-                                    <div className="absolute right-3 bottom-3 flex items-center gap-2">
+                                    <div className="absolute right-2 md:right-3 bottom-2 md:bottom-3 flex items-center gap-1 md:gap-2">
                                         {!isInternal && (
                                             <button 
                                                 type="button" 
                                                 onClick={() => setShowTemplateModal(true)}
-                                                className="p-2 text-slate-400 hover:text-primary-600 transition-all"
+                                                className="p-1.5 md:p-2 text-slate-400 hover:text-primary-600 transition-all"
                                                 title="Kirim Template Meta"
                                             >
-                                                <Layout size={20} />
+                                                <Layout size={18} md:size={20} />
                                             </button>
                                         )}
-                                        <button type="button" className="p-2 text-slate-400 hover:text-primary-600 transition-all">
-                                            <Smile size={20} />
-                                        </button>
                                         <button 
                                             type="button" 
                                             onClick={() => fileInputRef.current?.click()}
                                             disabled={uploading}
-                                            className={`p-2 transition-all ${uploading ? 'text-primary-400 animate-pulse' : 'text-slate-400 hover:text-primary-600'}`}
+                                            className={`p-1.5 md:p-2 transition-all ${uploading ? 'text-primary-400 animate-pulse' : 'text-slate-400 hover:text-primary-600'}`}
                                         >
-                                            <Paperclip size={20} />
+                                            <Paperclip size={18} md:size={20} />
                                         </button>
                                         <input 
                                             type="file"
@@ -861,7 +887,7 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                                         <button 
                                             type="submit"
                                             disabled={!messageInput.trim()}
-                                            className={`p-2.5 rounded-xl text-white shadow-lg transition-all disabled:opacity-50 disabled:shadow-none ${isInternal ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-100' : 'bg-primary-600 hover:bg-primary-700 shadow-primary-100'}`}
+                                            className={`p-2 md:p-2.5 rounded-lg md:rounded-xl text-white shadow-lg transition-all disabled:opacity-50 disabled:shadow-none ${isInternal ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-100' : 'bg-primary-600 hover:bg-primary-700 shadow-primary-100'}`}
                                         >
                                             <Send size={18} />
                                         </button>
@@ -871,23 +897,36 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                         </div>
                     </>
                 ) : (
-                    <div className="flex-1 flex flex-col items-center justify-center text-slate-400 bg-slate-50/30">
-                        <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center shadow-sm mb-6">
-                            <MessageSquare size={40} className="text-slate-200" />
+                    <div className="flex-1 flex flex-col items-center justify-center text-slate-400 p-8 text-center bg-slate-50/20">
+                        <div className="w-16 h-16 md:w-20 md:h-20 bg-white rounded-2xl md:rounded-3xl shadow-sm flex items-center justify-center text-slate-200 mb-6 border border-slate-100">
+                            <MessageCircle size={32} md:size={40} />
                         </div>
-                        <h3 className="text-lg font-bold text-slate-800">Pilih Percakapan</h3>
-                        <p className="text-sm mt-1">Pilih salah satu chat di samping untuk mulai membalas pesan.</p>
+                        <h3 className="text-base md:text-lg font-bold text-slate-800 mb-2">WhatsApp CRM</h3>
+                        <p className="max-w-xs text-xs md:text-sm leading-relaxed">Pilih percakapan dari daftar untuk mulai membalas pesan pelanggan.</p>
+                        
+                        {isMobileView && (
+                             <button 
+                                onClick={() => setMobileActiveView('list')}
+                                className="mt-8 px-6 py-2 bg-white border border-slate-200 rounded-xl text-slate-600 font-bold text-sm shadow-sm"
+                            >
+                                Kembali ke Daftar Chat
+                            </button>
+                        )}
                     </div>
                 )}
             </div>
 
             {/* Right Sidebar: Details & Assignment */}
-            {selectedChat && showProfileSidebar && (
-                <div className="w-80 border-l border-slate-100 bg-white flex flex-col overflow-hidden animate-in slide-in-from-right duration-300">
-                    <div className="p-6 border-b border-slate-50 flex items-center justify-between">
-                        <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest">Profil Pelanggan</h3>
-                        <button onClick={() => setShowProfileSidebar(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
-                            <X size={18} />
+            {selectedChat && (
+                <div className={`
+                    ${showProfileSidebar ? 'flex' : 'hidden'}
+                    ${isMobileView ? 'fixed inset-0 z-[70] bg-white' : 'w-80 border-l border-slate-100'}
+                    flex-col bg-white overflow-hidden animate-in slide-in-from-right duration-300
+                `}>
+                    <div className="p-4 md:p-6 border-b border-slate-50 flex items-center justify-between shrink-0">
+                        <h3 className="text-xs font-bold text-slate-800 uppercase tracking-widest">Profil Pelanggan</h3>
+                        <button onClick={() => setShowProfileSidebar(false)} className="text-slate-400 hover:text-slate-600 transition-colors p-2">
+                            <X size={20} />
                         </button>
                     </div>
 

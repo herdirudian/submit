@@ -148,15 +148,15 @@ export default function EditCampaignPage() {
     }
 
     return (
-        <div className="max-w-5xl mx-auto space-y-6 pb-20">
-            <div className="flex justify-between items-center">
-                <div className="flex items-center gap-4">
-                    <Link href={isWa ? "/blast-wa" : "/campaigns"} className="p-2 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-primary-600 transition-all shadow-sm">
+        <div className="max-w-5xl mx-auto space-y-6 pb-20 px-4 md:px-0">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div className="flex items-center gap-3 md:gap-4">
+                    <Link href={isWa ? "/blast-wa" : "/campaigns"} className="p-2 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-primary-600 transition-all shadow-sm shrink-0">
                         <ArrowLeft size={20} />
                     </Link>
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-800">Edit {isWa ? "Pesan WA" : "Campaign"}</h1>
-                        <p className="text-slate-500 text-sm">Perbarui rancangan pesan blast {isWa ? "WhatsApp" : "email"} Anda.</p>
+                        <h1 className="text-xl md:text-2xl font-bold text-slate-800">Edit {isWa ? "Pesan WA" : "Campaign"}</h1>
+                        <p className="text-slate-500 text-xs md:text-sm">Perbarui rancangan pesan blast {isWa ? "WhatsApp" : "email"} Anda.</p>
                     </div>
                 </div>
             </div>

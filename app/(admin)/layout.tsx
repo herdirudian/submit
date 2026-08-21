@@ -6,7 +6,8 @@ import Image from "next/image";
 import { 
   LayoutDashboard, Settings, Search, LogOut, FileText, 
   BarChart3, Users, Inbox, Mail, Megaphone, 
-  Contact2, MessageSquare, MessageCircle, History, Hash 
+  Contact2, MessageSquare, MessageCircle, History, Hash,
+  Menu, X as CloseIcon
 } from 'lucide-react';
 import { signOut, useSession } from "next-auth/react";
 import NotificationDropdown from "@/components/NotificationDropdown";
@@ -18,7 +19,13 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const { data: session } = useSession();
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
   const pathname = usePathname();
+
+  // Close sidebar when route changes on mobile
+  React.useEffect(() => {
+    setIsSidebarOpen(false);
+  }, [pathname]);
   const getActiveKey = (path: string) => {
     if (path === "/dashboard" || path.startsWith("/dashboard/")) return "dashboard";
     if (path === "/forms" || path.startsWith("/forms/") || path.startsWith("/builder/")) return "forms";
@@ -81,20 +88,40 @@ export default function AdminLayout({
   })();
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
-      {/* Sidebar - Innap Style (Clean, White/Light, Modern Typography) */}
-      <aside className="w-64 bg-white border-r border-slate-100 flex flex-col fixed inset-y-0 z-50">
-        <div className="p-6 flex items-center gap-3">
-          <div className="w-10 h-10 relative">
-             <Image src="/logotlm.png" alt="The Lodge Maribaya" width={40} height={40} className="w-full h-full object-contain" />
+    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
+      {/* Mobile Overlay */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 md:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside className={`
+        w-64 bg-white border-r border-slate-100 flex flex-col fixed inset-y-0 z-[60] transition-transform duration-300
+        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        md:translate-x-0 md:static
+      `}>
+        <div className="p-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 relative">
+               <Image src="/logotlm.png" alt="The Lodge Maribaya" width={40} height={40} className="w-full h-full object-contain" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-slate-800 leading-none font-judul tracking-wide">The Lodge</h1>
+              <p className="text-xs text-slate-400 font-medium tracking-wide mt-1 font-subjudul">ADMIN PANEL</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-lg font-bold text-slate-800 leading-none font-judul tracking-wide">The Lodge</h1>
-            <p className="text-xs text-slate-400 font-medium tracking-wide mt-1 font-subjudul">ADMIN PANEL</p>
-          </div>
+          <button 
+            onClick={() => setIsSidebarOpen(false)}
+            className="p-2 text-slate-400 hover:text-slate-600 md:hidden"
+          >
+            <CloseIcon size={20} />
+          </button>
         </div>
 
-        <div className="px-4 py-2">
+        <div className="px-4 py-2 flex-1 overflow-y-auto">
             <p className="text-xs font-semibold text-slate-400 px-4 mb-2 uppercase tracking-wider">Main Menu</p>
             <nav className="space-y-1">
               {filteredLinks.map((item) => (
@@ -110,7 +137,7 @@ export default function AdminLayout({
             </nav>
         </div>
 
-        <div className="mt-auto p-4 border-t border-slate-100">
+        <div className="p-4 border-t border-slate-100">
             <nav className="space-y-1">
                  <Link href="/settings" className={navItemClassName("settings")}>
                     <Settings size={20} />
@@ -128,41 +155,57 @@ export default function AdminLayout({
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 ml-64 flex flex-col min-h-screen">
+      <div className="flex-1 flex flex-col min-h-screen">
         {/* Header - Search & Profile */}
-        <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-100 flex items-center justify-between px-8 sticky top-0 z-40">
-            {/* Search Bar */}
-            <div className="relative w-96 hidden md:block">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                <input 
-                    type="text" 
-                    placeholder="Search forms, responses..." 
-                    className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-300 transition-all"
-                />
+        <header className="h-16 md:h-20 bg-white/80 backdrop-blur-md border-b border-slate-100 flex items-center justify-between px-4 md:px-8 sticky top-0 z-40">
+            <div className="flex items-center gap-2 md:gap-4 flex-1">
+                {/* Mobile Menu Toggle */}
+                <button 
+                  onClick={() => setIsSidebarOpen(true)}
+                  className="p-2 text-slate-500 hover:bg-slate-50 rounded-xl md:hidden shrink-0"
+                >
+                  <Menu size={24} />
+                </button>
+
+                {/* Search Bar */}
+                <div className="relative w-full max-w-md hidden lg:block">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                        type="text" 
+                        placeholder="Search forms, responses..." 
+                        className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-300 transition-all"
+                    />
+                </div>
+
+                {/* Logo for mobile only */}
+                <div className="md:hidden flex items-center gap-2 truncate">
+                  <Image src="/logotlm.png" alt="Logo" width={28} height={28} className="shrink-0" />
+                  <span className="font-bold text-slate-800 text-sm truncate">The Lodge</span>
+                </div>
             </div>
 
             {/* Right Side Actions */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 md:gap-4 shrink-0">
                 <NotificationDropdown />
-                <div className="h-8 w-[1px] bg-slate-200 mx-2"></div>
-                <div className="flex items-center gap-3 cursor-pointer hover:bg-slate-50 p-2 rounded-xl transition-colors">
-                    <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold text-xs relative overflow-hidden">
+                <div className="h-6 w-[1px] bg-slate-200 mx-1 md:mx-2 hidden sm:block"></div>
+                <div className="flex items-center gap-2 md:gap-3 cursor-pointer hover:bg-slate-50 p-1 md:p-2 rounded-xl transition-colors">
+                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold text-xs relative overflow-hidden shrink-0">
                         {session?.user?.image ? (
                             <Image src={session.user.image} alt={displayName} fill className="object-cover" />
                         ) : (
                             initials
                         )}
                     </div>
-                    <div className="hidden md:block text-left">
-                        <p className="text-sm font-bold text-slate-800 leading-none">{displayName}</p>
-                        <p className="text-xs text-slate-400 mt-1">{(session?.user as any)?.role === 'CASHIER' ? 'Cashier' : 'Super Admin'}</p>
+                    <div className="hidden sm:block text-left">
+                        <p className="text-xs md:text-sm font-bold text-slate-800 leading-none truncate max-w-[120px]">{displayName}</p>
+                        <p className="text-[10px] md:text-xs text-slate-400 mt-1">{(session?.user as any)?.role === 'CASHIER' ? 'Cashier' : 'Super Admin'}</p>
                     </div>
                 </div>
             </div>
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-8 overflow-y-auto">
+        <main className="flex-1 p-4 md:p-8 overflow-x-hidden">
             {children}
         </main>
       </div>
