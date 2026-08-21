@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import localFont from 'next/font/local'
 import './globals.css'
 import { Toaster } from 'sonner';
@@ -23,12 +23,18 @@ const fontDeskripsi = localFont({
   display: 'swap',
 })
 
+export const viewport: Viewport = {
+  themeColor: '#0284c7',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+}
+
 export const metadata: Metadata = {
   title: 'The Lodge CRM',
   description: 'Custom CRM and Form Builder for The Lodge Maribaya',
   manifest: '/manifest.json',
-  themeColor: '#0284c7',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
