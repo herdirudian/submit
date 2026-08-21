@@ -5,6 +5,32 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
+async function recordLoginAttempt(email: string, ip: string) {
+  const maxAttempts = 5;
+  
+  const attempt = await prisma.loginAttempt.findUnique({
+    where: { email_ip: { email, ip } }
+  });
+
+  if (!attempt) {
+    await prisma.loginAttempt.create({
+      data: { email, ip, count: 1 }
+    });
+  } else {
+    const newCount = attempt.count + 1;
+    const isLocked = newCount >= maxAttempts;
+    
+    await prisma.loginAttempt.update({
+      where: { id: attempt.id },
+      data: {
+        count: newCount,
+        isLocked,
+        lockedAt: isLocked ? new Date() : null
+      }
+    });
+  }
+}
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
@@ -14,20 +40,38 @@ export const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         const email = (credentials?.email ?? "").trim().toLowerCase();
         const password = (credentials?.password ?? "").trim();
+        const ip = (req?.headers as any)?.["x-forwarded-for"] || "unknown";
+
         if (!email || !password) {
           return null;
         }
 
+        // 1. Check for locked account
+        const attempt = await prisma.loginAttempt.findUnique({
+          where: { email_ip: { email, ip } }
+        });
+
+        if (attempt?.isLocked && attempt.lockedAt) {
+          const lockTime = 15 * 60 * 1000; // 15 minutes
+          const timePassed = Date.now() - attempt.lockedAt.getTime();
+          
+          if (timePassed < lockTime) {
+            throw new Error("Account temporarily locked. Try again in 15 minutes.");
+          } else {
+            // Unlock after time passed
+            await prisma.loginAttempt.delete({ where: { id: attempt.id } });
+          }
+        }
+
         const user = await prisma.user.findUnique({
-          where: {
-            email,
-          },
+          where: { email },
         });
 
         if (!user || !user.password) {
+          await recordLoginAttempt(email, ip);
           return null;
         }
 
@@ -37,7 +81,13 @@ export const authOptions: NextAuthOptions = {
         );
 
         if (!isPasswordValid) {
+          await recordLoginAttempt(email, ip);
           return null;
+        }
+
+        // Success - clear attempts
+        if (attempt) {
+          await prisma.loginAttempt.delete({ where: { id: attempt.id } });
         }
 
         return {
@@ -52,9 +102,11 @@ export const authOptions: NextAuthOptions = {
   ],
   session: {
     strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   pages: {
     signIn: "/login",
+    error: "/login",
   },
   callbacks: {
     async session({ session, token }) {

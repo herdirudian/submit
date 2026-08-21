@@ -25,7 +25,11 @@ export default function LoginPage() {
             });
 
             if (result?.error) {
-                toast.error("Invalid email or password");
+                if (result.error === "Account temporarily locked. Try again in 15 minutes.") {
+                    toast.error(result.error);
+                } else {
+                    toast.error("Email atau password salah");
+                }
             } else {
                 toast.success("Logged in successfully");
                 router.push("/dashboard");

@@ -526,3 +526,16 @@ model WaFaq {
 
   @@map("wa_faqs")
 }
+
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  email     String
+  ip        String
+  count     Int      @default(1)
+  isLocked  Boolean  @default(false)
+  lockedAt  DateTime?
+  updatedAt DateTime @updatedAt
+
+  @@unique([email, ip])
+  @@map("login_attempts")
+}
