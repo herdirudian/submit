@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma";
 import { Parser } from "json2csv";
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
   try {
