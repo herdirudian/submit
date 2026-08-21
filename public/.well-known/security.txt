@@ -1,0 +1,4 @@
+Contact: mailto:it@thelodgegroup.id
+Expires: 2027-08-21T00:00:00.000Z
+Preferred-Languages: id, en
+Policy: https://submit.thelodgegroup.id/privacy

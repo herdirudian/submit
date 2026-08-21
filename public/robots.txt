@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+Allow: /public/forms/
+Disallow: /api/
+Disallow: /dashboard/
+Disallow: /builder/
+Disallow: /analytics/
+Disallow: /users/
+Disallow: /campaigns/
+Disallow: /contacts/
+Disallow: /whatsapp/
+Disallow: /settings/
+
+Sitemap: https://submit.thelodgegroup.id/sitemap.xml
