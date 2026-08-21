@@ -677,7 +677,7 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                                     className={`p-1.5 md:p-2 rounded-xl transition-all ${showProfileSidebar ? 'text-primary-600 bg-primary-50' : 'text-slate-400 hover:text-primary-600 hover:bg-slate-50'}`}
                                     title="Toggle Profil Pelanggan"
                                 >
-                                    <Info size={18} md:size={20} />
+                                    <Info size={isMobileView ? 18 : 20} />
                                 </button>
                             </div>
                         </div>
@@ -866,7 +866,7 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                                                 className="p-1.5 md:p-2 text-slate-400 hover:text-primary-600 transition-all"
                                                 title="Kirim Template Meta"
                                             >
-                                                <Layout size={18} md:size={20} />
+                                                <Layout size={isMobileView ? 18 : 20} />
                                             </button>
                                         )}
                                         <button 
@@ -875,7 +875,7 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                                             disabled={uploading}
                                             className={`p-1.5 md:p-2 transition-all ${uploading ? 'text-primary-400 animate-pulse' : 'text-slate-400 hover:text-primary-600'}`}
                                         >
-                                            <Paperclip size={18} md:size={20} />
+                                            <Paperclip size={isMobileView ? 18 : 20} />
                                         </button>
                                         <input 
                                             type="file"
@@ -899,7 +899,7 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                 ) : (
                     <div className="flex-1 flex flex-col items-center justify-center text-slate-400 p-8 text-center bg-slate-50/20">
                         <div className="w-16 h-16 md:w-20 md:h-20 bg-white rounded-2xl md:rounded-3xl shadow-sm flex items-center justify-center text-slate-200 mb-6 border border-slate-100">
-                            <MessageCircle size={32} md:size={40} />
+                            <MessageCircle size={isMobileView ? 32 : 40} />
                         </div>
                         <h3 className="text-base md:text-lg font-bold text-slate-800 mb-2">WhatsApp CRM</h3>
                         <p className="max-w-xs text-xs md:text-sm leading-relaxed">Pilih percakapan dari daftar untuk mulai membalas pesan pelanggan.</p>
