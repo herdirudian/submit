@@ -154,8 +154,9 @@ export async function sendWaMediaAction(chatId: string, type: any, url: string, 
   // Convert relative URL to absolute for Meta API (they need to download it)
   let absoluteUrl = url;
   if (url.startsWith("/")) {
-    const host = headers().get("host");
-    const protocol = headers().get("x-forwarded-proto") || "http";
+    const headerList = await headers();
+    const host = headerList.get("host");
+    const protocol = headerList.get("x-forwarded-proto") || "http";
     absoluteUrl = `${protocol}://${host}${url}`;
   }
   
