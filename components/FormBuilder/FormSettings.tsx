@@ -353,7 +353,7 @@ export default function FormSettings({ form, isOpen, onClose, questions }: { for
                                         </div>
                                     </div>
                                     <p className="text-[10px] text-slate-400 mt-2">
-                                        Tips: Masukkan jawaban persis seperti pilihan di form (misal: "Ya, Saya Akan Hadir").
+                                        Tips: Masukkan jawaban persis seperti pilihan di form (misal: &quot;Ya, Saya Akan Hadir&quot;).
                                     </p>
                                 </div>
 
