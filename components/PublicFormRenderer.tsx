@@ -254,6 +254,8 @@ export default function PublicFormRenderer({ form, headerLogoSrc }: { form: Form
     }
   };
 
+  const primaryColor = form.primaryColor || "#0f4d39";
+  const fontFamily = form.fontFamily || "inherit";
   const primaryLight = `${primaryColor}1A`; // 10% opacity hex
   
   return (
