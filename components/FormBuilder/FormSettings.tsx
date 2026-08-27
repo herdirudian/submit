@@ -46,6 +46,8 @@ export default function FormSettings({ form, isOpen, onClose, questions }: { for
   // Email & Thank You State
   const [sendEmailConfirmation, setSendEmailConfirmation] = useState(form.sendEmailConfirmation || false);
   const [emailConfirmationFieldId, setEmailConfirmationFieldId] = useState(form.emailConfirmationFieldId || "");
+  const [emailConfirmationTriggerFieldId, setEmailConfirmationTriggerFieldId] = useState(form.emailConfirmationTriggerFieldId || "");
+  const [emailConfirmationTriggerValue, setEmailConfirmationTriggerValue] = useState(form.emailConfirmationTriggerValue || "");
   const [emailSubject, setEmailSubject] = useState(form.emailSubject || "Submission Received");
   const [emailBody, setEmailBody] = useState(form.emailBody || "");
   const [thankYouTitle, setThankYouTitle] = useState(form.thankYouTitle || "Thank You!");
@@ -170,6 +172,8 @@ export default function FormSettings({ form, isOpen, onClose, questions }: { for
               fontFamily,
               sendEmailConfirmation,
               emailConfirmationFieldId,
+              emailConfirmationTriggerFieldId,
+              emailConfirmationTriggerValue,
               emailSubject,
               emailBody,
               thankYouTitle,
@@ -315,6 +319,44 @@ export default function FormSettings({ form, isOpen, onClose, questions }: { for
                                     </select>
                                     <p className="text-xs text-slate-500 mt-1">Sistem akan mengirimkan email konfirmasi ke alamat email yang diisi pada pertanyaan ini.</p>
                                 </div>
+
+                                <div className="pt-4 border-t border-slate-50">
+                                    <label className="block text-sm font-semibold text-slate-700 mb-2">Trigger Kondisi (Opsional)</label>
+                                    <p className="text-xs text-slate-500 mb-3">Email hanya akan dikirim jika jawaban pada pertanyaan tertentu sesuai dengan nilai yang ditentukan.</p>
+                                    
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-500 mb-1">Pilih Pertanyaan Trigger</label>
+                                            <select 
+                                                value={emailConfirmationTriggerFieldId}
+                                                onChange={(e) => setEmailConfirmationTriggerFieldId(e.target.value)}
+                                                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:border-primary-500 outline-none"
+                                            >
+                                                <option value="">-- Tanpa Trigger (Kirim Selalu) --</option>
+                                                {questions
+                                                    .filter(q => ['DROPDOWN', 'RADIO', 'CHECKBOX', 'SHORT_TEXT'].includes(q.type))
+                                                    .map(q => (
+                                                        <option key={q.id} value={q.id}>{q.label}</option>
+                                                    ))
+                                                }
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-500 mb-1">Jawaban yang Memicu (Case Sensitive)</label>
+                                            <input 
+                                                type="text" 
+                                                value={emailConfirmationTriggerValue}
+                                                onChange={(e) => setEmailConfirmationTriggerValue(e.target.value)}
+                                                placeholder="Contoh: Ya, Saya Akan Hadir"
+                                                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:border-primary-500 outline-none"
+                                            />
+                                        </div>
+                                    </div>
+                                    <p className="text-[10px] text-slate-400 mt-2">
+                                        Tips: Masukkan jawaban persis seperti pilihan di form (misal: "Ya, Saya Akan Hadir").
+                                    </p>
+                                </div>
+
                                 <div>
                                     <label className="block text-sm font-semibold text-slate-700 mb-2">Email Subject</label>
                                     <input 

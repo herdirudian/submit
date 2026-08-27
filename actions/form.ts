@@ -194,6 +194,8 @@ export async function updateForm(id: string, data: {
     fontFamily?: string;
     sendEmailConfirmation?: boolean;
     emailConfirmationFieldId?: string;
+    emailConfirmationTriggerFieldId?: string;
+    emailConfirmationTriggerValue?: string;
     emailSubject?: string;
     emailBody?: string;
     thankYouTitle?: string;
@@ -249,6 +251,8 @@ export async function updateForm(id: string, data: {
                 fontFamily: data.fontFamily,
                 sendEmailConfirmation: data.sendEmailConfirmation,
                 emailConfirmationFieldId: data.emailConfirmationFieldId,
+                emailConfirmationTriggerFieldId: data.emailConfirmationTriggerFieldId,
+                emailConfirmationTriggerValue: data.emailConfirmationTriggerValue,
                 emailSubject: data.emailSubject,
                 emailBody: data.emailBody,
                 thankYouTitle: data.thankYouTitle,
@@ -379,6 +383,8 @@ export async function duplicateForm(id: string) {
       showSidebar: source.showSidebar,
       sendEmailConfirmation: source.sendEmailConfirmation,
       emailConfirmationFieldId: source.emailConfirmationFieldId,
+      emailConfirmationTriggerFieldId: source.emailConfirmationTriggerFieldId,
+      emailConfirmationTriggerValue: source.emailConfirmationTriggerValue,
       emailSubject: source.emailSubject,
       emailBody: source.emailBody,
       thankYouTitle: source.thankYouTitle,

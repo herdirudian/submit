@@ -140,28 +140,53 @@ export async function submitForm(formId: string, data: Record<string, any>) {
                 }
 
                 if (respondentEmail) {
-                    const formTitle = response.form.title;
-                    const emailSubject = response.form.emailSubject || `Submission Received: ${formTitle}`;
-                    const customBody = response.form.emailBody ? `<p>${response.form.emailBody.replace(/\n/g, '<br>')}</p><br/>` : '';
+                    // Check trigger condition if configured
+                    let shouldSend = true;
+                    if (response.form.emailConfirmationTriggerFieldId && response.form.emailConfirmationTriggerValue) {
+                        const triggerAnswer = validAnswers.find(a => a.questionId === response.form.emailConfirmationTriggerFieldId);
+                        // For checkbox, it might be a comma separated string
+                        const answerValue = triggerAnswer?.value || "";
+                        const triggerValue = response.form.emailConfirmationTriggerValue;
+                        
+                        // Check if the answer matches the trigger value
+                        // For multi-select, we check if the trigger value is included
+                        if (triggerAnswer) {
+                            const question = validQuestions.find(q => q.id === triggerAnswer.questionId);
+                            if (question?.type === 'CHECKBOX') {
+                                const options = answerValue.split(',').map(o => o.trim());
+                                shouldSend = options.includes(triggerValue.trim());
+                            } else {
+                                shouldSend = answerValue.trim() === triggerValue.trim();
+                            }
+                        } else {
+                            shouldSend = false;
+                        }
+                    }
 
-                    const confirmationHtml = `
-                        <h2>${response.form.thankYouTitle || "Thank you for your submission!"}</h2>
-                        ${customBody}
-                        <p>We have received your response for <strong>${formTitle}</strong>.</p>
-                        <p>We will review it and get back to you shortly if necessary.</p>
-                        <br />
-                        <p>Best regards,</p>
-                        <p>${response.form.sidebarTitle || "The Lodge Team"}</p>
-                    `;
+                    if (shouldSend) {
+                        const formTitle = response.form.title;
+                        const emailSubject = response.form.emailSubject || `Submission Received: ${formTitle}`;
+                        const customBody = response.form.emailBody ? `<p>${response.form.emailBody.replace(/\n/g, '<br>')}</p><br/>` : '';
 
-                    // Send async
-                    sendEmail({
-                        to: respondentEmail,
-                        subject: emailSubject,
-                        html: confirmationHtml,
-                        fromName: appSettings?.notificationFromName,
-                        fromEmail: appSettings?.notificationFromEmail
-                    });
+                        const confirmationHtml = `
+                            <h2>${response.form.thankYouTitle || "Thank you for your submission!"}</h2>
+                            ${customBody}
+                            <p>We have received your response for <strong>${formTitle}</strong>.</p>
+                            <p>We will review it and get back to you shortly if necessary.</p>
+                            <br />
+                            <p>Best regards,</p>
+                            <p>${response.form.sidebarTitle || "The Lodge Team"}</p>
+                        `;
+
+                        // Send async
+                        sendEmail({
+                            to: respondentEmail,
+                            subject: emailSubject,
+                            html: confirmationHtml,
+                            fromName: appSettings?.notificationFromName,
+                            fromEmail: appSettings?.notificationFromEmail
+                        });
+                    }
                 }
             }
 
