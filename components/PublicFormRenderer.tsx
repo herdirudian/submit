@@ -28,7 +28,7 @@ export default function PublicFormRenderer({ form }: { form: FormWithQuestions }
   
   // File upload state
   const [uploading, setUploading] = useState<Record<string, boolean>>({});
-  const [fileUrls, setFileUrls] = useState<Record<string, string>>({});
+  const [fileUrls, setFileUrls] = useState<Record<string, string[]>>({});
 
   const parseValidation = (question: Question) => {
     if (!question.validation) return null;
@@ -78,13 +78,15 @@ export default function PublicFormRenderer({ form }: { form: FormWithQuestions }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, questionId: string) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
     setUploading(prev => ({ ...prev, [questionId]: true }));
 
     const formData = new FormData();
-    formData.append('file', file);
+    for (let i = 0; i < files.length; i++) {
+        formData.append('file', files[i]);
+    }
 
     try {
         const res = await fetch('/api/upload', {
@@ -94,25 +96,32 @@ export default function PublicFormRenderer({ form }: { form: FormWithQuestions }
         
         const data = await res.json();
         if (data.success) {
-            setFileUrls(prev => ({ ...prev, [questionId]: data.url }));
-            setValue(questionId, data.url); // Set hidden input value
+            const newUrls = data.urls || [data.url];
+            setFileUrls(prev => {
+                const existing = prev[questionId] || [];
+                const updated = [...existing, ...newUrls];
+                setValue(questionId, updated.join(',')); // Set hidden input value as comma-separated
+                return { ...prev, [questionId]: updated };
+            });
         } else {
-            toast.error("Upload failed");
+            toast.error(data.error || "Upload failed");
         }
     } catch (error) {
         toast.error("Upload error");
     } finally {
         setUploading(prev => ({ ...prev, [questionId]: false }));
+        // Clear the input value so the same file can be selected again
+        e.target.value = '';
     }
   };
 
-  const removeFile = (questionId: string) => {
+  const removeFile = (questionId: string, index: number) => {
     setFileUrls(prev => {
-        const newUrls = { ...prev };
-        delete newUrls[questionId];
-        return newUrls;
+        const existing = prev[questionId] || [];
+        const updated = existing.filter((_, i) => i !== index);
+        setValue(questionId, updated.length > 0 ? updated.join(',') : ""); // Update hidden input
+        return { ...prev, [questionId]: updated };
     });
-    setValue(questionId, ""); // Clear hidden input
   };
 
 
@@ -678,57 +687,61 @@ export default function PublicFormRenderer({ form }: { form: FormWithQuestions }
 
                         {/* File Upload */}
                         {question.type === 'FILE_UPLOAD' && (
-                            <div className="mt-2">
+                            <div className="mt-2 space-y-3">
                                 <input
                                     type="hidden"
                                     {...register(question.id, { required: question.required })}
                                 />
                                 
-                                {!fileUrls[question.id] ? (
-                                    <div className="relative border-2 border-dashed border-slate-300 rounded-xl p-8 hover:bg-slate-50 transition-colors text-center group cursor-pointer">
-                                        <input
-                                            type="file"
-                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                            onChange={(e) => handleFileUpload(e, question.id)}
-                                            disabled={uploading[question.id]}
-                                        />
-                                        <div className="flex flex-col items-center gap-2">
-                                            <div 
-                                                className="p-4 rounded-full transition-transform group-hover:scale-110"
-                                                style={{ backgroundColor: primaryLight, color: primaryColor }}
-                                            >
-                                                {uploading[question.id] ? (
-                                                    <Loader2 size={24} className="animate-spin" />
-                                                ) : (
-                                                    <Upload size={24} />
-                                                )}
-                                            </div>
-                                            <p className="font-medium text-slate-700">
-                                                {uploading[question.id] ? "Uploading..." : "Click or drag file to upload"}
-                                            </p>
-                                            <p className="text-xs text-slate-400">Max file size: 5MB</p>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2 rounded-lg" style={{ backgroundColor: '#f0fdf4', color: '#16a34a' }}>
-                                                <File size={20} />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-medium text-slate-800 truncate max-w-[200px]">
-                                                    {fileUrls[question.id].split('/').pop()}
-                                                </p>
-                                                <p className="text-xs font-medium text-green-600">Upload Complete</p>
-                                            </div>
-                                        </div>
-                                        <button 
-                                            type="button"
-                                            onClick={() => removeFile(question.id)}
-                                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                <div className="relative border-2 border-dashed border-slate-300 rounded-xl p-6 hover:bg-slate-50 transition-colors text-center group cursor-pointer">
+                                    <input
+                                        type="file"
+                                        multiple
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                        onChange={(e) => handleFileUpload(e, question.id)}
+                                        disabled={uploading[question.id]}
+                                    />
+                                    <div className="flex flex-col items-center gap-2">
+                                        <div 
+                                            className="p-3 rounded-full transition-transform group-hover:scale-110"
+                                            style={{ backgroundColor: primaryLight, color: primaryColor }}
                                         >
-                                            <X size={18} />
-                                        </button>
+                                            {uploading[question.id] ? (
+                                                <Loader2 size={20} className="animate-spin" />
+                                            ) : (
+                                                <Upload size={20} />
+                                            )}
+                                        </div>
+                                        <p className="font-medium text-slate-700 text-sm">
+                                            {uploading[question.id] ? "Uploading..." : "Click or drag files to upload"}
+                                        </p>
+                                        <p className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Images, PDF, Docs (Max 5MB each)</p>
+                                    </div>
+                                </div>
+
+                                {fileUrls[question.id] && fileUrls[question.id].length > 0 && (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4">
+                                        {fileUrls[question.id].map((url, idx) => (
+                                            <div key={idx} className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl shadow-sm animate-in fade-in slide-in-from-bottom-2">
+                                                <div className="flex items-center gap-3 overflow-hidden">
+                                                    <div className="p-2 rounded-lg flex-shrink-0" style={{ backgroundColor: '#f0fdf4', color: '#16a34a' }}>
+                                                        <File size={16} />
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <p className="text-xs font-medium text-slate-800 truncate">
+                                                            {url.split('/').pop()}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => removeFile(question.id, idx)}
+                                                    className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+                                                >
+                                                    <X size={14} />
+                                                </button>
+                                            </div>
+                                        ))}
                                     </div>
                                 )}
                             </div>

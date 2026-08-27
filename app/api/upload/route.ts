@@ -5,42 +5,40 @@ import path from "path";
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
-    const file = formData.get("file") as File;
+    const files = formData.getAll("file") as File[];
 
-    if (!file) {
-      return NextResponse.json({ success: false, error: "No file uploaded" }, { status: 400 });
+    if (!files || files.length === 0) {
+      return NextResponse.json({ success: false, error: "No files uploaded" }, { status: 400 });
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    // Create a very safe filename (alphanumeric, dots, and hyphens only)
-    const safeName = file.name
-      .split('.')[0] // Get name without extension
-      .replace(/[^a-zA-Z0-9]/g, "-") // Replace everything not alphanumeric with hyphen
-      .replace(/-+/g, "-") // Replace multiple hyphens with single hyphen
-      .substring(0, 50); // Limit length to 50 chars for stability
-
-    const extension = path.extname(file.name).toLowerCase();
-    const filename = `${Date.now()}-${safeName}${extension}`;
+    const uploadResults = [];
     const uploadDir = path.join(process.cwd(), "public", "uploads");
-    
-    // Ensure directory exists
     await mkdir(uploadDir, { recursive: true });
-    
-    const filePath = path.join(uploadDir, filename);
-    await writeFile(filePath, buffer);
 
-    // Return relative URL for internal use (works better with next/image)
-    const url = `/uploads/${filename}`;
+    for (const file of files) {
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
 
-    console.log(`File uploaded to: ${filePath}`);
-    console.log(`Relative URL: ${url}`);
+      const safeName = file.name
+        .split('.')[0]
+        .replace(/[^a-zA-Z0-9]/g, "-")
+        .replace(/-+/g, "-")
+        .substring(0, 50);
+
+      const extension = path.extname(file.name).toLowerCase();
+      const filename = `${Date.now()}-${Math.random().toString(36).substring(2, 7)}-${safeName}${extension}`;
+      
+      const filePath = path.join(uploadDir, filename);
+      await writeFile(filePath, buffer);
+
+      const url = `/uploads/${filename}`;
+      uploadResults.push({ url, filename, originalName: file.name });
+    }
 
     return NextResponse.json({ 
       success: true, 
-      url: url,
-      filename 
+      urls: uploadResults.map(r => r.url),
+      files: uploadResults
     });
   } catch (error: any) {
     console.error("Upload error:", error);
