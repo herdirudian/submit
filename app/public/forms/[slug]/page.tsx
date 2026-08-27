@@ -185,35 +185,7 @@ export default async function PublicFormPage({ params }: { params: Promise<{ slu
             {/* Right Main Content - Form */}
             <div className={`${(form.showSidebar ?? true) ? 'lg:w-2/3' : 'w-full'} p-8 sm:p-12 lg:p-16 overflow-y-auto`} style={{ backgroundColor }}>
                  <div className="max-w-2xl mx-auto">
-                    <div className="mb-10 border-b border-slate-100 pb-8 text-center">
-                        {headerLogoSrc && (
-                            <div className="mb-6 flex justify-center">
-                                <Image 
-                                    src={headerLogoSrc} 
-                                    alt="Form Logo" 
-                                    width={form.logoWidth || 128}
-                                    height={form.logoWidth || 128}
-                                    className="object-contain hover:scale-105 transition-transform duration-300" 
-                                />
-                            </div>
-                        )}
-                        <h1 
-                            className="font-judul font-bold text-slate-800 mb-3 tracking-wide"
-                            style={{ fontSize: form.titleFontSize || 30 }}
-                        >
-                            {form.title}
-                        </h1>
-                        {form.description && (
-                            <p 
-                                className="text-slate-500 leading-relaxed font-deskripsi max-w-lg mx-auto"
-                                style={{ fontSize: form.descriptionFontSize || 16 }}
-                            >
-                                {form.description}
-                            </p>
-                        )}
-                    </div>
-
-                    <PublicFormRenderer form={form} />
+                    <PublicFormRenderer form={form} headerLogoSrc={headerLogoSrc} />
                  </div>
             </div>
 
