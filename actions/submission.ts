@@ -153,7 +153,7 @@ export async function submitForm(formId: string, data: Record<string, any>) {
                         if (triggerAnswer) {
                             const question = validQuestions.find(q => q.id === triggerAnswer.questionId);
                             if (question?.type === 'CHECKBOX') {
-                                const options = answerValue.split(',').map(o => o.trim());
+                                const options = answerValue.split(',').map((o: string) => o.trim());
                                 shouldSend = options.includes(triggerValue.trim());
                             } else {
                                 shouldSend = answerValue.trim() === triggerValue.trim();
