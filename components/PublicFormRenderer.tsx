@@ -1207,6 +1207,8 @@ export default function PublicFormRenderer({ form, headerLogoSrc }: { form: Form
                 )}
             </div>
         </form>
+      </>
+    )}
     </div>
   );
 }
