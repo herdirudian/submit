@@ -443,7 +443,7 @@ export default function FormSettings({ form, isOpen, onClose, questions }: { for
                                                             <div className="p-1.5 bg-blue-50 text-blue-600 rounded flex-shrink-0">
                                                                 {url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
                                                                     <div className="w-5 h-5 relative rounded overflow-hidden">
-                                                                        <Image src={url} alt="preview" fill className="object-cover" />
+                                                                        <Image src={url} alt="preview" fill className="object-cover" unoptimized />
                                                                     </div>
                                                                 ) : (
                                                                     <File size={14} />
@@ -602,7 +602,7 @@ export default function FormSettings({ form, isOpen, onClose, questions }: { for
                         <div className="flex items-center gap-4">
                             <div className="w-20 h-20 bg-slate-100 rounded-xl border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden relative group">
                                 {logo ? (
-                                    <Image src={logo} alt="Logo" fill className="object-cover" />
+                                    <Image src={logo} alt="Logo" fill className="object-cover" unoptimized />
                                 ) : (
                                     <ImageIcon className="text-slate-300" />
                                 )}

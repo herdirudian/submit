@@ -212,7 +212,7 @@ export default function SettingsPage() {
               <div className="md:col-span-2 flex items-center gap-4">
                 <div className="w-20 h-20 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 overflow-hidden relative flex-shrink-0">
                   {adminImage ? (
-                    <Image src={adminImage} alt="Profile" fill className="object-cover" />
+                    <Image src={adminImage} alt="Profile" fill className="object-cover" unoptimized />
                   ) : (
                     <ImageIcon size={32} />
                   )}
@@ -295,7 +295,7 @@ export default function SettingsPage() {
               <div className="md:col-span-2 flex items-center gap-4 p-4 rounded-2xl border border-slate-100 bg-slate-50">
                 <div className="w-14 h-14 rounded-2xl border border-slate-200 bg-white flex items-center justify-center overflow-hidden relative">
                   {brandLogoUrl ? (
-                    <Image src={brandLogoUrl} alt="Brand Logo" fill className="object-contain" />
+                    <Image src={brandLogoUrl} alt="Brand Logo" fill className="object-contain" unoptimized />
                   ) : (
                     <ImageIcon className="text-slate-300" size={22} />
                   )}
