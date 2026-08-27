@@ -19,6 +19,7 @@ export async function sendEmail({
   html,
   fromName,
   fromEmail,
+  attachments,
 }: {
   to: string;
   subject: string;
