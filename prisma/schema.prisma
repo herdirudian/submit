@@ -126,6 +126,8 @@ model Form {
   showSidebar         Boolean    @default(true) // Option to show/hide sidebar
 
   // Email & Thank You Page Customization
+  sendEmailConfirmation Boolean    @default(false)
+  emailConfirmationFieldId String?
   emailSubject        String?    @default("Submission Received") // Subject for respondent email
   emailBody           String?    @db.Text // Custom message body for respondent email
   thankYouTitle       String?    @default("Thank You!")

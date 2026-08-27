@@ -17,7 +17,9 @@ export async function submitForm(formId: string, data: Record<string, any>) {
     // 1. Create Response
     const response = await prisma.response.create({
         data: {
-            formId,
+            form: {
+                connect: { id: formId }
+            }
         },
         include: {
             form: {
@@ -117,12 +119,27 @@ export async function submitForm(formId: string, data: Record<string, any>) {
             }
 
             // 2. Notify Respondent (Confirmation)
-            // Look for an answer that corresponds to an EMAIL question type
-            const emailQuestion = validQuestions.find(q => q.type === 'EMAIL');
-            if (emailQuestion) {
-                const emailAnswer = validAnswers.find(a => a.questionId === emailQuestion.id);
-                if (emailAnswer && emailAnswer.value) {
-                    const respondentEmail = emailAnswer.value;
+            if (response.form.sendEmailConfirmation) {
+                // Find email address based on configured field or auto-detect
+                let respondentEmail = "";
+                
+                if (response.form.emailConfirmationFieldId) {
+                    const emailAnswer = validAnswers.find(a => a.questionId === response.form.emailConfirmationFieldId);
+                    if (emailAnswer && emailAnswer.value && emailAnswer.value.includes('@')) {
+                        respondentEmail = emailAnswer.value;
+                    }
+                } else {
+                    // Fallback to auto-detection if no field is configured but feature is ON
+                    const emailQuestion = validQuestions.find(q => q.type === 'EMAIL');
+                    if (emailQuestion) {
+                        const emailAnswer = validAnswers.find(a => a.questionId === emailQuestion.id);
+                        if (emailAnswer && emailAnswer.value) {
+                            respondentEmail = emailAnswer.value;
+                        }
+                    }
+                }
+
+                if (respondentEmail) {
                     const formTitle = response.form.title;
                     const emailSubject = response.form.emailSubject || `Submission Received: ${formTitle}`;
                     const customBody = response.form.emailBody ? `<p>${response.form.emailBody.replace(/\n/g, '<br>')}</p><br/>` : '';

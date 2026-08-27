@@ -192,6 +192,8 @@ export async function updateForm(id: string, data: {
     primaryColor?: string;
     backgroundColor?: string;
     fontFamily?: string;
+    sendEmailConfirmation?: boolean;
+    emailConfirmationFieldId?: string;
     emailSubject?: string;
     emailBody?: string;
     thankYouTitle?: string;
@@ -245,6 +247,8 @@ export async function updateForm(id: string, data: {
                 primaryColor: data.primaryColor,
                 backgroundColor: data.backgroundColor,
                 fontFamily: data.fontFamily,
+                sendEmailConfirmation: data.sendEmailConfirmation,
+                emailConfirmationFieldId: data.emailConfirmationFieldId,
                 emailSubject: data.emailSubject,
                 emailBody: data.emailBody,
                 thankYouTitle: data.thankYouTitle,
@@ -373,6 +377,8 @@ export async function duplicateForm(id: string) {
       socialTiktok: source.socialTiktok,
       socialWebsite: source.socialWebsite,
       showSidebar: source.showSidebar,
+      sendEmailConfirmation: source.sendEmailConfirmation,
+      emailConfirmationFieldId: source.emailConfirmationFieldId,
       emailSubject: source.emailSubject,
       emailBody: source.emailBody,
       thankYouTitle: source.thankYouTitle,

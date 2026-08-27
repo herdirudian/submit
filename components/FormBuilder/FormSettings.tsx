@@ -44,6 +44,8 @@ export default function FormSettings({ form, isOpen, onClose, questions }: { for
   const [fontFamily, setFontFamily] = useState(form.fontFamily || "var(--font-deskripsi)");
   
   // Email & Thank You State
+  const [sendEmailConfirmation, setSendEmailConfirmation] = useState(form.sendEmailConfirmation || false);
+  const [emailConfirmationFieldId, setEmailConfirmationFieldId] = useState(form.emailConfirmationFieldId || "");
   const [emailSubject, setEmailSubject] = useState(form.emailSubject || "Submission Received");
   const [emailBody, setEmailBody] = useState(form.emailBody || "");
   const [thankYouTitle, setThankYouTitle] = useState(form.thankYouTitle || "Thank You!");
@@ -166,6 +168,8 @@ export default function FormSettings({ form, isOpen, onClose, questions }: { for
               primaryColor,
               backgroundColor,
               fontFamily,
+              sendEmailConfirmation,
+              emailConfirmationFieldId,
               emailSubject,
               emailBody,
               thankYouTitle,
@@ -276,29 +280,62 @@ export default function FormSettings({ form, isOpen, onClose, questions }: { for
                     </div>
 
                     <div className="pt-6 border-t border-slate-100">
-                        <h4 className="text-sm font-bold text-slate-800 mb-4 uppercase tracking-wider">Email Notification (to User)</h4>
-                        <p className="text-xs text-slate-500 mb-4">Sent to users if they provide an email address.</p>
-                        <div className="space-y-4">
-                             <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">Email Subject</label>
-                                <input 
-                                    type="text" 
-                                    value={emailSubject}
-                                    onChange={(e) => setEmailSubject(e.target.value)}
-                                    className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary-500 outline-none"
-                                />
-                            </div>
+                        <div className="flex items-center justify-between mb-4">
                             <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">Custom Message Body</label>
-                                <textarea 
-                                    rows={4}
-                                    value={emailBody}
-                                    onChange={(e) => setEmailBody(e.target.value)}
-                                    className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary-500 outline-none resize-none"
-                                    placeholder="Optional: Add a custom message to the confirmation email..."
-                                />
+                                <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Email Confirmation (to User)</h4>
+                                <p className="text-xs text-slate-500">Sent to users after they submit the form.</p>
                             </div>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                                <input 
+                                    type="checkbox" 
+                                    checked={sendEmailConfirmation} 
+                                    onChange={(e) => setSendEmailConfirmation(e.target.checked)} 
+                                    className="sr-only peer" 
+                                />
+                                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-100 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+                            </label>
                         </div>
+
+                        {sendEmailConfirmation && (
+                            <div className="space-y-4 animate-in slide-in-from-top-2 duration-200">
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-2">Pilih Field Email Pelanggan</label>
+                                    <select 
+                                        value={emailConfirmationFieldId}
+                                        onChange={(e) => setEmailConfirmationFieldId(e.target.value)}
+                                        className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary-500 outline-none"
+                                    >
+                                        <option value="">-- Pilih Field --</option>
+                                        {questions
+                                            .filter(q => q.type === 'EMAIL' || q.type === 'SHORT_TEXT')
+                                            .map(q => (
+                                                <option key={q.id} value={q.id}>{q.label}</option>
+                                            ))
+                                        }
+                                    </select>
+                                    <p className="text-xs text-slate-500 mt-1">Sistem akan mengirimkan email konfirmasi ke alamat email yang diisi pada pertanyaan ini.</p>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-2">Email Subject</label>
+                                    <input 
+                                        type="text" 
+                                        value={emailSubject}
+                                        onChange={(e) => setEmailSubject(e.target.value)}
+                                        className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary-500 outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-2">Custom Message Body</label>
+                                    <textarea 
+                                        rows={4}
+                                        value={emailBody}
+                                        onChange={(e) => setEmailBody(e.target.value)}
+                                        className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary-500 outline-none resize-none"
+                                        placeholder="Optional: Add a custom message to the confirmation email..."
+                                    />
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             ) : activeTab === 'whatsapp' ? (
