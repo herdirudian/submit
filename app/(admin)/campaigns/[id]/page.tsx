@@ -87,11 +87,11 @@ export default function EditCampaignPage() {
 
         const res = await fetch("/api/upload", { method: "POST", body: data });
         const result = await res.json();
-        if (!result?.success || !result?.url) {
+        if (!result?.success || !result?.urls || result.urls.length === 0) {
             throw new Error("Upload failed");
         }
         
-        return String(result.url);
+        return String(result.urls[0]);
     };
 
     const handlePreview = async () => {

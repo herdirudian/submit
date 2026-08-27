@@ -95,8 +95,8 @@ export default function PublicFormRenderer({ form }: { form: FormWithQuestions }
         });
         
         const data = await res.json();
-        if (data.success) {
-            const newUrls = data.urls || [data.url];
+        if (data.success && data.urls) {
+            const newUrls = data.urls;
             setFileUrls(prev => {
                 const existing = prev[questionId] || [];
                 const updated = [...existing, ...newUrls];

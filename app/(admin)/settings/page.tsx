@@ -92,10 +92,10 @@ export default function SettingsPage() {
 
     const res = await fetch("/api/upload", { method: "POST", body: formData });
     const data = await res.json();
-    if (!data?.success || !data?.url) {
+    if (!data?.success || !data?.urls || data.urls.length === 0) {
       throw new Error("Upload failed");
     }
-    return String(data.url);
+    return String(data.urls[0]);
   };
 
   const saveProfile = () => {

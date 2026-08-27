@@ -294,9 +294,9 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
             });
 
             const uploadData = await uploadRes.json();
-            if (!uploadData.success) throw new Error(uploadData.error);
+            if (!uploadData.success || !uploadData.urls || uploadData.urls.length === 0) throw new Error(uploadData.error || "Upload failed");
 
-            const newMsg = await sendWaMediaAction(selectedChat.id, type, uploadData.url, file.name);
+            const newMsg = await sendWaMediaAction(selectedChat.id, type, uploadData.urls[0], file.name);
             setMessages(prev => [...prev, newMsg]);
             
             setChats(prevChats => prevChats.map(c => 

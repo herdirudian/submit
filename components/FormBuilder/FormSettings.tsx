@@ -130,8 +130,8 @@ export default function FormSettings({ form, isOpen, onClose, questions }: { for
             body: formData,
         });
         const data = await res.json();
-        if (data.success) {
-            setLogo(data.url);
+        if (data.success && data.urls && data.urls.length > 0) {
+            setLogo(data.urls[0]);
             toast.success("Logo uploaded");
         } else {
             toast.error("Upload failed");
@@ -158,8 +158,8 @@ export default function FormSettings({ form, isOpen, onClose, questions }: { for
             body: formData,
         });
         const data = await res.json();
-        if (data.success) {
-            const newUrls = data.urls || [data.url];
+        if (data.success && data.urls) {
+            const newUrls = data.urls;
             setEmailAttachments(prev => {
                 const existing = prev ? prev.split(',') : [];
                 return [...existing, ...newUrls].join(',');
