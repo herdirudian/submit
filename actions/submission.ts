@@ -31,8 +31,7 @@ export async function submitForm(formId: string, data: Record<string, any>) {
     });
 
     const appSettings = await prisma.appSettings.findUnique({
-        where: { id: "singleton" },
-        select: { notificationFromName: true, notificationFromEmail: true }
+        where: { id: "singleton" }
     });
 
     // 2. Create Answers
@@ -166,7 +165,17 @@ export async function submitForm(formId: string, data: Record<string, any>) {
                     if (shouldSend) {
                         const formTitle = response.form.title;
                         const emailSubject = response.form.emailSubject || `Submission Received: ${formTitle}`;
-                        const customBody = response.form.emailBody ? `<p>${response.form.emailBody.replace(/\n/g, '<br>')}</p><br/>` : '';
+                        
+                        // Find respondent name for personalization
+                        const nameQuestion = validQuestions.find(q => q.label.toLowerCase().includes('nama'));
+                        const nameAnswer = nameQuestion ? validAnswers.find(a => a.questionId === nameQuestion.id) : null;
+                        const respondentName = nameAnswer?.value || "Sobat";
+
+                        let bodyText = response.form.emailBody || "Terima kasih telah mengisi formulir kami. Kami telah menerima tanggapan Anda dan akan segera meninjaunya.";
+                        bodyText = bodyText.replace(/{{name}}/g, respondentName);
+                        
+                        // Convert newlines to HTML
+                        const bodyContent = `<p>${bodyText.replace(/\n/g, '<br>')}</p>`;
 
                         // Handle attachments
                         const attachments = [];
@@ -183,14 +192,79 @@ export async function submitForm(formId: string, data: Record<string, any>) {
                             }
                         }
 
+                        // Professional HTML Template (Matching Blast Style)
+                        const brandName = appSettings?.brandName || response.form.sidebarTitle || "The Lodge Maribaya";
+                        const brandLogo = appSettings?.brandLogoUrl ? (appSettings.brandLogoUrl.startsWith('http') ? appSettings.brandLogoUrl : `${process.env.NEXTAUTH_URL}${appSettings.brandLogoUrl}`) : "";
+                        
                         const confirmationHtml = `
-                            <h2>${response.form.thankYouTitle || "Thank you for your submission!"}</h2>
-                            ${customBody}
-                            <p>We have received your response for <strong>${formTitle}</strong>.</p>
-                            <p>We will review it and get back to you shortly if necessary.</p>
-                            <br />
-                            <p>Best regards,</p>
-                            <p>${response.form.sidebarTitle || "The Lodge Team"}</p>
+                            <!DOCTYPE html>
+                            <html>
+                            <head>
+                              <meta charset="utf-8">
+                              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                              <style>
+                                body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #f8f9fa; color: #333333; }
+                                .wrapper { width: 100%; table-layout: fixed; background-color: #f8f9fa; padding: 20px 0; }
+                                .main { background-color: #ffffff; margin: 0 auto; width: 100%; max-width: 600px; border-spacing: 0; font-family: sans-serif; color: #333333; border-radius: 8px; overflow: hidden; }
+                                .header { padding: 30px; text-align: center; background-color: #ffffff; border-bottom: 1px solid #eeeeee; }
+                                .content { padding: 40px 30px; line-height: 1.6; font-size: 16px; text-align: left; }
+                                .footer { padding: 40px 30px; text-align: center; font-size: 12px; color: #666666; background-color: #ffffff; border-top: 1px solid #eeeeee; }
+                                .logo { max-height: 60px; width: auto; display: inline-block; }
+                                h2 { color: #0f4d39; text-align: center; margin-bottom: 25px; font-size: 24px; }
+                                p { margin-bottom: 15px; }
+                                .contact-section { margin-top: 30px; padding-top: 20px; border-top: 1px dashed #dddddd; text-align: center; }
+                                .social-icons { margin: 20px 0; text-align: center; }
+                                .social-icons a { margin: 0 8px; text-decoration: none; display: inline-block; }
+                                .social-icon { width: 24px; height: 24px; }
+                                .address { font-size: 11px; color: #999999; margin-top: 20px; line-height: 1.4; }
+                                @media screen and (max-width: 600px) {
+                                  .main { width: 100% !important; border-radius: 0; }
+                                  .content { padding: 30px 20px !important; }
+                                }
+                              </style>
+                            </head>
+                            <body>
+                              <center class="wrapper">
+                                <table class="main" width="100%" cellpadding="0" cellspacing="0">
+                                  <tr>
+                                    <td class="header">
+                                      ${brandLogo ? `<img src="${brandLogo}" alt="${brandName}" class="logo">` : `<h1 style="margin:0; color:#0f4d39;">${brandName}</h1>`}
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <td class="content">
+                                      <h2>${response.form.thankYouTitle || "Submission Received"}</h2>
+                                      ${bodyContent}
+                                      <div style="margin-top: 30px; padding: 20px; background-color: #fcfdfd; border-radius: 12px; border: 1px solid #eef2f2;">
+                                        <p style="margin: 0; font-size: 14px; color: #64748b;"><strong>Detail Formulir:</strong></p>
+                                        <p style="margin: 5px 0 0 0; font-weight: bold; color: #0f4d39;">${formTitle}</p>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <td class="footer">
+                                      <div class="contact-section">
+                                        <p style="font-weight: bold; font-size: 14px; margin-bottom: 10px;">Punya Pertanyaan?</p>
+                                        <p style="font-size: 13px; font-weight: bold; color: #0f4d39;">
+                                          ${appSettings?.notificationFromEmail || "cs@thelodgegroup.id"}
+                                        </p>
+                                      </div>
+                                      <div class="social-icons">
+                                        ${appSettings?.instagramUrl ? `<a href="${appSettings.instagramUrl}"><img src="https://img.icons8.com/material-outlined/24/666666/instagram-new.png" class="social-icon"></a>` : ""}
+                                        ${appSettings?.facebookUrl ? `<a href="${appSettings.facebookUrl}"><img src="https://img.icons8.com/material-outlined/24/666666/facebook-new.png" class="social-icon"></a>` : ""}
+                                        ${appSettings?.websiteUrl ? `<a href="${appSettings.websiteUrl}"><img src="https://img.icons8.com/material-outlined/24/666666/globe.png" class="social-icon"></a>` : ""}
+                                      </div>
+                                      <div class="address">
+                                        <p style="margin-bottom: 5px;"><strong>${brandName}</strong></p>
+                                        ${appSettings?.address ? `<p style="margin-bottom: 5px;">${appSettings.address.replace(/\n/g, '<br/>')}</p>` : ""}
+                                        <p style="margin: 0;">Email ini dikirimkan secara otomatis oleh sistem ${brandName}.</p>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                </table>
+                              </center>
+                            </body>
+                            </html>
                         `;
 
                         // Send async
@@ -198,7 +272,7 @@ export async function submitForm(formId: string, data: Record<string, any>) {
                             to: respondentEmail,
                             subject: emailSubject,
                             html: confirmationHtml,
-                            fromName: appSettings?.notificationFromName,
+                            fromName: appSettings?.notificationFromName || brandName,
                             fromEmail: appSettings?.notificationFromEmail,
                             attachments: attachments.length > 0 ? attachments : undefined
                         });
