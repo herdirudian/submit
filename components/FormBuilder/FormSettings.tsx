@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { X, Upload, Loader2, Image as ImageIcon, MessageSquare } from "lucide-react";
+import { X, Upload, Loader2, Image as ImageIcon, MessageSquare, Paperclip, File } from "lucide-react";
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
 import { toast } from "sonner";
@@ -50,6 +50,7 @@ export default function FormSettings({ form, isOpen, onClose, questions }: { for
   const [emailConfirmationTriggerValue, setEmailConfirmationTriggerValue] = useState(form.emailConfirmationTriggerValue || "");
   const [emailSubject, setEmailSubject] = useState(form.emailSubject || "Submission Received");
   const [emailBody, setEmailBody] = useState(form.emailBody || "");
+  const [emailAttachments, setEmailAttachments] = useState(form.emailAttachments || "");
   const [thankYouTitle, setThankYouTitle] = useState(form.thankYouTitle || "Thank You!");
   const [thankYouMessage, setThankYouMessage] = useState(form.thankYouMessage || "Your response has been successfully recorded.");
   const [redirectUrl, setRedirectUrl] = useState(form.redirectUrl || "");
@@ -142,6 +143,46 @@ export default function FormSettings({ form, isOpen, onClose, questions }: { for
     }
   };
 
+  const handleAttachmentsUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    
+    setIsUploading(true);
+    const formData = new FormData();
+    for (let i = 0; i < e.target.files.length; i++) {
+        formData.append("file", e.target.files[i]);
+    }
+
+    try {
+        const res = await fetch("/api/upload", {
+            method: "POST",
+            body: formData,
+        });
+        const data = await res.json();
+        if (data.success) {
+            const newUrls = data.urls || [data.url];
+            setEmailAttachments(prev => {
+                const existing = prev ? prev.split(',') : [];
+                return [...existing, ...newUrls].join(',');
+            });
+            toast.success(`${newUrls.length} file(s) uploaded`);
+        } else {
+            toast.error("Upload failed");
+        }
+    } catch (err) {
+        toast.error("Error uploading files");
+    } finally {
+        setIsUploading(false);
+        e.target.value = '';
+    }
+  };
+
+  const removeAttachment = (url: string) => {
+    setEmailAttachments(prev => {
+        const existing = prev ? prev.split(',') : [];
+        return existing.filter(u => u !== url).join(',');
+    });
+  };
+
   const handleSave = async () => {
       setIsSaving(true);
       try {
@@ -176,6 +217,7 @@ export default function FormSettings({ form, isOpen, onClose, questions }: { for
               emailConfirmationTriggerValue,
               emailSubject,
               emailBody,
+              emailAttachments,
               thankYouTitle,
               thankYouMessage,
               whatsappEnabled,
@@ -375,6 +417,54 @@ export default function FormSettings({ form, isOpen, onClose, questions }: { for
                                         className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary-500 outline-none resize-none"
                                         placeholder="Optional: Add a custom message to the confirmation email..."
                                     />
+                                </div>
+
+                                <div className="pt-4 border-t border-slate-50">
+                                    <label className="block text-sm font-semibold text-slate-700 mb-2">Email Attachments (Images, PDF, etc.)</label>
+                                    <p className="text-xs text-slate-500 mb-3">Berkas ini akan dilampirkan dalam email konfirmasi ke pendaftar.</p>
+                                    
+                                    <div className="space-y-3">
+                                        <label className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-slate-200 rounded-xl hover:bg-slate-50 hover:border-primary-300 transition-all cursor-pointer group">
+                                            <Paperclip size={18} className="text-slate-400 group-hover:text-primary-600" />
+                                            <span className="text-sm font-medium text-slate-600 group-hover:text-primary-700">Upload Attachments</span>
+                                            <input 
+                                                type="file" 
+                                                multiple 
+                                                className="hidden" 
+                                                onChange={handleAttachmentsUpload} 
+                                            />
+                                        </label>
+
+                                        {emailAttachments && emailAttachments.split(',').length > 0 && (
+                                            <div className="grid grid-cols-1 gap-2">
+                                                {emailAttachments.split(',').map((url, idx) => (
+                                                    <div key={idx} className="flex items-center justify-between p-2 bg-white border border-slate-200 rounded-lg shadow-sm">
+                                                        <div className="flex items-center gap-2 overflow-hidden">
+                                                            <div className="p-1.5 bg-blue-50 text-blue-600 rounded flex-shrink-0">
+                                                                {url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                                                                    <div className="w-5 h-5 relative rounded overflow-hidden">
+                                                                        <Image src={url} alt="preview" fill className="object-cover" />
+                                                                    </div>
+                                                                ) : (
+                                                                    <File size={14} />
+                                                                )}
+                                                            </div>
+                                                            <span className="text-xs font-medium text-slate-700 truncate max-w-[200px]">
+                                                                {url.split('/').pop()}
+                                                            </span>
+                                                        </div>
+                                                        <button 
+                                                            type="button"
+                                                            onClick={() => removeAttachment(url)}
+                                                            className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded"
+                                                        >
+                                                            <X size={14} />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         )}

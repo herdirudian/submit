@@ -168,6 +168,21 @@ export async function submitForm(formId: string, data: Record<string, any>) {
                         const emailSubject = response.form.emailSubject || `Submission Received: ${formTitle}`;
                         const customBody = response.form.emailBody ? `<p>${response.form.emailBody.replace(/\n/g, '<br>')}</p><br/>` : '';
 
+                        // Handle attachments
+                        const attachments = [];
+                        if (response.form.emailAttachments) {
+                            const urls = response.form.emailAttachments.split(',');
+                            const path = require('path');
+                            for (const url of urls) {
+                                if (url.trim()) {
+                                    attachments.push({
+                                        filename: url.split('/').pop() || 'attachment',
+                                        path: path.join(process.cwd(), 'public', url.trim())
+                                    });
+                                }
+                            }
+                        }
+
                         const confirmationHtml = `
                             <h2>${response.form.thankYouTitle || "Thank you for your submission!"}</h2>
                             ${customBody}
@@ -184,7 +199,8 @@ export async function submitForm(formId: string, data: Record<string, any>) {
                             subject: emailSubject,
                             html: confirmationHtml,
                             fromName: appSettings?.notificationFromName,
-                            fromEmail: appSettings?.notificationFromEmail
+                            fromEmail: appSettings?.notificationFromEmail,
+                            attachments: attachments.length > 0 ? attachments : undefined
                         });
                     }
                 }

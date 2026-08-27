@@ -25,6 +25,7 @@ export async function sendEmail({
   html: string;
   fromName?: string | null;
   fromEmail?: string | null;
+  attachments?: { filename: string; path: string }[];
 }) {
   try {
     const finalFromEmail = (fromEmail ?? "").trim() || process.env.FROM_EMAIL || process.env.SMTP_USER || "";
@@ -36,14 +37,12 @@ export async function sendEmail({
         : finalFromEmail
       : undefined;
 
-    // Hostinger/Strict SMTP fix: If the from email doesn't match SMTP_USER, 
-    // some servers reject it. We can try to use SMTP_USER as the sender 
-    // but keep the display name if possible.
     const mailOptions: nodemailer.SendMailOptions = {
       from: from || process.env.SMTP_USER,
       to,
       subject,
       html,
+      attachments,
     };
 
     // If we have a dedicated FROM_EMAIL that is different from SMTP_USER,

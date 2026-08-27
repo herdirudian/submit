@@ -198,6 +198,7 @@ export async function updateForm(id: string, data: {
     emailConfirmationTriggerValue?: string;
     emailSubject?: string;
     emailBody?: string;
+    emailAttachments?: string;
     thankYouTitle?: string;
     thankYouMessage?: string;
     redirectUrl?: string;
@@ -255,6 +256,7 @@ export async function updateForm(id: string, data: {
                 emailConfirmationTriggerValue: data.emailConfirmationTriggerValue,
                 emailSubject: data.emailSubject,
                 emailBody: data.emailBody,
+                emailAttachments: data.emailAttachments,
                 thankYouTitle: data.thankYouTitle,
                 thankYouMessage: data.thankYouMessage,
                 whatsappEnabled: data.whatsappEnabled,
@@ -387,6 +389,7 @@ export async function duplicateForm(id: string) {
       emailConfirmationTriggerValue: source.emailConfirmationTriggerValue,
       emailSubject: source.emailSubject,
       emailBody: source.emailBody,
+      emailAttachments: source.emailAttachments,
       thankYouTitle: source.thankYouTitle,
       thankYouMessage: source.thankYouMessage,
       whatsappEnabled: source.whatsappEnabled,

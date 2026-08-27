@@ -132,6 +132,7 @@ model Form {
   emailConfirmationTriggerValue String?
   emailSubject        String?    @default("Submission Received") // Subject for respondent email
   emailBody           String?    @db.Text // Custom message body for respondent email
+  emailAttachments    String?    @db.Text // Comma separated URLs of attachments
   thankYouTitle       String?    @default("Thank You!")
   thankYouMessage     String?    @db.Text
   redirectUrl         String?    // Optional redirect after submit
