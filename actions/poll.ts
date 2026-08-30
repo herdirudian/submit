@@ -140,21 +140,29 @@ export async function deletePoll(id: string) {
 }
 
 export async function submitPollResult(pollId: string, optionId: string, metadata: { ip?: string; userAgent?: string }) {
-    // Public action
+    // Public action - allow submission if poll exists (even if draft for preview testing)
     const poll = await prisma.poll.findUnique({
-        where: { id: pollId, status: 'PUBLISHED' }
+        where: { id: pollId }
     });
 
-    if (!poll) throw new Error("Poll not found or not published");
+    if (!poll) {
+        console.error(`[POLL SUBMIT] Poll not found: ${pollId}`);
+        throw new Error("Poll not found");
+    }
 
-    return await prisma.pollResult.create({
-        data: {
-            pollId,
-            optionId,
-            ip: metadata.ip,
-            userAgent: metadata.userAgent
-        }
-    });
+    try {
+        return await prisma.pollResult.create({
+            data: {
+                pollId,
+                optionId,
+                ip: metadata.ip,
+                userAgent: metadata.userAgent
+            }
+        });
+    } catch (error) {
+        console.error(`[POLL SUBMIT] Database error:`, error);
+        throw new Error("Failed to save result");
+    }
 }
 
 export async function getPollBySlug(slug: string) {
