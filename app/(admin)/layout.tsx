@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Settings, Search, LogOut, FileText, 
   BarChart3, Users, Inbox, Mail, Megaphone, 
   Contact2, MessageSquare, MessageCircle, History, Hash,
-  Menu, X as CloseIcon
+  Menu, X as CloseIcon, PieChart
 } from 'lucide-react';
 import { signOut, useSession } from "next-auth/react";
 import NotificationDropdown from "@/components/NotificationDropdown";
@@ -31,6 +31,7 @@ export default function AdminLayout({
     if (path === "/forms" || path.startsWith("/forms/") || path.startsWith("/builder/")) return "forms";
     if (path === "/responses" || path.startsWith("/responses/")) return "responses";
     if (path === "/analytics" || path.startsWith("/analytics/")) return "analytics";
+    if (path === "/polls" || path.startsWith("/polls/")) return "polls";
     if (path === "/users" || path.startsWith("/users/")) return "users";
     if (path === "/blast-email" || path.startsWith("/blast-email")) return "blast-email";
     if (path === "/blast-wa" || path.startsWith("/blast-wa")) return "blast-wa";
@@ -54,6 +55,7 @@ export default function AdminLayout({
     { name: 'My Forms', href: '/forms', icon: FileText, id: 'forms', roles: ['ADMIN'] },
     { name: 'Responses', href: '/responses', icon: Inbox, id: 'responses', roles: ['ADMIN'] },
     { name: 'Analytics', href: '/analytics', icon: BarChart3, id: 'analytics', roles: ['ADMIN'] },
+    { name: 'Polling', href: '/polls', icon: PieChart, id: 'polls', roles: ['ADMIN'] },
     { name: 'Users', href: '/users', icon: Users, id: 'users', roles: ['ADMIN'] },
     { name: 'Blast Email', href: '/blast-email', icon: Mail, id: 'blast-email', roles: ['ADMIN'] },
     { name: 'Blast WA', href: '/blast-wa', icon: MessageCircle, id: 'blast-wa', roles: ['ADMIN'] },
