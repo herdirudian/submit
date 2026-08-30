@@ -21,7 +21,8 @@ export default function PublicPollRenderer({ poll }: { poll: PollWithDetails }) 
     const currentQuestion = questions[currentStep];
 
     const handleSelect = (optionId: string) => {
-        setSelections(prev => ({ ...prev, [currentQuestion.id]: optionId }));
+        const newSelections = { ...selections, [currentQuestion.id]: optionId };
+        setSelections(newSelections);
         
         // Auto-next logic
         setTimeout(() => {
@@ -29,7 +30,7 @@ export default function PublicPollRenderer({ poll }: { poll: PollWithDetails }) 
                 setCurrentStep(currentStep + 1);
                 window.scrollTo(0, 0);
             } else {
-                handleSubmit(optionId);
+                handleSubmit(newSelections);
             }
         }, 300); // Small delay for visual feedback
     };
@@ -41,13 +42,12 @@ export default function PublicPollRenderer({ poll }: { poll: PollWithDetails }) 
         }
     };
 
-    const handleSubmit = async (finalOptionId?: string) => {
+    const handleSubmit = async (allSelections: Record<string, string>) => {
         setIsSubmitting(true);
         try {
-            const lastQuestionId = questions[questions.length - 1].id;
-            const optionToSubmit = finalOptionId || selections[lastQuestionId];
+            const optionIds = Object.values(allSelections);
             
-            await submitPollResult(poll.id, optionToSubmit, {
+            await submitPollResult(poll.id, optionIds, {
                 userAgent: navigator.userAgent
             });
             

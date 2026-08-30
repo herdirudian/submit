@@ -17,6 +17,8 @@ export default async function PollAnalyticsPage({ params }: { params: Promise<{ 
             return Math.max(acc, qVotes);
         }, 0);
 
+        const recentResults = (poll as any).recentResults || [];
+
         return (
             <div className="min-h-screen bg-slate-50 p-6 md:p-10 font-deskripsi">
                 <div className="max-w-6xl mx-auto">
@@ -121,6 +123,61 @@ export default async function PollAnalyticsPage({ params }: { params: Promise<{ 
                                 </div>
                             </div>
                         ))}
+                    </div>
+
+                    {/* Recent Submissions Table */}
+                    <div className="mt-12 bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
+                        <div className="p-8 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-white rounded-xl shadow-sm text-primary-600">
+                                    <BarChart3 size={20} />
+                                </div>
+                                <h3 className="text-xl font-bold text-slate-800 font-judul">Data Responden Terbaru</h3>
+                            </div>
+                            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">100 Data Terakhir</span>
+                        </div>
+                        
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="bg-slate-50/50">
+                                        <th className="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Waktu</th>
+                                        <th className="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Langkah/Pertanyaan</th>
+                                        <th className="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Pilihan</th>
+                                        <th className="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Perangkat</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-50">
+                                    {recentResults.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={4} className="px-8 py-10 text-center text-slate-400 font-medium italic">Belum ada data masuk.</td>
+                                        </tr>
+                                    ) : (
+                                        recentResults.map((res: any) => (
+                                            <tr key={res.id} className="hover:bg-slate-50/50 transition-colors">
+                                                <td className="px-8 py-4 text-sm text-slate-500 whitespace-nowrap">
+                                                    {new Date(res.createdAt).toLocaleString('id-ID', { 
+                                                        dateStyle: 'short', 
+                                                        timeStyle: 'short' 
+                                                    })}
+                                                </td>
+                                                <td className="px-8 py-4 text-sm font-bold text-slate-700">
+                                                    {res.option.question.label}
+                                                </td>
+                                                <td className="px-8 py-4">
+                                                    <span className="px-3 py-1 bg-primary-50 text-primary-700 rounded-full text-xs font-bold">
+                                                        {res.option.label}
+                                                    </span>
+                                                </td>
+                                                <td className="px-8 py-4 text-[10px] text-slate-400 max-w-[200px] truncate" title={res.userAgent}>
+                                                    {res.userAgent || 'Unknown'}
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -139,8 +139,8 @@ export async function deletePoll(id: string) {
     revalidatePath("/polls");
 }
 
-export async function submitPollResult(pollId: string, optionId: string, metadata: { ip?: string; userAgent?: string }) {
-    // Public action - allow submission if poll exists (even if draft for preview testing)
+export async function submitPollResult(pollId: string, optionIds: string[], metadata: { ip?: string; userAgent?: string }) {
+    // Public action - allow submission if poll exists
     const poll = await prisma.poll.findUnique({
         where: { id: pollId }
     });
@@ -151,17 +151,23 @@ export async function submitPollResult(pollId: string, optionId: string, metadat
     }
 
     try {
-        return await prisma.pollResult.create({
-            data: {
-                pollId,
-                optionId,
-                ip: metadata.ip,
-                userAgent: metadata.userAgent
-            }
-        });
+        // Create a result record for each selected option
+        const results = await Promise.all(
+            optionIds.map(optionId => 
+                prisma.pollResult.create({
+                    data: {
+                        pollId,
+                        optionId,
+                        ip: metadata.ip,
+                        userAgent: metadata.userAgent
+                    }
+                })
+            )
+        );
+        return { success: true, count: results.length };
     } catch (error) {
         console.error(`[POLL SUBMIT] Database error:`, error);
-        throw new Error("Failed to save result");
+        throw new Error("Failed to save results");
     }
 }
 
@@ -224,5 +230,18 @@ export async function getPollAnalytics(id: string) {
 
     if (!poll) throw new Error("Poll not found");
 
-    return poll;
+    const recentResults = await prisma.pollResult.findMany({
+        where: { pollId: id },
+        include: {
+            option: {
+                include: {
+                    question: true
+                }
+            }
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 100
+    });
+
+    return { ...poll, recentResults };
 }
