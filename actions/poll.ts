@@ -133,7 +133,7 @@ export async function submitPollResult(pollId: string, optionId: string, metadat
 
 export async function getPollBySlug(slug: string) {
     return await prisma.poll.findUnique({
-        where: { slug, status: 'PUBLISHED' },
+        where: { slug },
         include: {
             questions: {
                 include: {
@@ -145,4 +145,22 @@ export async function getPollBySlug(slug: string) {
             }
         }
     });
+}
+
+export async function publishPoll(id: string, isPublished: boolean) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) throw new Error("Unauthorized");
+
+    const poll = await prisma.poll.update({
+        where: { id, userId: session.user.id },
+        data: {
+            status: isPublished ? 'PUBLISHED' : 'DRAFT'
+        }
+    });
+
+    revalidatePath("/polls");
+    revalidatePath(`/polls/${id}`);
+    revalidatePath(`/public/polls/${poll.slug}`);
+    
+    return poll;
 }

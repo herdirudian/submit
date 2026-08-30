@@ -5,7 +5,7 @@ import { Poll, PollQuestion, PollOption, PollQuestionType } from "@prisma/client
 import { ArrowLeft, Save, Eye, Plus, Trash2, Image as ImageIcon, Layout, List, Layers, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { updatePoll } from "@/actions/poll";
+import { updatePoll, publishPoll } from "@/actions/poll";
 import Image from "next/image";
 
 type PollWithDetails = Poll & {
@@ -16,7 +16,9 @@ export default function PollBuilderContext({ poll }: { poll: PollWithDetails }) 
     const [title, setTitle] = useState(poll.title);
     const [description, setDescription] = useState(poll.description || "");
     const [questions, setQuestions] = useState(poll.questions);
+    const [status, setStatus] = useState(poll.status);
     const [isSaving, setIsSaving] = useState(false);
+    const [isPublishing, setIsPublishing] = useState(false);
 
     const handleSave = async () => {
         setIsSaving(true);
@@ -38,6 +40,20 @@ export default function PollBuilderContext({ poll }: { poll: PollWithDetails }) 
             toast.error("Failed to save poll");
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handlePublish = async () => {
+        setIsPublishing(true);
+        try {
+            const newStatus = status === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED';
+            await publishPoll(poll.id, newStatus === 'PUBLISHED');
+            setStatus(newStatus);
+            toast.success(`Poll ${newStatus === 'PUBLISHED' ? 'published' : 'moved to draft'}`);
+        } catch (error) {
+            toast.error("Failed to update poll status");
+        } finally {
+            setIsPublishing(false);
         }
     };
 
@@ -122,6 +138,18 @@ export default function PollBuilderContext({ poll }: { poll: PollWithDetails }) 
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
+                    <button 
+                        onClick={handlePublish}
+                        disabled={isPublishing}
+                        className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold border rounded-full transition-all ${
+                            status === 'PUBLISHED' 
+                                ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100' 
+                                : 'bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100'
+                        }`}
+                    >
+                        {isPublishing ? <Loader2 size={16} className="animate-spin" /> : <div className={`w-2 h-2 rounded-full ${status === 'PUBLISHED' ? 'bg-green-500' : 'bg-yellow-500'}`} />}
+                        {status === 'PUBLISHED' ? 'Published' : 'Draft'}
+                    </button>
                     <Link 
                         href={`/public/polls/${poll.slug}`} 
                         target="_blank"
