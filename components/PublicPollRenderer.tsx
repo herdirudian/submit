@@ -22,20 +22,16 @@ export default function PublicPollRenderer({ poll }: { poll: PollWithDetails }) 
 
     const handleSelect = (optionId: string) => {
         setSelections(prev => ({ ...prev, [currentQuestion.id]: optionId }));
-    };
-
-    const handleNext = () => {
-        if (!selections[currentQuestion.id]) {
-            toast.error("Silakan pilih salah satu opsi");
-            return;
-        }
-
-        if (currentStep < questions.length - 1) {
-            setCurrentStep(currentStep + 1);
-            window.scrollTo(0, 0);
-        } else {
-            handleSubmit();
-        }
+        
+        // Auto-next logic
+        setTimeout(() => {
+            if (currentStep < questions.length - 1) {
+                setCurrentStep(currentStep + 1);
+                window.scrollTo(0, 0);
+            } else {
+                handleSubmit(optionId);
+            }
+        }, 300); // Small delay for visual feedback
     };
 
     const handleBack = () => {
@@ -45,15 +41,13 @@ export default function PublicPollRenderer({ poll }: { poll: PollWithDetails }) 
         }
     };
 
-    const handleSubmit = async () => {
+    const handleSubmit = async (finalOptionId?: string) => {
         setIsSubmitting(true);
         try {
-            // For now, we only submit the final choice as the main result
-            // Or we could submit all choices. User said "Pilih produk" at the end.
             const lastQuestionId = questions[questions.length - 1].id;
-            const finalOptionId = selections[lastQuestionId];
+            const optionToSubmit = finalOptionId || selections[lastQuestionId];
             
-            await submitPollResult(poll.id, finalOptionId, {
+            await submitPollResult(poll.id, optionToSubmit, {
                 userAgent: navigator.userAgent
             });
             
@@ -168,7 +162,7 @@ export default function PublicPollRenderer({ poll }: { poll: PollWithDetails }) 
                 </div>
 
                 {/* Navigation */}
-                <div className="mt-12 pt-8 border-t border-slate-50 flex items-center justify-between gap-4">
+                <div className="mt-12 pt-8 border-t border-slate-50 flex items-center justify-start gap-4">
                     <button
                         onClick={handleBack}
                         disabled={currentStep === 0}
@@ -177,22 +171,11 @@ export default function PublicPollRenderer({ poll }: { poll: PollWithDetails }) 
                         <ArrowLeft size={20} /> Kembali
                     </button>
                     
-                    <button
-                        onClick={handleNext}
-                        disabled={isSubmitting || !selections[currentQuestion.id]}
-                        className="px-10 py-4 bg-primary-600 text-white font-bold rounded-full hover:bg-primary-700 transition-all shadow-lg shadow-primary-200 active:scale-95 disabled:opacity-50 flex items-center gap-2"
-                    >
-                        {isSubmitting ? (
-                            <>
-                                <Loader2 size={20} className="animate-spin" /> Mengirim...
-                            </>
-                        ) : (
-                            <>
-                                {currentStep === questions.length - 1 ? 'Kirim Polling' : 'Lanjutkan'}
-                                <ArrowRight size={20} />
-                            </>
-                        )}
-                    </button>
+                    {isSubmitting && (
+                        <div className="ml-auto flex items-center gap-2 text-primary-600 font-bold animate-pulse">
+                            <Loader2 size={20} className="animate-spin" /> Mengirim...
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
