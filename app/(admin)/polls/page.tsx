@@ -151,6 +151,12 @@ export default async function PollsPage({ searchParams }: { searchParams: Promis
                     <Edit size={16} /> Edit
                   </Link>
                   <Link
+                    href={`/polls/${poll.id}/analytics`}
+                    className="text-sm font-semibold text-slate-600 hover:text-primary-700 flex items-center gap-1.5 transition-colors"
+                  >
+                    <BarChart2 size={16} /> Analytics
+                  </Link>
+                  <Link
                     href={`/public/polls/${poll.slug}`}
                     target="_blank"
                     className="text-sm font-semibold text-slate-600 hover:text-primary-700 flex items-center gap-1.5 transition-colors"

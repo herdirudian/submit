@@ -152,7 +152,7 @@ export default function PublicPollRenderer({ poll }: { poll: PollWithDetails }) 
                                     </div>
                                 )}
                             </div>
-                            <span className={`text-lg font-bold transition-colors ${
+                            <span className={`text-lg font-bold text-center w-full transition-colors ${
                                 selections[currentQuestion.id] === opt.id ? 'text-primary-700' : 'text-slate-700'
                             }`}>
                                 {opt.label}

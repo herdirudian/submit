@@ -198,3 +198,31 @@ export async function publishPoll(id: string, isPublished: boolean) {
     
     return poll;
 }
+
+export async function getPollAnalytics(id: string) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) throw new Error("Unauthorized");
+
+    const poll = await prisma.poll.findUnique({
+        where: { id, userId: session.user.id },
+        include: {
+            questions: {
+                include: {
+                    options: {
+                        include: {
+                            _count: {
+                                select: { results: true }
+                            }
+                        },
+                        orderBy: { order: 'asc' }
+                    }
+                },
+                orderBy: { order: 'asc' }
+            }
+        }
+    });
+
+    if (!poll) throw new Error("Poll not found");
+
+    return poll;
+}

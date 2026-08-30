@@ -138,6 +138,12 @@ export default function PollBuilderContext({ poll }: { poll: PollWithDetails }) 
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
+                    <Link 
+                        href={`/polls/${poll.id}/analytics`} 
+                        className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-primary-700 bg-primary-50 border border-primary-100 rounded-full hover:bg-primary-100 transition-all"
+                    >
+                        <BarChart2 size={16} /> Analytics
+                    </Link>
                     <button 
                         onClick={handlePublish}
                         disabled={isPublishing}
@@ -226,7 +232,7 @@ export default function PollBuilderContext({ poll }: { poll: PollWithDetails }) 
                                                 value={opt.label}
                                                 onChange={(e) => updateOption(qIndex, optIndex, 'label', e.target.value)}
                                                 placeholder="Label Opsi"
-                                                className="w-full text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-100 outline-none mb-2"
+                                                className="w-full text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-100 outline-none mb-2 text-center"
                                             />
                                             
                                             {q.type === 'PRODUCT_SELECT' && (
