@@ -69,11 +69,15 @@ export async function updatePoll(id: string, data: any) {
         data: pollData
     });
 
-    // Handle questions and options (Simplified: delete and recreate for now, or implement deep update)
+    // Handle questions and options
     if (questions) {
-        // This is a simplified approach. In production, you'd want to track IDs to avoid deleting everything.
+        // Mapping old temporary IDs to new database IDs
+        const idMapping: Record<string, string> = {};
+
+        // 1. Delete existing structure
         await prisma.pollQuestion.deleteMany({ where: { pollId: id } });
 
+        // 2. Create questions and options sequentially to build ID mapping
         for (const q of questions) {
             const createdQuestion = await prisma.pollQuestion.create({
                 data: {
@@ -81,17 +85,39 @@ export async function updatePoll(id: string, data: any) {
                     type: q.type as PollQuestionType,
                     label: q.label,
                     order: q.order,
-                    options: {
-                        create: q.options?.map((opt: any) => ({
+                }
+            });
+
+            if (q.options) {
+                for (const opt of q.options) {
+                    const createdOption = await prisma.pollOption.create({
+                        data: {
+                            questionId: createdQuestion.id,
                             label: opt.label,
                             value: opt.value || opt.label,
                             imageUrl: opt.imageUrl,
-                            parentId: opt.parentId,
-                            order: opt.order
-                        }))
+                            order: opt.order,
+                            // parentId will be updated in the next pass after all options are created
+                        }
+                    });
+                    // Store mapping: frontendId -> backendId
+                    idMapping[opt.id] = createdOption.id;
+                }
+            }
+        }
+
+        // 3. Second pass: Update parentId for products using the mapping
+        for (const q of questions) {
+            if (q.type === 'PRODUCT_SELECT' && q.options) {
+                for (const opt of q.options) {
+                    if (opt.parentId && idMapping[opt.parentId]) {
+                        await prisma.pollOption.update({
+                            where: { id: idMapping[opt.id] },
+                            data: { parentId: idMapping[opt.parentId] }
+                        });
                     }
                 }
-            });
+            }
         }
     }
 
