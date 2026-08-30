@@ -1,12 +1,13 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
+import prisma from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { PollQuestionType, FormStatus } from "@prisma/client";
 
 export async function getPolls() {
-    const session = await auth();
+    const session = await getServerSession(authOptions);
     if (!session?.user?.id) throw new Error("Unauthorized");
 
     return await prisma.poll.findMany({
@@ -21,7 +22,7 @@ export async function getPolls() {
 }
 
 export async function createPoll(data: { title: string; slug: string }) {
-    const session = await auth();
+    const session = await getServerSession(authOptions);
     if (!session?.user?.id) throw new Error("Unauthorized");
 
     const poll = await prisma.poll.create({
@@ -38,7 +39,7 @@ export async function createPoll(data: { title: string; slug: string }) {
 }
 
 export async function getPollById(id: string) {
-    const session = await auth();
+    const session = await getServerSession(authOptions);
     if (!session?.user?.id) throw new Error("Unauthorized");
 
     return await prisma.poll.findUnique({
@@ -57,7 +58,7 @@ export async function getPollById(id: string) {
 }
 
 export async function updatePoll(id: string, data: any) {
-    const session = await auth();
+    const session = await getServerSession(authOptions);
     if (!session?.user?.id) throw new Error("Unauthorized");
 
     const { questions, ...pollData } = data;
@@ -102,7 +103,7 @@ export async function updatePoll(id: string, data: any) {
 }
 
 export async function deletePoll(id: string) {
-    const session = await auth();
+    const session = await getServerSession(authOptions);
     if (!session?.user?.id) throw new Error("Unauthorized");
 
     await prisma.poll.delete({
