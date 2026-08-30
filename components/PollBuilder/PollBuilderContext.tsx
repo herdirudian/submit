@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Poll, PollQuestion, PollOption, PollQuestionType } from "@prisma/client";
-import { ArrowLeft, Save, Eye, Plus, Trash2, Image as ImageIcon, Layout, List, Layers, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, Eye, Plus, Trash2, Image as ImageIcon, Layout, List, Layers, Loader2, BarChart2 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { updatePoll, publishPoll } from "@/actions/poll";
