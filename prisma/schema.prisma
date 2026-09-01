@@ -368,18 +368,20 @@ model PollOption {
 }
 
 model PollResult {
-  id          String   @id @default(cuid())
-  pollId      String
-  optionId    String
-  ip          String?
-  userAgent   String?  @db.Text
-  createdAt   DateTime @default(now())
+  id           String      @id @default(cuid())
+  pollId       String
+  submissionId String?
+  optionId     String
+  ip           String?
+  userAgent    String?     @db.Text
+  createdAt    DateTime    @default(now())
   
-  poll        Poll     @relation(fields: [pollId], references: [id], onDelete: Cascade)
-  option      PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  poll         Poll        @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  option       PollOption  @relation(fields: [optionId], references: [id], onDelete: Cascade)
 
   @@index([pollId])
   @@index([optionId])
+  @@index([submissionId])
   @@map("poll_results")
 }
 
