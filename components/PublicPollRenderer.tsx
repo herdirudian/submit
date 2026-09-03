@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { Poll, PollQuestion, PollOption } from "@prisma/client";
-import { CheckCircle, ArrowRight, ArrowLeft, Loader2, Check } from "lucide-react";
+import { CheckCircle, ArrowRight, ArrowLeft, Loader2, Check, Maximize2 } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { submitPollResult } from "@/actions/poll";
+import ImageZoomModal from "@/components/ImageZoomModal";
 
 type PollWithDetails = Poll & {
     questions: (PollQuestion & { options: PollOption[] })[];
@@ -16,6 +17,7 @@ export default function PublicPollRenderer({ poll }: { poll: PollWithDetails }) 
     const [selections, setSelections] = useState<Record<string, string>>({});
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [zoomImage, setZoomImage] = useState<{ imageUrl: string; label: string; optionId: string } | null>(null);
 
     const questions = poll.questions;
     const currentQuestion = questions[currentStep];
@@ -129,10 +131,10 @@ export default function PublicPollRenderer({ poll }: { poll: PollWithDetails }) 
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {visibleOptions.map((opt) => (
-                        <button
+                        <div
                             key={opt.id}
                             onClick={() => handleSelect(opt.id)}
-                            className={`group relative flex flex-col p-4 rounded-3xl border-2 transition-all duration-300 text-left ${
+                            className={`group relative flex flex-col p-4 rounded-3xl border-2 transition-all duration-300 text-left cursor-pointer ${
                                 selections[currentQuestion.id] === opt.id
                                     ? 'border-primary-600 bg-primary-50/30 ring-4 ring-primary-50'
                                     : 'border-slate-100 bg-white hover:border-primary-200 hover:shadow-xl hover:-translate-y-1'
@@ -140,14 +142,33 @@ export default function PublicPollRenderer({ poll }: { poll: PollWithDetails }) 
                         >
                             <div className="aspect-square w-full rounded-2xl bg-slate-50 mb-4 relative overflow-hidden">
                                 {opt.imageUrl ? (
-                                    <Image src={opt.imageUrl} alt={opt.label} fill className="object-cover transition-transform duration-500 group-hover:scale-110" unoptimized />
+                                    <>
+                                        <Image src={opt.imageUrl} alt={opt.label} fill className="object-cover transition-transform duration-500 group-hover:scale-105" unoptimized />
+                                        
+                                        {/* Zoom Preview Button Overlay */}
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setZoomImage({
+                                                    imageUrl: opt.imageUrl!,
+                                                    label: opt.label,
+                                                    optionId: opt.id
+                                                });
+                                            }}
+                                            className="absolute top-3 left-3 bg-slate-900/75 hover:bg-slate-950 text-white px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 backdrop-blur-sm opacity-90 group-hover:opacity-100 shadow-md"
+                                            title="Klik untuk Zoom Gambar"
+                                        >
+                                            <Maximize2 size={14} /> Zoom
+                                        </button>
+                                    </>
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center text-slate-200">
                                         <CheckCircle size={48} />
                                     </div>
                                 )}
                                 {selections[currentQuestion.id] === opt.id && (
-                                    <div className="absolute top-3 right-3 w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center shadow-lg animate-in zoom-in duration-300">
+                                    <div className="absolute top-3 right-3 w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center shadow-lg animate-in zoom-in duration-300 z-10">
                                         <Check size={18} strokeWidth={3} />
                                     </div>
                                 )}
@@ -157,7 +178,7 @@ export default function PublicPollRenderer({ poll }: { poll: PollWithDetails }) 
                             }`}>
                                 {opt.label}
                             </span>
-                        </button>
+                        </div>
                     ))}
                 </div>
 
@@ -178,6 +199,18 @@ export default function PublicPollRenderer({ poll }: { poll: PollWithDetails }) 
                     )}
                 </div>
             </div>
+
+            {/* Modal Zoom Preview */}
+            <ImageZoomModal
+                isOpen={!!zoomImage}
+                onClose={() => setZoomImage(null)}
+                imageUrl={zoomImage?.imageUrl || null}
+                title={zoomImage?.label || ""}
+                subtitle={`Langkah: ${currentQuestion.label}`}
+                onSelect={zoomImage ? () => handleSelect(zoomImage.optionId) : undefined}
+                isSelected={zoomImage ? selections[currentQuestion.id] === zoomImage.optionId : false}
+            />
         </div>
     );
 }
+

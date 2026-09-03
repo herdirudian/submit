@@ -6,11 +6,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { 
     ArrowLeft, Calendar, Download, TrendingUp, Users, Award, 
-    Filter, Layers, ShoppingBag, Eye, RefreshCw, BarChart2
+    Filter, Layers, ShoppingBag, Eye, RefreshCw, BarChart2, Maximize2
 } from "lucide-react";
 import { 
     ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, Cell 
 } from "recharts";
+import ImageZoomModal from "@/components/ImageZoomModal";
 
 const INFO_COLORS = ['#0f4d39', '#2563eb', '#d97706', '#dc2626', '#9333ea', '#0891b2'];
 
@@ -26,6 +27,7 @@ export default function PollAnalyticsDashboard({ poll, dateRange }: PollAnalytic
     const [from, setFrom] = useState(dateRange.from);
     const [to, setTo] = useState(dateRange.to);
     const [selectedInfoFilter, setSelectedInfoFilter] = useState<string>("ALL");
+    const [zoomImage, setZoomImage] = useState<{ imageUrl: string; label: string; subtitle?: string } | null>(null);
 
     // Extract questions and options metadata
     const infoOptions: any[] = poll.infoOptions || [];
@@ -442,9 +444,28 @@ export default function PollAnalyticsDashboard({ poll, dateRange }: PollAnalytic
                                 <div>
                                     <div className="flex items-start justify-between gap-3 mb-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-14 h-14 rounded-2xl bg-slate-100 relative overflow-hidden flex-shrink-0 border border-slate-100">
+                                            <div 
+                                                onClick={() => {
+                                                    if (prod.imageUrl) {
+                                                        setZoomImage({
+                                                            imageUrl: prod.imageUrl,
+                                                            label: prod.label,
+                                                            subtitle: `Kategori: ${prod.categoryLabel}`
+                                                        });
+                                                    }
+                                                }}
+                                                className={`w-14 h-14 rounded-2xl bg-slate-100 relative overflow-hidden flex-shrink-0 border border-slate-100 group/img ${
+                                                    prod.imageUrl ? "cursor-pointer hover:ring-2 hover:ring-primary-500" : ""
+                                                }`}
+                                                title={prod.imageUrl ? "Klik untuk Zoom Gambar" : undefined}
+                                            >
                                                 {prod.imageUrl ? (
-                                                    <Image src={prod.imageUrl} alt={prod.label} fill className="object-cover" unoptimized />
+                                                    <>
+                                                        <Image src={prod.imageUrl} alt={prod.label} fill className="object-cover transition-transform group-hover/img:scale-110" unoptimized />
+                                                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center text-white">
+                                                            <Maximize2 size={14} />
+                                                        </div>
+                                                    </>
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center text-slate-300">
                                                         <ShoppingBag size={24} />
@@ -514,7 +535,7 @@ export default function PollAnalyticsDashboard({ poll, dateRange }: PollAnalytic
                 <div className="p-6 md:p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                     <div>
                         <h3 className="text-lg font-bold text-slate-800 font-judul">Tabel Matriks Perbandingan Produk</h3>
-                        <p className="text-xs text-slate-400">Rincian data suara terbanyak untuk setiap kombinasi Form Info & Produk.</p>
+                        <p className="text-xs text-slate-400">Rincian data suara terbanyak untuk setiap kombinasi Form Info & Produk. Klik gambar untuk zoom.</p>
                     </div>
                 </div>
 
@@ -536,9 +557,28 @@ export default function PollAnalyticsDashboard({ poll, dateRange }: PollAnalytic
                             {dynamicProducts.map((prod: any) => (
                                 <tr key={prod.id} className="hover:bg-slate-50/50 transition-colors">
                                     <td className="px-6 py-4 font-bold text-slate-800 flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-lg bg-slate-100 relative overflow-hidden flex-shrink-0">
+                                        <div 
+                                            onClick={() => {
+                                                if (prod.imageUrl) {
+                                                    setZoomImage({
+                                                        imageUrl: prod.imageUrl,
+                                                        label: prod.label,
+                                                        subtitle: `Kategori: ${prod.categoryLabel}`
+                                                    });
+                                                }
+                                            }}
+                                            className={`w-9 h-9 rounded-lg bg-slate-100 relative overflow-hidden flex-shrink-0 border border-slate-100 group/tableImg ${
+                                                prod.imageUrl ? "cursor-pointer hover:ring-2 hover:ring-primary-500" : ""
+                                            }`}
+                                            title={prod.imageUrl ? "Klik untuk Zoom Gambar" : undefined}
+                                        >
                                             {prod.imageUrl ? (
-                                                <Image src={prod.imageUrl} alt={prod.label} fill className="object-cover" unoptimized />
+                                                <>
+                                                    <Image src={prod.imageUrl} alt={prod.label} fill className="object-cover transition-transform group-hover/tableImg:scale-110" unoptimized />
+                                                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover/tableImg:opacity-100 transition-opacity flex items-center justify-center text-white">
+                                                        <Maximize2 size={12} />
+                                                    </div>
+                                                </>
                                             ) : (
                                                 <div className="w-full h-full flex items-center justify-center text-slate-300">
                                                     <ShoppingBag size={14} />
@@ -639,6 +679,17 @@ export default function PollAnalyticsDashboard({ poll, dateRange }: PollAnalytic
                     </table>
                 </div>
             </div>
+
+            {/* Modal Zoom Preview */}
+            <ImageZoomModal
+                isOpen={!!zoomImage}
+                onClose={() => setZoomImage(null)}
+                imageUrl={zoomImage?.imageUrl || null}
+                title={zoomImage?.label || ""}
+                subtitle={zoomImage?.subtitle}
+            />
         </div>
     );
 }
+
+
