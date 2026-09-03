@@ -97,16 +97,21 @@ export async function updateFormSettings(id: string, data: any) {
 }
 
 export async function checkSlugAvailability(slug: string, currentFormId?: string) {
+  const formattedSlug = slug.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "form";
   const existing = await prisma.form.findFirst({
     where: {
-      slug,
+      slug: formattedSlug,
       ...(currentFormId ? { NOT: { id: currentFormId } } : {}),
     },
   });
-  if (existing) {
-    return { ok: false, message: "Slug sudah digunakan oleh form lain." };
-  }
-  return { ok: true, message: "Slug dapat digunakan." };
+  
+  const isAvailable = !existing;
+  return {
+    ok: true,
+    available: isAvailable,
+    slug: formattedSlug,
+    message: isAvailable ? "Slug tersedia!" : "Slug sudah digunakan oleh form lain.",
+  };
 }
 
 export async function updateFormSlug(id: string, newSlug: string) {
