@@ -55,14 +55,19 @@ export async function getFormBySlug(slug: string) {
   });
 }
 
-export async function createForm(data: { title: string; slug: string }) {
+export async function createForm(data: { title: string; description?: string; slug?: string }) {
   const session = await getServerSession(authOptions);
   if (!session || !session.user) throw new Error("Unauthorized");
 
+  const title = (data.title ?? "").trim();
+  const baseSlug = data.slug || title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "form";
+  const slug = `${baseSlug}-${Date.now()}`;
+
   const form = await prisma.form.create({
     data: {
-      title: data.title,
-      slug: data.slug,
+      title,
+      description: data.description,
+      slug,
       userId: session.user.id,
       status: "DRAFT",
     },
