@@ -78,18 +78,22 @@ export async function createForm(data: { title: string; description?: string; sl
 }
 
 export async function updateForm(id: string, data: any) {
-  const session = await getServerSession(authOptions);
-  if (!session || !session.user) throw new Error("Unauthorized");
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) return { success: false, error: "Unauthorized" };
 
-  const form = await prisma.form.update({
-    where: { id, userId: session.user.id },
-    data,
-  });
+    const form = await prisma.form.update({
+      where: { id, userId: session.user.id },
+      data,
+    });
 
-  revalidatePath(`/builder/${id}`);
-  revalidatePath(`/forms/${id}`);
-  revalidatePath(`/public/forms/${form.slug}`);
-  return form;
+    revalidatePath(`/builder/${id}`);
+    revalidatePath(`/forms/${id}`);
+    revalidatePath(`/public/forms/${form.slug}`);
+    return { success: true, form };
+  } catch (error: any) {
+    return { success: false, error: error?.message || "Failed to update form" };
+  }
 }
 
 export async function updateFormSettings(id: string, data: any) {
