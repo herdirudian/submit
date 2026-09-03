@@ -103,7 +103,10 @@ export async function checkSlugAvailability(slug: string, currentFormId?: string
       ...(currentFormId ? { NOT: { id: currentFormId } } : {}),
     },
   });
-  return !existing;
+  if (existing) {
+    return { ok: false, message: "Slug sudah digunakan oleh form lain." };
+  }
+  return { ok: true, message: "Slug dapat digunakan." };
 }
 
 export async function updateFormSlug(id: string, newSlug: string) {
