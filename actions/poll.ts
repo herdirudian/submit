@@ -210,7 +210,6 @@ export async function publishPoll(id: string, isPublished: boolean) {
     return poll;
 }
 
-export async function getPollAnalytics(id: string) {
 export async function getPollAnalytics(id: string, fromStr?: string, toStr?: string) {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) throw new Error("Unauthorized");
@@ -236,8 +235,6 @@ export async function getPollAnalytics(id: string, fromStr?: string, toStr?: str
 
     if (!poll) throw new Error("Poll not found");
 
-    const recentResults = await prisma.pollResult.findMany({
-        where: { pollId: id },
     // Build date filter
     const whereCondition: any = { pollId: id };
     if (fromStr || toStr) {
@@ -261,12 +258,9 @@ export async function getPollAnalytics(id: string, fromStr?: string, toStr?: str
                 }
             }
         },
-        orderBy: { createdAt: 'desc' },
-        take: 100
         orderBy: { createdAt: 'desc' }
     });
 
-    return { ...poll, recentResults };
     // Grouping results into submission sessions
     const submissionsMap = new Map<string, {
         submissionId: string;

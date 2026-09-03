@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 // --- Form Actions ---
 
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export async function getForms() {
   const session = await getServerSession(authOptions);
@@ -16,19 +16,6 @@ export async function getForms() {
     where: { userId: session.user.id },
     orderBy: { createdAt: "desc" },
   });
-}
-
-export async function getDashboardStats() {
-  const session = await getServerSession(authOptions);
-  if (!session || !session.user) return { totalForms: 0, totalResponses: 0 };
-
-  const userId = session.user.id;
-  const [totalForms, totalResponses] = await Promise.all([
-    prisma.form.count({ where: { userId } }),
-    prisma.response.count({ where: { form: { userId } } }),
-  ]);
-
-  return { totalForms, totalResponses };
 }
 
 export async function getFormById(id: string) {
@@ -94,81 +81,7 @@ export async function createForm(data: { title: string; description?: string }) 
   }
 
   revalidatePath("/dashboard");
-  revalidatePath("/forms");
   return form;
-}
-
-const normalizeSlug = (raw: string) =>
-  raw
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-
-const isValidSlug = (slug: string) => /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) && slug.length <= 80;
-
-const sanitizeRedirectUrl = (raw?: string) => {
-  if (raw === undefined) return undefined;
-  const value = raw.trim();
-  if (!value) return null;
-  if (value.startsWith("/") && !value.startsWith("//")) return value;
-  try {
-    const url = new URL(value);
-    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
-    return url.toString();
-  } catch {
-    return null;
-  }
-};
-
-export async function checkSlugAvailability(rawSlug: string, excludeFormId?: string) {
-  const slug = normalizeSlug(rawSlug);
-  if (!slug) return { ok: false, slug, available: false, message: "Slug wajib diisi" };
-  if (!isValidSlug(slug)) return { ok: false, slug, available: false, message: "Slug tidak valid" };
-
-  const existing = await prisma.form.findFirst({
-    where: {
-      slug,
-      ...(excludeFormId ? { NOT: { id: excludeFormId } } : {}),
-    },
-    select: { id: true },
-  });
-
-  if (existing) return { ok: true, slug, available: false, message: "Slug sudah dipakai" };
-  return { ok: true, slug, available: true, message: "Slug tersedia" };
-}
-
-export async function updateFormSlug(id: string, rawSlug: string) {
-  const session = await getServerSession(authOptions);
-  if (!session || !session.user) {
-    throw new Error("Unauthorized");
-  }
-
-  const owned = await prisma.form.findFirst({ where: { id, userId: session.user.id }, select: { slug: true } });
-  if (!owned) {
-    throw new Error("Form tidak ditemukan");
-  }
-
-  const check = await checkSlugAvailability(rawSlug, id);
-  if (!check.ok || !check.available) {
-    throw new Error(check.message);
-  }
-
-  try {
-    await prisma.form.update({
-      where: { id },
-      data: { slug: check.slug },
-    });
-  } catch (error: any) {
-    if (error?.code === "P2002") {
-      throw new Error("Slug sudah dipakai");
-    }
-    throw error;
-  }
-
-  revalidatePath(`/builder/${id}`);
-  revalidatePath(`/public/forms/${owned.slug}`);
-  revalidatePath(`/public/forms/${check.slug}`);
 }
 
 export async function updateForm(id: string, data: { 
@@ -192,86 +105,24 @@ export async function updateForm(id: string, data: {
     primaryColor?: string;
     backgroundColor?: string;
     fontFamily?: string;
-    sendEmailConfirmation?: boolean;
-    emailConfirmationFieldId?: string;
-    emailConfirmationTriggerFieldId?: string;
-    emailConfirmationTriggerValue?: string;
     emailSubject?: string;
     emailBody?: string;
-    emailAttachments?: string;
     thankYouTitle?: string;
     thankYouMessage?: string;
-    redirectUrl?: string;
-    whatsappEnabled?: boolean;
-    whatsappTemplateName?: string;
-    whatsappPhoneFieldId?: string;
 }) {
-    console.log(`[ACTION] Updating form ${id} with data:`, JSON.stringify(data, null, 2));
     try {
-        const session = await getServerSession(authOptions);
-        if (!session || !session.user) {
-            console.warn(`[ACTION] Unauthorized attempt to update form ${id}`);
-            throw new Error("Unauthorized");
-        }
-
-        const owned = await prisma.form.findFirst({ where: { id, userId: session.user.id }, select: { id: true } });
-        if (!owned) {
-            console.warn(`[ACTION] Form ${id} not found or not owned by user ${session.user.id}`);
-            throw new Error("Form tidak ditemukan");
-        }
-
-        const sanitizedRedirectUrlValue = sanitizeRedirectUrl(data.redirectUrl);
-        // Throw error only if redirectUrl was provided, is not empty, but is invalid
-        if (data.redirectUrl !== undefined && data.redirectUrl.trim() !== "" && sanitizedRedirectUrlValue === null) {
-            throw new Error("Redirect URL tidak valid");
-        }
-
-        console.log(`[ACTION] Executing Prisma update for form ${id}`);
+        // TODO: Auth check
         const form = await prisma.form.update({
             where: { id },
             data: {
-                title: data.title,
-                description: data.description,
-                logo: data.logo,
-                logoWidth: data.logoWidth,
-                titleFontSize: data.titleFontSize,
-                descriptionFontSize: data.descriptionFontSize,
-                sidebarTitle: data.sidebarTitle,
-                sidebarSubtitle: data.sidebarSubtitle,
-                sidebarDescription: data.sidebarDescription,
-                contactAddress: data.contactAddress,
-                contactPhone: data.contactPhone,
-                contactEmail: data.contactEmail,
-                contactWorkingHours: data.contactWorkingHours,
-                socialInstagram: data.socialInstagram,
-                socialTiktok: data.socialTiktok,
-                socialWebsite: data.socialWebsite,
-                showSidebar: data.showSidebar,
-                primaryColor: data.primaryColor,
-                backgroundColor: data.backgroundColor,
-                fontFamily: data.fontFamily,
-                sendEmailConfirmation: data.sendEmailConfirmation,
-                emailConfirmationFieldId: data.emailConfirmationFieldId,
-                emailConfirmationTriggerFieldId: data.emailConfirmationTriggerFieldId,
-                emailConfirmationTriggerValue: data.emailConfirmationTriggerValue,
-                emailSubject: data.emailSubject,
-                emailBody: data.emailBody,
-                emailAttachments: data.emailAttachments,
-                thankYouTitle: data.thankYouTitle,
-                thankYouMessage: data.thankYouMessage,
-                whatsappEnabled: data.whatsappEnabled,
-                whatsappTemplateName: data.whatsappTemplateName,
-                whatsappPhoneFieldId: data.whatsappPhoneFieldId,
-                ...(data.redirectUrl !== undefined ? { redirectUrl: sanitizedRedirectUrlValue } : {}),
+                ...data
             }
         });
-
-        console.log(`[ACTION] Form ${id} updated successfully. Revalidating path.`);
         revalidatePath(`/builder/${id}`);
-        return { success: true };
-    } catch (error: any) {
-        console.error(`[ACTION] Failed to update form ${id}:`, error);
-        return { success: false, error: error.message || "Failed to update form" };
+        return form;
+    } catch (error) {
+        console.error("Failed to update form:", error);
+        throw new Error("Failed to update form");
     }
 }
 
@@ -292,34 +143,15 @@ export async function incrementFormViews(slug: string) {
 
 
 export async function deleteForm(id: string) {
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-        throw new Error("Unauthorized");
-    }
-
-    const owned = await prisma.form.findFirst({ where: { id, userId: session.user.id }, select: { id: true } });
-    if (!owned) {
-        throw new Error("Form tidak ditemukan");
-    }
-
+    // TODO: Auth check
     await prisma.form.delete({
         where: { id }
     });
     revalidatePath("/dashboard");
-    revalidatePath("/forms");
 }
 
 export async function publishForm(id: string, isPublished: boolean) {
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-        throw new Error("Unauthorized");
-    }
-
-    const owned = await prisma.form.findFirst({ where: { id, userId: session.user.id }, select: { id: true } });
-    if (!owned) {
-        throw new Error("Form tidak ditemukan");
-    }
-
+    // TODO: Auth check
     await prisma.form.update({
         where: { id },
         data: {
@@ -327,102 +159,5 @@ export async function publishForm(id: string, isPublished: boolean) {
         }
     });
     revalidatePath("/dashboard");
-    revalidatePath("/forms");
     revalidatePath(`/builder/${id}`);
-}
-
-export async function duplicateForm(id: string) {
-  const session = await getServerSession(authOptions);
-  if (!session || !session.user) {
-    throw new Error("Unauthorized");
-  }
-
-  const source = await prisma.form.findFirst({
-    where: { id, userId: session.user.id },
-    include: {
-      questions: {
-        orderBy: { order: "asc" },
-        include: {
-          options: {
-            orderBy: { order: "asc" },
-          },
-        },
-      },
-    },
-  });
-
-  if (!source) {
-    throw new Error("Form tidak ditemukan");
-  }
-
-  const title = `${source.title} (Copy)`;
-  const baseSlug =
-    title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "form";
-  const slug = `${baseSlug}-${Date.now()}`;
-
-  const duplicated = await prisma.form.create({
-    data: {
-      userId: session.user.id,
-      title,
-      description: source.description,
-      logo: source.logo,
-      logoWidth: source.logoWidth,
-      titleFontSize: source.titleFontSize,
-      descriptionFontSize: source.descriptionFontSize,
-      primaryColor: source.primaryColor,
-      backgroundColor: source.backgroundColor,
-      fontFamily: source.fontFamily,
-      sidebarTitle: source.sidebarTitle,
-      sidebarSubtitle: source.sidebarSubtitle,
-      sidebarDescription: source.sidebarDescription,
-      contactAddress: source.contactAddress,
-      contactPhone: source.contactPhone,
-      contactEmail: source.contactEmail,
-      contactWorkingHours: source.contactWorkingHours,
-      socialInstagram: source.socialInstagram,
-      socialTiktok: source.socialTiktok,
-      socialWebsite: source.socialWebsite,
-      showSidebar: source.showSidebar,
-      sendEmailConfirmation: source.sendEmailConfirmation,
-      emailConfirmationFieldId: source.emailConfirmationFieldId,
-      emailConfirmationTriggerFieldId: source.emailConfirmationTriggerFieldId,
-      emailConfirmationTriggerValue: source.emailConfirmationTriggerValue,
-      emailSubject: source.emailSubject,
-      emailBody: source.emailBody,
-      emailAttachments: source.emailAttachments,
-      thankYouTitle: source.thankYouTitle,
-      thankYouMessage: source.thankYouMessage,
-      whatsappEnabled: source.whatsappEnabled,
-      whatsappTemplateName: source.whatsappTemplateName,
-      whatsappPhoneFieldId: source.whatsappPhoneFieldId,
-      slug,
-      status: "DRAFT",
-      questions: {
-        create: source.questions.map((q) => ({
-          type: q.type,
-          label: q.label,
-          description: q.description,
-          placeholder: q.placeholder,
-          required: q.required,
-          validation: q.validation,
-          logic: q.logic,
-          order: q.order,
-          options: q.options.length
-            ? {
-                create: q.options.map((o) => ({
-                  label: o.label,
-                  value: o.value,
-                  order: o.order,
-                })),
-              }
-            : undefined,
-        })),
-      },
-    },
-    select: { id: true },
-  });
-
-  revalidatePath("/dashboard");
-  revalidatePath("/forms");
-  return duplicated;
 }
