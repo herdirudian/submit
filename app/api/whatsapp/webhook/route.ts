@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { sendWaText, getWaMediaUrl, downloadWaMedia } from "@/lib/whatsapp";
+import { sendPushToAllAdmins } from "@/lib/push";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 
@@ -212,6 +213,15 @@ export async function POST(req: NextRequest) {
                     },
                   });
                   console.log(`[WEBHOOK] Message saved successfully: ${messageId}`);
+
+                  // Trigger Web Push Notification to Admin HP / Devices
+                  const senderTitle = cleanWaId;
+                  sendPushToAllAdmins({
+                    title: `📩 Pesan WA dari ${senderTitle}`,
+                    body: bodyContent || "[Pesan WhatsApp]",
+                    url: `/whatsapp?chatId=${chat.id}`,
+                    tag: `wa-chat-${chat.id}`,
+                  }).catch((pushErr) => console.error("[WEBHOOK PUSH ERROR]", pushErr));
                 } else {
                   console.log(`[WEBHOOK] Skipping duplicate message: ${messageId}`);
                 }

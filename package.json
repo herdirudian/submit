@@ -24,6 +24,7 @@
     "@prisma/client": "^5.22.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/nodemailer": "^7.0.5",
+    "@types/web-push": "^3.6.4",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
@@ -42,6 +43,7 @@
     "recharts": "^3.7.0",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0",
+    "web-push": "^3.6.7",
     "zod": "^4.3.5"
   },
   "devDependencies": {

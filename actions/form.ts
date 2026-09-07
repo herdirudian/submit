@@ -10,6 +10,7 @@ import { authOptions } from "@/lib/auth";
 export async function getForms() {
   const session = await getServerSession(authOptions);
   if (!session || !session.user) return [];
+  
 
   return await prisma.form.findMany({
     where: { userId: session.user.id },
@@ -57,7 +58,15 @@ export async function getFormBySlug(slug: string) {
 
 export async function createForm(data: { title: string; description?: string; slug?: string }) {
   const session = await getServerSession(authOptions);
-  if (!session || !session.user) throw new Error("Unauthorized");
+  if (!session || !session.user) {
+    throw new Error("Unauthorized");
+  }
+
+  const userId = session.user.id;
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+  if (!user) {
+    throw new Error("User tidak ditemukan. Silakan logout lalu login ulang.");
+  }
 
   const title = (data.title ?? "").trim();
   const baseSlug = data.slug || title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "form";
@@ -65,10 +74,10 @@ export async function createForm(data: { title: string; description?: string; sl
 
   const form = await prisma.form.create({
     data: {
+      userId,
       title,
       description: data.description,
       slug,
-      userId: session.user.id,
       status: "DRAFT",
     },
   });
@@ -134,6 +143,8 @@ export async function updateFormSlug(id: string, newSlug: string) {
   revalidatePath("/dashboard");
   return form;
 }
+
+
 
 export async function duplicateForm(id: string) {
   const session = await getServerSession(authOptions);
@@ -220,6 +231,18 @@ export async function duplicateForm(id: string) {
 }
 
 export async function incrementFormViews(slug: string) {
+    try {
+        await prisma.form.update({
+            where: { slug },
+            data: {
+                views: {
+                    increment: 1
+                }
+            }
+        });
+    } catch (error) {
+        console.error("Failed to increment views:", error);
+    }
   try {
     await prisma.form.update({
       where: { slug },

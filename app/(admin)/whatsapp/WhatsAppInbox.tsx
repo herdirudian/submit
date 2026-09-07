@@ -17,7 +17,7 @@ import {
     updateChatStatusAction, sendWaMediaAction, markMessagesAsReadAction,
     getWaTemplates, sendWaTemplateAction
 } from "@/actions/whatsapp";
-import { updateContact, createContact } from "@/actions/contact";
+import WaPushNotificationToggle from "@/components/WaPushNotificationToggle";
 import { formatDistance } from "date-fns";
 import { id } from "date-fns/locale";
 import { X } from "lucide-react";
@@ -489,30 +489,33 @@ export default function WhatsAppInbox({ initialChats, agents }: { initialChats: 
                 w-full md:w-80 border-r border-slate-100 flex-col bg-slate-50/50
             `}>
                 <div className="p-4 space-y-4">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-lg font-bold text-slate-800">WhatsApp CRM</h2>
-                        <div className="flex gap-2">
-                            <button 
-                                onClick={handleSyncTemplates}
-                                disabled={syncing}
-                                className="p-2 text-slate-400 hover:text-primary-600 hover:bg-white rounded-xl transition-all disabled:opacity-50"
-                                title="Sinkronkan Template Meta"
-                            >
-                                <RefreshCw size={18} className={syncing ? "animate-spin" : ""} />
-                            </button>
-                            <button 
-                                onClick={() => setShowFilters(!showFilters)}
-                                className={`p-2 rounded-xl transition-all ${showFilters ? 'text-primary-600 bg-primary-50' : 'text-slate-400 hover:text-primary-600 hover:bg-white'}`}
-                                title="Filter Chat"
-                            >
-                                <Filter size={18} />
-                            </button>
-                            <button 
-                                onClick={() => setShowNewChatModal(true)}
-                                className="p-2 text-slate-400 hover:text-primary-600 hover:bg-white rounded-xl transition-all"
-                            >
-                                <Plus size={18} />
-                            </button>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div className="flex items-center justify-between w-full">
+                            <h2 className="text-lg font-bold text-slate-800">WhatsApp CRM</h2>
+                            <div className="flex items-center gap-2">
+                                <WaPushNotificationToggle />
+                                <button 
+                                    onClick={handleSyncTemplates}
+                                    disabled={syncing}
+                                    className="p-2 text-slate-400 hover:text-primary-600 hover:bg-white rounded-xl transition-all disabled:opacity-50"
+                                    title="Sinkronkan Template Meta"
+                                >
+                                    <RefreshCw size={18} className={syncing ? "animate-spin" : ""} />
+                                </button>
+                                <button 
+                                    onClick={() => setShowFilters(!showFilters)}
+                                    className={`p-2 rounded-xl transition-all ${showFilters ? 'text-primary-600 bg-primary-50' : 'text-slate-400 hover:text-primary-600 hover:bg-white'}`}
+                                    title="Filter Chat"
+                                >
+                                    <Filter size={18} />
+                                </button>
+                                <button 
+                                    onClick={() => setShowNewChatModal(true)}
+                                    className="p-2 text-slate-400 hover:text-primary-600 hover:bg-white rounded-xl transition-all"
+                                >
+                                    <Plus size={18} />
+                                </button>
+                            </div>
                         </div>
                     </div>
                     {showFilters && (

@@ -535,6 +535,7 @@ export default function PollAnalyticsDashboard({ poll, dateRange }: PollAnalytic
                 <div className="p-6 md:p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                     <div>
                         <h3 className="text-lg font-bold text-slate-800 font-judul">Tabel Matriks Perbandingan Produk</h3>
+                        <p className="text-xs text-slate-400">Rincian data suara terbanyak untuk setiap kombinasi Form Info & Produk.</p>
                         <p className="text-xs text-slate-400">Rincian data suara terbanyak untuk setiap kombinasi Form Info & Produk. Klik gambar untuk zoom.</p>
                     </div>
                 </div>
