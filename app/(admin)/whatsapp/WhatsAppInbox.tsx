@@ -17,6 +17,7 @@ import {
     updateChatStatusAction, sendWaMediaAction, markMessagesAsReadAction,
     getWaTemplates, sendWaTemplateAction
 } from "@/actions/whatsapp";
+import { updateContact, createContact } from "@/actions/contact";
 import WaPushNotificationToggle from "@/components/WaPushNotificationToggle";
 import { formatDistance } from "date-fns";
 import { id } from "date-fns/locale";
