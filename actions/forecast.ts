@@ -227,3 +227,86 @@ export async function getForecastStats(params: {
   };
 }
 
+export async function getForecastReminders(unit?: ForecastUnitType) {
+  const session = await getServerSession(authOptions);
+  if (!session || !session.user) throw new Error("Unauthorized");
+
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+
+  const maxDate = new Date(now);
+  maxDate.setDate(maxDate.getDate() + 14); // Next 14 days
+
+  const where: any = {
+    status: "TENTATIVE",
+  };
+
+  if (unit) {
+    where.unit = unit;
+  }
+
+  const items = await prisma.forecastItem.findMany({
+    where,
+    orderBy: [
+      { checkIn: "asc" },
+      { eventDate: "asc" },
+    ],
+  });
+
+  const reminders = items
+    .map((item) => {
+      const targetDate = item.unit === "CAMP_VILLAGE" ? item.checkIn : item.eventDate;
+      if (!targetDate) return null;
+
+      const dateObj = new Date(targetDate);
+      dateObj.setHours(0, 0, 0, 0);
+
+      const diffTime = dateObj.getTime() - now.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays < 0 || diffDays > 14) return null;
+
+      const urgency: "URGENT" | "WARNING" | "INFO" =
+        diffDays <= 3 ? "URGENT" : diffDays <= 7 ? "WARNING" : "INFO";
+
+      return {
+        ...item,
+        targetDate: dateObj,
+        daysLeft: diffDays,
+        urgency,
+      };
+    })
+    .filter(Boolean);
+
+  return reminders.sort((a: any, b: any) => a.daysLeft - b.daysLeft);
+}
+
+export async function sendForecastWaReminderAction(data: {
+  forecastId: string;
+  phone: string;
+  message: string;
+}) {
+  const session = await getServerSession(authOptions);
+  if (!session || !session.user) throw new Error("Unauthorized");
+
+  const { sendWaText } = await import("@/lib/whatsapp");
+  
+  let cleanPhone = data.phone.replace(/\D/g, "");
+  if (cleanPhone.startsWith("0")) {
+    cleanPhone = "62" + cleanPhone.substring(1);
+  }
+
+  if (!cleanPhone) {
+    throw new Error("Nomor WhatsApp/HP tidak valid");
+  }
+
+  const res = await sendWaText(cleanPhone, data.message);
+  return {
+    success: res.success,
+    error: res.error,
+    phone: cleanPhone,
+    waWebUrl: `https://wa.me/${cleanPhone}?text=${encodeURIComponent(data.message)}`,
+  };
+}
+
+

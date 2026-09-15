@@ -18,15 +18,21 @@ import {
   Users,
   Home,
   RefreshCw,
+  AlertTriangle,
+  MessageSquare,
+  ChevronRight,
+  Bell,
 } from "lucide-react";
 import {
   getForecastItems,
   getForecastStats,
   deleteForecastItem,
+  getForecastReminders,
   ForecastUnitType,
   ForecastStatusType,
 } from "@/actions/forecast";
 import ForecastModal from "@/components/ForecastModal";
+import ForecastWaModal from "@/components/ForecastWaModal";
 
 const MONTHS = [
   "Januari",
@@ -52,6 +58,7 @@ export default function ForecastDashboard() {
   const [statusFilter, setStatusFilter] = useState<ForecastStatusType | "ALL">("ALL");
 
   const [items, setItems] = useState<any[]>([]);
+  const [reminders, setReminders] = useState<any[]>([]);
   const [stats, setStats] = useState<{
     confirmTotal: number;
     tentativeTotal: number;
@@ -74,10 +81,14 @@ export default function ForecastDashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any | null>(null);
 
+  // WA Modal State
+  const [waModalItem, setWaModalItem] = useState<any | null>(null);
+  const [isWaModalOpen, setIsWaModalOpen] = useState(false);
+
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const [fetchedItems, fetchedStats] = await Promise.all([
+      const [fetchedItems, fetchedStats, fetchedReminders] = await Promise.all([
         getForecastItems({
           unit: selectedUnit,
           month: selectedMonth,
@@ -90,10 +101,12 @@ export default function ForecastDashboard() {
           month: selectedMonth,
           year: selectedYear,
         }),
+        getForecastReminders(selectedUnit),
       ]);
 
       setItems(fetchedItems);
       setStats(fetchedStats);
+      setReminders(fetchedReminders);
     } catch (err) {
       console.error("Failed to fetch forecast data:", err);
     } finally {
@@ -133,6 +146,22 @@ export default function ForecastDashboard() {
       month: "short",
       year: "numeric",
     });
+  };
+
+  const getItemUrgency = (item: any) => {
+    if (item.status !== "TENTATIVE") return null;
+    const targetDate = item.unit === "CAMP_VILLAGE" ? item.checkIn : item.eventDate;
+    if (!targetDate) return null;
+
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const dateObj = new Date(targetDate);
+    dateObj.setHours(0, 0, 0, 0);
+
+    const diffDays = Math.ceil((dateObj.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    if (diffDays >= 0 && diffDays <= 3) return { days: diffDays, level: "URGENT", label: `H-${diffDays} URGENT` };
+    if (diffDays > 3 && diffDays <= 7) return { days: diffDays, level: "WARNING", label: `H-${diffDays} WARNING` };
+    return null;
   };
 
   const exportToCSV = () => {
@@ -308,6 +337,67 @@ export default function ForecastDashboard() {
           <span>The Lodge Park</span>
         </button>
       </div>
+
+      {/* Follow-up Reminder Banner (H-7 / H-3 Alert) */}
+      {reminders.length > 0 && (
+        <div className="mb-6 bg-amber-50/90 border border-amber-200 rounded-2xl p-4 shadow-sm">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 bg-amber-100 text-amber-800 rounded-xl mt-0.5">
+                <Bell size={20} className="animate-pulse" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-amber-900 flex items-center gap-2">
+                  <span>Peringatan Follow-up Reservasi Tentative (H-7 / H-3)</span>
+                  <span className="px-2 py-0.5 bg-amber-200 text-amber-900 font-bold rounded-full text-xs">
+                    {reminders.length} Reservasi
+                  </span>
+                </h3>
+                <p className="text-xs text-amber-800 mt-1">
+                  Terdapat {reminders.length} reservasi berstatus <span className="font-bold">Tentative</span> yang mendekati tanggal pelaksanaan dalam 14 hari ke depan. Segera lakukan follow-up atau kirim notifikasi WA.
+                </p>
+
+                {/* Reminder Cards Carousel / List */}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {reminders.slice(0, 3).map((r) => (
+                    <div
+                      key={r.id}
+                      className="flex items-center gap-2.5 bg-white px-3 py-2 rounded-xl border border-amber-200 text-xs shadow-sm"
+                    >
+                      <span
+                        className={`font-bold px-2 py-0.5 rounded-md text-[10px] ${
+                          r.urgency === "URGENT"
+                            ? "bg-rose-100 text-rose-700 border border-rose-200"
+                            : "bg-amber-100 text-amber-800 border border-amber-200"
+                        }`}
+                      >
+                        {r.urgency === "URGENT" ? `H-${r.daysLeft} URGENT` : `H-${r.daysLeft} Warning`}
+                      </span>
+                      <span className="font-bold text-slate-800 truncate max-w-[150px]">{r.company}</span>
+                      <span className="text-slate-500">({r.pax} Pax)</span>
+                      <button
+                        onClick={() => {
+                          setWaModalItem(r);
+                          setIsWaModalOpen(true);
+                        }}
+                        className="flex items-center gap-1 text-emerald-700 hover:text-emerald-800 font-semibold bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200 hover:bg-emerald-100 transition-colors"
+                      >
+                        <MessageSquare size={13} />
+                        <span>Kirim WA</span>
+                      </button>
+                    </div>
+                  ))}
+                  {reminders.length > 3 && (
+                    <span className="text-xs text-amber-700 font-semibold self-center">
+                      +{reminders.length - 3} reservasi lainnya di tabel
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Clean KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
@@ -502,7 +592,7 @@ export default function ForecastDashboard() {
                   <th className="py-3.5 px-3 border-r border-slate-200 min-w-[100px]">Segment</th>
                 )}
                 <th className="py-3.5 px-3 border-r border-slate-200 min-w-[100px]">Source</th>
-                <th className="py-3.5 px-3 text-center min-w-[80px]">Aksi</th>
+                <th className="py-3.5 px-3 text-center min-w-[110px]">Aksi</th>
               </tr>
             </thead>
 
@@ -528,17 +618,37 @@ export default function ForecastDashboard() {
                   const isConfirm = item.status === "CONFIRM";
                   const isTentative = item.status === "TENTATIVE";
                   const isCancel = item.status === "CANCEL";
+                  const urgency = getItemUrgency(item);
 
                   return (
                     <tr
                       key={item.id}
-                      className="hover:bg-slate-50/80 transition-colors font-sans"
+                      className={`hover:bg-slate-50/80 transition-colors font-sans ${
+                        urgency?.level === "URGENT"
+                          ? "bg-rose-50/30"
+                          : urgency?.level === "WARNING"
+                          ? "bg-amber-50/30"
+                          : ""
+                      }`}
                     >
                       <td className="py-3 px-3 border-r border-slate-100 text-center font-medium text-slate-400">
                         {index + 1}
                       </td>
                       <td className="py-3 px-3 border-r border-slate-100 font-semibold text-slate-800">
-                        {item.company}
+                        <div className="flex flex-col gap-1">
+                          <span>{item.company}</span>
+                          {urgency && (
+                            <span
+                              className={`w-fit font-bold text-[10px] px-1.5 py-0.5 rounded ${
+                                urgency.level === "URGENT"
+                                  ? "bg-rose-100 text-rose-700 border border-rose-200"
+                                  : "bg-amber-100 text-amber-800 border border-amber-200"
+                              }`}
+                            >
+                              {urgency.label}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="py-3 px-3 border-r border-slate-100 whitespace-nowrap text-slate-600">
                         {formatDateStr(item.reservationDate)}
@@ -627,6 +737,17 @@ export default function ForecastDashboard() {
                       </td>
                       <td className="py-3 px-3 text-center whitespace-nowrap">
                         <div className="flex items-center justify-center gap-1">
+                          {/* Send WA Follow-up button */}
+                          <button
+                            onClick={() => {
+                              setWaModalItem(item);
+                              setIsWaModalOpen(true);
+                            }}
+                            className="p-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors"
+                            title="Kirim WA Follow-up"
+                          >
+                            <MessageSquare size={15} />
+                          </button>
                           <button
                             onClick={() => {
                               setEditingItem(item);
@@ -687,7 +808,7 @@ export default function ForecastDashboard() {
         </div>
       </div>
 
-      {/* Modal Dialog */}
+      {/* Forecast Edit / Create Modal */}
       <ForecastModal
         isOpen={isModalOpen}
         onClose={() => {
@@ -697,6 +818,16 @@ export default function ForecastDashboard() {
         onSuccess={() => fetchData()}
         unit={selectedUnit}
         initialData={editingItem}
+      />
+
+      {/* WA CRM Follow-up Quick Send Modal */}
+      <ForecastWaModal
+        isOpen={isWaModalOpen}
+        onClose={() => {
+          setIsWaModalOpen(false);
+          setWaModalItem(null);
+        }}
+        forecastItem={waModalItem}
       />
     </div>
   );
