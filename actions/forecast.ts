@@ -62,6 +62,40 @@ export async function getForecastItems(params: {
   return items;
 }
 
+export async function getSalesPics() {
+  const session = await getServerSession(authOptions);
+  if (!session || !session.user) throw new Error("Unauthorized");
+
+  const users = await prisma.user.findMany({
+    select: { id: true, name: true },
+  });
+
+  const forecastPics = await prisma.forecastItem.findMany({
+    select: { pic: true, picPhone: true },
+    where: { pic: { not: null } },
+  });
+
+  const map = new Map<string, { name: string; phone: string }>();
+
+  users.forEach((u) => {
+    if (u.name) {
+      map.set(u.name.toLowerCase(), { name: u.name, phone: "" });
+    }
+  });
+
+  forecastPics.forEach((f) => {
+    if (f.pic) {
+      const existing = map.get(f.pic.toLowerCase());
+      map.set(f.pic.toLowerCase(), {
+        name: f.pic,
+        phone: f.picPhone || existing?.phone || "",
+      });
+    }
+  });
+
+  return Array.from(map.values());
+}
+
 export async function createForecastItem(data: {
   unit: ForecastUnitType;
   company: string;
@@ -76,6 +110,7 @@ export async function createForecastItem(data: {
   rate?: number;
   total?: number;
   pic?: string | null;
+  picPhone?: string | null;
   status?: ForecastStatusType;
   remarks?: string | null;
   segment?: string | null;
@@ -103,6 +138,7 @@ export async function createForecastItem(data: {
       rate,
       total,
       pic: data.pic || null,
+      picPhone: data.picPhone || null,
       status: data.status || "TENTATIVE",
       remarks: data.remarks || null,
       segment: data.segment || null,
@@ -130,6 +166,7 @@ export async function updateForecastItem(
     rate?: number;
     total?: number;
     pic?: string | null;
+    picPhone?: string | null;
     status?: ForecastStatusType;
     remarks?: string | null;
     segment?: string | null;
@@ -356,7 +393,8 @@ export async function autoProcessForecastReminders(unit?: ForecastUnitType) {
   let sentCount = 0;
 
   for (const item of eligibleItems) {
-    const rawPhone = item.source || item.remarks || "";
+    // Target Internal Sales PIC Phone Number
+    const rawPhone = item.picPhone || item.source || item.remarks || "";
     const cleanPhoneMatch = rawPhone.match(/(?:08|628|\+628)\d{8,12}/);
     if (!cleanPhoneMatch) continue;
 
@@ -369,7 +407,7 @@ export async function autoProcessForecastReminders(unit?: ForecastUnitType) {
       : "";
 
     const unitName = item.unit === "CAMP_VILLAGE" ? "The Lodge Camp & Village" : "The Lodge Park";
-    const message = `Halo Kak ${item.pic || item.company},\n\nPesan Otomatis dari *${unitName}* 👋\n\nKami mengonfirmasi reservasi grup *${item.company}* (${item.pax} Pax) untuk tanggal *${dateStr}* yang saat ini statusnya masih *Tentative*.\n\nMohon konfirmasi atau informasi kelanjutan reservasinya ya Kak. Terima kasih banyak! 🙏✨`;
+    const message = `Halo Kak ${item.pic || "Sales"},\n\n*Peringatan Reservasi Tentative (Internal Sales)* 📌\n\nReservasi grup *${item.company}* (${item.pax} Pax) untuk tanggal *${dateStr}* di *${unitName}* statusnya masih *TENTATIVE*.\n\nMohon segera difollow-up kelanjutan atau pelunasannya ya Kak. Terima kasih! 🙏✨`;
 
     try {
       const waRes = await sendWaText(phone, message);
@@ -390,6 +428,7 @@ export async function autoProcessForecastReminders(unit?: ForecastUnitType) {
 
   return { autoSentCount: sentCount };
 }
+
 
 
 

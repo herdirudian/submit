@@ -664,6 +664,7 @@ model ForecastItem {
   rate            Float          @default(0)
   total           Float          @default(0)
   pic             String?        // Sales PIC name
+  picPhone        String?        // Sales PIC WhatsApp phone number
   status          ForecastStatus @default(TENTATIVE)
   remarks         String?        @db.Text
   segment         String?

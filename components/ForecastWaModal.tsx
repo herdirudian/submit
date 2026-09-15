@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Send, Loader2, MessageSquare, ExternalLink, CheckCircle } from "lucide-react";
+import { X, Send, Loader2, MessageSquare, ExternalLink, CheckCircle, UserCheck } from "lucide-react";
 import { sendForecastWaReminderAction } from "@/actions/forecast";
 
 interface ForecastWaModalProps {
@@ -22,7 +22,8 @@ export default function ForecastWaModal({
 
   useEffect(() => {
     if (forecastItem) {
-      const company = forecastItem.company || "Bapak/Ibu";
+      const picName = forecastItem.pic || "Sales PIC";
+      const company = forecastItem.company || "Instansi";
       const eventType = forecastItem.eventType || "Event Reservasi";
       const pax = forecastItem.pax || 0;
       const dateStr = forecastItem.checkIn
@@ -33,10 +34,10 @@ export default function ForecastWaModal({
 
       const unitName = forecastItem.unit === "CAMP_VILLAGE" ? "The Lodge Camp & Village" : "The Lodge Park";
 
-      const defaultText = `Halo Kak ${forecastItem.pic ? forecastItem.pic + " (" + company + ")" : company},\n\nSalam dari *${unitName}*! 👋\n\nKami ingin mengonfirmasi terkait reservasi grup *${company}* untuk kegiatan *${eventType}* (${pax} Pax) pada tanggal *${dateStr}* yang saat ini statusnya masih *Tentative*.\n\nMohon informasi terkini atau konfirmasi kelanjutan reservasinya ya Kak, agar slot area dan persiapan tim kami dapat dijaga dengan baik.\n\nTerima kasih banyak! 🙏✨`;
+      const defaultText = `Halo Kak ${picName},\n\n📌 *Peringatan Reservasi Tentative (Internal Sales)*\n\nReservasi grup *${company}* (${pax} Pax) untuk kegiatan *${eventType}* pada tanggal *${dateStr}* di *${unitName}* statusnya saat ini masih *TENTATIVE*.\n\nMohon segera difollow-up ke customer/instansi terkait untuk kepastian konfirmasi atau pelunasannya ya Kak.\n\nTerima kasih banyak! 🙏✨`;
 
       setMessage(defaultText);
-      setPhone(forecastItem.phone || forecastItem.source || "");
+      setPhone(forecastItem.picPhone || forecastItem.source || forecastItem.remarks || "");
       setStatusMsg(null);
     }
   }, [forecastItem, isOpen]);
@@ -46,7 +47,7 @@ export default function ForecastWaModal({
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!phone.trim()) {
-      setStatusMsg({ type: "error", text: "Silakan masukkan nomor WhatsApp / HP tujuan" });
+      setStatusMsg({ type: "error", text: "Silakan masukkan nomor WhatsApp / HP PIC Sales" });
       return;
     }
 
@@ -63,13 +64,13 @@ export default function ForecastWaModal({
       if (res.success) {
         setStatusMsg({
           type: "success",
-          text: "Pesan WhatsApp berhasil dikirim via WA CRM Meta API!",
+          text: "Pesan pengingat internal ke PIC Sales berhasil dikirim via WA Meta API!",
           waUrl: res.waWebUrl,
         });
       } else {
         setStatusMsg({
           type: "error",
-          text: "Integrasi API Meta belum aktif/error. Klik tombol di bawah untuk membuka WhatsApp Web langsung:",
+          text: "API Meta tidak aktif/salah nomor. Klik tombol di bawah untuk membuka WhatsApp Web ke PIC Sales langsung:",
           waUrl: res.waWebUrl,
         });
       }
@@ -92,19 +93,19 @@ export default function ForecastWaModal({
     <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl overflow-hidden border border-slate-100 my-8">
         {/* Header */}
-        <div className="px-6 py-4 bg-emerald-700 text-white flex items-center justify-between">
+        <div className="px-6 py-4 bg-primary-700 text-white flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <MessageSquare size={20} />
+            <UserCheck size={20} />
             <div>
-              <h2 className="text-base font-bold font-judul">Kirim Follow-up WA CRM</h2>
-              <p className="text-xs text-emerald-100 font-subjudul">
-                {forecastItem.company} - {forecastItem.eventType || "Reservasi"}
+              <h2 className="text-base font-bold font-judul">Pengingat Internal PIC Sales (WA)</h2>
+              <p className="text-xs text-primary-100 font-subjudul">
+                PIC: {forecastItem.pic || "Belum ditentukan"} | Instansi: {forecastItem.company}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-emerald-800 rounded-lg transition-colors text-emerald-100 hover:text-white"
+            className="p-1 hover:bg-primary-800 rounded-lg transition-colors text-primary-100 hover:text-white"
           >
             <X size={20} />
           </button>
@@ -138,7 +139,7 @@ export default function ForecastWaModal({
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-colors"
                   >
                     <ExternalLink size={14} />
-                    <span>Buka WhatsApp Web / App Langsung</span>
+                    <span>Buka WhatsApp Web ke PIC Sales</span>
                   </a>
                 </div>
               )}
@@ -147,7 +148,7 @@ export default function ForecastWaModal({
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Nomor WhatsApp / HP PIC <span className="text-red-500">*</span>
+              No. WhatsApp / HP PIC Sales <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -155,22 +156,22 @@ export default function ForecastWaModal({
               placeholder="Contoh: 081234567890"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
             <p className="text-[11px] text-slate-400 mt-1">
-              Format: 08xxx atau 628xxx (akan diformat otomatis ke nomor internasional WA).
+              Nomor WhatsApp internal PIC Sales ({forecastItem.pic || "Internal Sales"}).
             </p>
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Pesan WhatsApp Follow-up (Dapat Disesuaikan)
+              Pesan WhatsApp Internal Sales (Dapat Disesuaikan)
             </label>
             <textarea
               rows={7}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              className="w-full p-3 border border-slate-200 rounded-xl text-xs font-sans leading-relaxed focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full p-3 border border-slate-200 rounded-xl text-xs font-sans leading-relaxed focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
 
@@ -186,7 +187,7 @@ export default function ForecastWaModal({
             <button
               type="submit"
               disabled={loading}
-              className="flex items-center gap-2 px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold transition-colors shadow-sm disabled:opacity-50"
+              className="flex items-center gap-2 px-5 py-2 bg-primary-700 hover:bg-primary-800 text-white rounded-xl text-xs font-semibold transition-colors shadow-sm disabled:opacity-50"
             >
               {loading ? (
                 <>
@@ -196,7 +197,7 @@ export default function ForecastWaModal({
               ) : (
                 <>
                   <Send size={16} />
-                  <span>Kirim Pesan WA</span>
+                  <span>Kirim Pesan ke PIC Sales</span>
                 </>
               )}
             </button>
@@ -206,4 +207,3 @@ export default function ForecastWaModal({
     </div>
   );
 }
-

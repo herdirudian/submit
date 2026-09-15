@@ -1,8 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Loader2, Save, Calculator, DollarSign } from "lucide-react";
-import { createForecastItem, updateForecastItem, ForecastUnitType, ForecastStatusType } from "@/actions/forecast";
+import { X, Loader2, Save, Calculator, DollarSign, UserCheck, Phone } from "lucide-react";
+import {
+  createForecastItem,
+  updateForecastItem,
+  getSalesPics,
+  ForecastUnitType,
+  ForecastStatusType,
+} from "@/actions/forecast";
 
 interface ForecastModalProps {
   isOpen: boolean;
@@ -23,6 +29,7 @@ export default function ForecastModal({
   const [error, setError] = useState("");
 
   const [rateType, setRateType] = useState<"PER_PAX" | "TOTAL_DIRECT">("PER_PAX");
+  const [salesPics, setSalesPics] = useState<{ name: string; phone: string }[]>([]);
 
   const [formData, setFormData] = useState({
     company: "",
@@ -37,6 +44,7 @@ export default function ForecastModal({
     rate: 0,
     total: 0,
     pic: "",
+    picPhone: "",
     status: "TENTATIVE" as ForecastStatusType,
     remarks: "",
     segment: "",
@@ -51,12 +59,17 @@ export default function ForecastModal({
   };
 
   useEffect(() => {
+    if (isOpen) {
+      getSalesPics()
+        .then((pics) => setSalesPics(pics))
+        .catch((err) => console.warn("Failed to load sales PIC list:", err));
+    }
+
     if (initialData) {
       const initPax = initialData.pax || 0;
       const initRate = initialData.rate || 0;
       const initTotal = initialData.total || 0;
 
-      // Determine if original data was PER_PAX or TOTAL_DIRECT
       const isPerPax = initPax > 0 && initRate > 0 && Math.abs(initRate * initPax - initTotal) < 100;
 
       setRateType(isPerPax ? "PER_PAX" : "TOTAL_DIRECT");
@@ -73,6 +86,7 @@ export default function ForecastModal({
         rate: initRate,
         total: initTotal,
         pic: initialData.pic || "",
+        picPhone: initialData.picPhone || "",
         status: initialData.status || "TENTATIVE",
         remarks: initialData.remarks || "",
         segment: initialData.segment || "",
@@ -93,6 +107,7 @@ export default function ForecastModal({
         rate: 0,
         total: 0,
         pic: "",
+        picPhone: "",
         status: "TENTATIVE",
         remarks: "",
         segment: "",
@@ -102,7 +117,6 @@ export default function ForecastModal({
     setError("");
   }, [initialData, isOpen]);
 
-  // Handle auto-calculations when values change
   const handleRateChange = (val: number) => {
     if (rateType === "PER_PAX") {
       setFormData((prev) => ({
@@ -148,12 +162,24 @@ export default function ForecastModal({
         total: (prev.rate || 0) * (prev.pax || 0),
       }));
     } else {
-      // Direct Total
       const calculatedRate = formData.pax > 0 ? Math.round(formData.total / formData.pax) : formData.total;
       setFormData((prev) => ({
         ...prev,
         rate: calculatedRate,
       }));
+    }
+  };
+
+  const handleSelectPic = (picName: string) => {
+    const found = salesPics.find((p) => p.name.toLowerCase() === picName.toLowerCase());
+    if (found) {
+      setFormData((prev) => ({
+        ...prev,
+        pic: found.name,
+        picPhone: found.phone || prev.picPhone,
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, pic: picName }));
     }
   };
 
@@ -189,6 +215,7 @@ export default function ForecastModal({
         rate: finalRate,
         total: finalTotal,
         pic: formData.pic || null,
+        picPhone: formData.picPhone || null,
         status: formData.status,
         remarks: formData.remarks || null,
         segment: unit === "PARK" ? formData.segment || null : null,
@@ -462,16 +489,49 @@ export default function ForecastModal({
               />
             </div>
 
-            {/* PIC */}
+            {/* PIC Sales Dropdown + Text Input */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1 flex items-center justify-between">
+                <span>Pilih PIC Sales</span>
+                {salesPics.length > 0 && (
+                  <span className="text-[10px] text-primary-700 font-medium">Auto-fill No HP</span>
+                )}
+              </label>
+              {salesPics.length > 0 ? (
+                <select
+                  value={formData.pic}
+                  onChange={(e) => handleSelectPic(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
+                >
+                  <option value="">-- Pilih PIC Sales --</option>
+                  {salesPics.map((p, idx) => (
+                    <option key={idx} value={p.name}>
+                      {p.name} {p.phone ? `(${p.phone})` : ""}
+                    </option>
+                  ))}
+                  <option value="CUSTOM">+ Tulis Manual Nama PIC Baru...</option>
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  placeholder="Nama PIC Sales"
+                  value={formData.pic}
+                  onChange={(e) => setFormData({ ...formData, pic: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                />
+              )}
+            </div>
+
+            {/* Manual PIC Name input if CUSTOM selected or typed */}
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1">
-                PIC Sales / Contact
+                No. HP WhatsApp PIC Sales
               </label>
               <input
                 type="text"
-                placeholder="Nama PIC"
-                value={formData.pic}
-                onChange={(e) => setFormData({ ...formData, pic: e.target.value })}
+                placeholder="Contoh: 08123456789"
+                value={formData.picPhone}
+                onChange={(e) => setFormData({ ...formData, picPhone: e.target.value })}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
