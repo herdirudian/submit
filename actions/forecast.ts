@@ -429,6 +429,151 @@ export async function autoProcessForecastReminders(unit?: ForecastUnitType) {
   return { autoSentCount: sentCount };
 }
 
+export async function saveForecastTarget(data: {
+  unit: ForecastUnitType;
+  year: number;
+  month: number;
+  target: number;
+}) {
+  const session = await getServerSession(authOptions);
+  if (!session || !session.user) throw new Error("Unauthorized");
+
+  const target = await prisma.forecastTarget.upsert({
+    where: {
+      unit_year_month: {
+        unit: data.unit,
+        year: data.year,
+        month: data.month,
+      },
+    },
+    update: {
+      target: Number(data.target) || 0,
+    },
+    create: {
+      unit: data.unit,
+      year: data.year,
+      month: data.month,
+      target: Number(data.target) || 0,
+    },
+  });
+
+  revalidatePath("/forecast");
+  return target;
+}
+
+export async function getForecastYearlyTrend(params: {
+  unit: ForecastUnitType;
+  year: number;
+}) {
+  const session = await getServerSession(authOptions);
+  if (!session || !session.user) throw new Error("Unauthorized");
+
+  const { unit, year } = params;
+
+  const startDate = new Date(year, 0, 1);
+  const endDate = new Date(year, 11, 31, 23, 59, 59, 999);
+
+  const where: any = { unit };
+  if (unit === "CAMP_VILLAGE") {
+    where.checkIn = { gte: startDate, lte: endDate };
+  } else {
+    where.eventDate = { gte: startDate, lte: endDate };
+  }
+
+  const [items, targets] = await Promise.all([
+    prisma.forecastItem.findMany({ where }),
+    prisma.forecastTarget.findMany({ where: { unit, year } }),
+  ]);
+
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agt", "Sep", "Okt", "Nov", "Des"];
+
+  const trendData = monthNames.map((name, index) => {
+    const monthNum = index + 1;
+    const monthItems = items.filter((item) => {
+      const d = item.unit === "CAMP_VILLAGE" ? item.checkIn : item.eventDate;
+      if (!d) return false;
+      return new Date(d).getMonth() === index;
+    });
+
+    let confirmRevenue = 0;
+    let tentativeRevenue = 0;
+    let cancelRevenue = 0;
+    let paxCount = 0;
+    let confirmCount = 0;
+    let tentativeCount = 0;
+    let cancelCount = 0;
+
+    monthItems.forEach((item) => {
+      paxCount += item.pax || 0;
+      if (item.status === "CONFIRM") {
+        confirmRevenue += item.total || 0;
+        confirmCount++;
+      } else if (item.status === "TENTATIVE") {
+        tentativeRevenue += item.total || 0;
+        tentativeCount++;
+      } else if (item.status === "CANCEL") {
+        cancelRevenue += item.total || 0;
+        cancelCount++;
+      }
+    });
+
+    const targetObj = targets.find((t) => t.month === monthNum);
+    const targetRevenue = targetObj ? targetObj.target : 0;
+
+    const totalEntries = confirmCount + tentativeCount + cancelCount;
+    const closingRate = totalEntries > 0 ? Math.round((confirmCount / totalEntries) * 100) : 0;
+
+    return {
+      month: monthNum,
+      monthName: name,
+      confirmRevenue,
+      tentativeRevenue,
+      cancelRevenue,
+      totalRevenue: confirmRevenue + tentativeRevenue,
+      targetRevenue,
+      paxCount,
+      confirmCount,
+      tentativeCount,
+      cancelCount,
+      closingRate,
+    };
+  });
+
+  return trendData;
+}
+
+export async function getForecastAnalyticsSummary(params: {
+  unit: ForecastUnitType;
+  year: number;
+  month: number;
+}) {
+  const session = await getServerSession(authOptions);
+  if (!session || !session.user) throw new Error("Unauthorized");
+
+  const trend = await getForecastYearlyTrend({ unit: params.unit, year: params.year });
+  const monthData = trend.find((t) => t.month === params.month) || {
+    confirmRevenue: 0,
+    tentativeRevenue: 0,
+    cancelRevenue: 0,
+    targetRevenue: 0,
+    paxCount: 0,
+    confirmCount: 0,
+    tentativeCount: 0,
+    cancelCount: 0,
+    closingRate: 0,
+  };
+
+  const targetProgress = monthData.targetRevenue > 0
+    ? Math.round((monthData.confirmRevenue / monthData.targetRevenue) * 100)
+    : 0;
+
+  return {
+    ...monthData,
+    targetProgress,
+  };
+}
+
+
 
 
 

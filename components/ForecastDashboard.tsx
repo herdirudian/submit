@@ -34,6 +34,7 @@ import {
 } from "@/actions/forecast";
 import ForecastModal from "@/components/ForecastModal";
 import ForecastWaModal from "@/components/ForecastWaModal";
+import ForecastAnalyticsCharts from "@/components/ForecastAnalyticsCharts";
 
 const MONTHS = [
   "Januari",
@@ -494,6 +495,14 @@ export default function ForecastDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Forecast Analytics & Revenue Trend Charts */}
+      <ForecastAnalyticsCharts
+        unit={selectedUnit}
+        year={selectedYear}
+        month={selectedMonth}
+        onRefreshParent={fetchData}
+      />
 
       {/* Filter Bar */}
       <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm mb-6 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">

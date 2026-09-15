@@ -680,3 +680,16 @@ model ForecastItem {
   @@index([eventDate])
   @@map("forecast_items")
 }
+
+model ForecastTarget {
+  id        String       @id @default(cuid())
+  unit      ForecastUnit @default(CAMP_VILLAGE)
+  year      Int
+  month     Int          // 1-12
+  target    Float        @default(0)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@unique([unit, year, month])
+  @@map("forecast_targets")
+}
