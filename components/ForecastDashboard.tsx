@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import {
   TrendingUp,
   Plus,
@@ -233,148 +234,174 @@ export default function ForecastDashboard() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden">
-        <div className="absolute right-0 top-0 translate-x-4 -translate-y-4 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-        
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
-          <div>
-            <div className="flex items-center gap-2 text-emerald-400 font-semibold text-xs tracking-wider uppercase mb-1">
-              <TrendingUp size={16} />
-              <span>Sales & Booking Forecast</span>
-            </div>
-            <h1 className="text-2xl md:text-3xl font-bold font-judul tracking-tight">
-              Forecast Management System
-            </h1>
-            <p className="text-slate-300 text-xs md:text-sm mt-1 max-w-xl">
-              Monitoring dan analisis estimasi pendapatan reservasi grup untuk The Lodge Camp & Village dan Kawasan Wisata The Lodge Park.
-            </p>
+    <div>
+      {/* Clean Page Header Aligned with Dashboard & Form Branding */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+        <div>
+          <div className="flex items-center gap-2 text-xs text-slate-400 font-medium mb-1.5">
+            <Link href="/dashboard" className="hover:text-slate-600 transition-colors">
+              Dashboard
+            </Link>
+            <span>/</span>
+            <span className="text-slate-500">Forecast</span>
           </div>
+          <h1 className="text-2xl font-bold text-slate-800 font-judul">Forecast Reservasi</h1>
+          <p className="text-slate-500 text-sm mt-0.5 font-subjudul">
+            Estimasi pendapatan reservasi grup The Lodge Camp & Village dan Kawasan Wisata The Lodge Park.
+          </p>
+        </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Unit Switcher */}
-            <div className="bg-slate-800/80 backdrop-blur-md p-1 rounded-xl border border-slate-700 flex items-center">
-              <button
-                onClick={() => setSelectedUnit("CAMP_VILLAGE")}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                  selectedUnit === "CAMP_VILLAGE"
-                    ? "bg-emerald-600 text-white shadow-md"
-                    : "text-slate-300 hover:text-white"
-                }`}
-              >
-                Camp & Village
-              </button>
-              <button
-                onClick={() => setSelectedUnit("PARK")}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                  selectedUnit === "PARK"
-                    ? "bg-emerald-600 text-white shadow-md"
-                    : "text-slate-300 hover:text-white"
-                }`}
-              >
-                The Lodge Park
-              </button>
-            </div>
+        {/* Action Buttons */}
+        <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+          <button
+            onClick={() => fetchData()}
+            disabled={loading}
+            className="p-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl transition-colors shadow-sm"
+            title="Refresh Data"
+          >
+            <RefreshCw size={18} className={loading ? "animate-spin text-primary-600" : ""} />
+          </button>
 
-            {/* Refresh button */}
-            <button
-              onClick={() => fetchData()}
-              disabled={loading}
-              className="p-2 bg-slate-800/80 border border-slate-700 hover:bg-slate-700 text-slate-200 rounded-xl transition-colors"
-              title="Refresh Data"
-            >
-              <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
-            </button>
-          </div>
+          <button
+            onClick={exportToCSV}
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white text-slate-700 hover:text-primary-700 border border-slate-200 hover:border-primary-200 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm"
+          >
+            <Download size={18} />
+            <span>Export CSV</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setEditingItem(null);
+              setIsModalOpen(true);
+            }}
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-primary-700 hover:bg-primary-800 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shadow-sm"
+          >
+            <Plus size={18} />
+            <span>Tambah Forecast</span>
+          </button>
         </div>
       </div>
 
-      {/* KPI Cards Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      {/* Unit Selection Tabs */}
+      <div className="flex items-center gap-2 mb-6 bg-slate-100 p-1.5 rounded-2xl w-fit border border-slate-200/80">
+        <button
+          onClick={() => setSelectedUnit("CAMP_VILLAGE")}
+          className={`flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold transition-all ${
+            selectedUnit === "CAMP_VILLAGE"
+              ? "bg-primary-700 text-white shadow-sm"
+              : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+          }`}
+        >
+          <Home size={16} />
+          <span>Camp & Village</span>
+        </button>
+        <button
+          onClick={() => setSelectedUnit("PARK")}
+          className={`flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold transition-all ${
+            selectedUnit === "PARK"
+              ? "bg-primary-700 text-white shadow-sm"
+              : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+          }`}
+        >
+          <Building2 size={16} />
+          <span>The Lodge Park</span>
+        </button>
+      </div>
+
+      {/* Clean KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         {/* Total Grand Revenue */}
-        <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm col-span-2 md:col-span-1 lg:col-span-2">
-          <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">Total Revenue Forecast</span>
-            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
-              <TrendingUp size={18} />
+        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Revenue</span>
+            <div className="p-2.5 bg-primary-50 text-primary-700 rounded-xl">
+              <TrendingUp size={20} />
             </div>
           </div>
-          <div className="text-xl md:text-2xl font-bold text-slate-900">
-            {formatCurrency(stats.grandTotal)}
-          </div>
-          <div className="text-xs text-slate-400 mt-1">
-            {stats.totalEntries} Transaksi ({stats.totalPax} Pax)
+          <div>
+            <h3 className="text-2xl font-bold text-slate-800 font-sans">
+              {formatCurrency(stats.grandTotal)}
+            </h3>
+            <p className="text-xs text-slate-400 mt-1">
+              {stats.totalEntries} Booking ({stats.totalPax} Pax)
+            </p>
           </div>
         </div>
 
         {/* Confirm (Green) */}
-        <div className="bg-emerald-50/60 rounded-2xl p-4 border border-emerald-200/60 shadow-sm">
-          <div className="flex items-center justify-between text-emerald-700 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Confirm</span>
-            <CheckCircle2 size={18} className="text-emerald-600" />
+        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wider">Confirm</span>
+            <div className="p-2.5 bg-green-50 text-green-600 rounded-xl">
+              <CheckCircle2 size={20} />
+            </div>
           </div>
-          <div className="text-lg md:text-xl font-bold text-emerald-900">
-            {formatCurrency(stats.confirmTotal)}
-          </div>
-          <div className="text-[11px] font-medium text-emerald-700 mt-1">
-            Status Disetujui (Green)
+          <div>
+            <h3 className="text-2xl font-bold text-emerald-700 font-sans">
+              {formatCurrency(stats.confirmTotal)}
+            </h3>
+            <p className="text-xs text-emerald-600 mt-1 font-medium">Disetujui (Green)</p>
           </div>
         </div>
 
         {/* Tentative (Yellow) */}
-        <div className="bg-amber-50/60 rounded-2xl p-4 border border-amber-200/60 shadow-sm">
-          <div className="flex items-center justify-between text-amber-700 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Tentative</span>
-            <Clock size={18} className="text-amber-600" />
+        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-semibold text-amber-700 uppercase tracking-wider">Tentative</span>
+            <div className="p-2.5 bg-amber-50 text-amber-600 rounded-xl">
+              <Clock size={20} />
+            </div>
           </div>
-          <div className="text-lg md:text-xl font-bold text-amber-900">
-            {formatCurrency(stats.tentativeTotal)}
-          </div>
-          <div className="text-[11px] font-medium text-amber-700 mt-1">
-            Dalam Proses (Yellow)
+          <div>
+            <h3 className="text-2xl font-bold text-amber-700 font-sans">
+              {formatCurrency(stats.tentativeTotal)}
+            </h3>
+            <p className="text-xs text-amber-600 mt-1 font-medium">Dalam Proses (Yellow)</p>
           </div>
         </div>
 
         {/* Cancel (Red) */}
-        <div className="bg-rose-50/60 rounded-2xl p-4 border border-rose-200/60 shadow-sm">
-          <div className="flex items-center justify-between text-rose-700 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Cancel</span>
-            <XCircle size={18} className="text-rose-600" />
+        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-semibold text-rose-700 uppercase tracking-wider">Cancel</span>
+            <div className="p-2.5 bg-rose-50 text-rose-600 rounded-xl">
+              <XCircle size={20} />
+            </div>
           </div>
-          <div className="text-lg md:text-xl font-bold text-rose-900">
-            {formatCurrency(stats.cancelTotal)}
-          </div>
-          <div className="text-[11px] font-medium text-rose-700 mt-1">
-            Dibatalkan (Red)
+          <div>
+            <h3 className="text-2xl font-bold text-rose-700 font-sans">
+              {formatCurrency(stats.cancelTotal)}
+            </h3>
+            <p className="text-xs text-rose-600 mt-1 font-medium">Dibatalkan (Red)</p>
           </div>
         </div>
 
         {/* Pax / Rooms Count */}
-        <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-          <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">
+        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
               {selectedUnit === "CAMP_VILLAGE" ? "Total Rooms" : "Total Pax"}
             </span>
-            {selectedUnit === "CAMP_VILLAGE" ? (
-              <Home size={18} className="text-indigo-600" />
-            ) : (
-              <Users size={18} className="text-indigo-600" />
-            )}
+            <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
+              {selectedUnit === "CAMP_VILLAGE" ? <Home size={20} /> : <Users size={20} />}
+            </div>
           </div>
-          <div className="text-lg md:text-xl font-bold text-slate-900">
-            {selectedUnit === "CAMP_VILLAGE" ? `${stats.totalRoomCount} Unit` : `${stats.totalPax} Pax`}
-          </div>
-          <div className="text-[11px] text-slate-400 mt-1">
-            {selectedUnit === "CAMP_VILLAGE" ? `${stats.totalPax} Pax Pengunjung` : "Pengunjung Event"}
+          <div>
+            <h3 className="text-2xl font-bold text-slate-800">
+              {selectedUnit === "CAMP_VILLAGE" ? `${stats.totalRoomCount} Unit` : `${stats.totalPax} Pax`}
+            </h3>
+            <p className="text-xs text-slate-400 mt-1">
+              {selectedUnit === "CAMP_VILLAGE" ? `${stats.totalPax} Pax Pengunjung` : "Pengunjung Event"}
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Main Controls & Filters Bar */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
-        {/* Left: Date & Month Selection */}
+      {/* Filter Bar */}
+      <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm mb-6 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-3">
+          {/* Month & Year Selectors */}
           <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-xl border border-slate-200">
             <Calendar size={16} className="text-slate-400" />
             <select
@@ -401,15 +428,15 @@ export default function ForecastDashboard() {
             </select>
           </div>
 
-          {/* Search by Company */}
-          <div className="relative min-w-[200px] flex-1 sm:flex-initial">
+          {/* Search Box */}
+          <div className="relative flex-1 min-w-[220px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
             <input
               type="text"
-              placeholder="Cari Instansi / Company..."
+              placeholder="Cari Company / Instansi..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
 
@@ -422,91 +449,69 @@ export default function ForecastDashboard() {
               className="bg-transparent text-sm font-semibold text-slate-700 focus:outline-none cursor-pointer"
             >
               <option value="ALL">Semua Status</option>
-              <option value="CONFIRM">Confirm (Green)</option>
-              <option value="TENTATIVE">Tentative (Yellow)</option>
-              <option value="CANCEL">Cancel (Red)</option>
+              <option value="CONFIRM">Confirm (Hijau)</option>
+              <option value="TENTATIVE">Tentative (Kuning)</option>
+              <option value="CANCEL">Cancel (Merah)</option>
             </select>
           </div>
         </div>
-
-        {/* Right: Actions */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={exportToCSV}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-xl text-sm font-semibold transition-colors"
-          >
-            <Download size={16} />
-            <span>Export CSV</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setEditingItem(null);
-              setIsModalOpen(true);
-            }}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm"
-          >
-            <Plus size={16} />
-            <span>Tambah Forecast</span>
-          </button>
-        </div>
       </div>
 
-      {/* Spreadsheet Data Table */}
+      {/* Clean Data Table */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left border-collapse min-w-[1200px]">
-            {/* Table Header */}
+            {/* Table Header - Clean Slate Background */}
             <thead>
-              <tr className="bg-slate-800 text-white font-semibold uppercase tracking-wider text-[11px]">
-                <th className="py-3 px-3 border-r border-slate-700 text-center w-12">No</th>
-                <th className="py-3 px-3 border-r border-slate-700 min-w-[180px]">Company</th>
-                <th className="py-3 px-3 border-r border-slate-700 min-w-[110px]">Reservation Date</th>
+              <tr className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200 uppercase tracking-wider text-[11px]">
+                <th className="py-3.5 px-3 border-r border-slate-200 text-center w-12">No</th>
+                <th className="py-3.5 px-3 border-r border-slate-200 min-w-[180px]">Company</th>
+                <th className="py-3.5 px-3 border-r border-slate-200 min-w-[110px]">Reservation Date</th>
                 {selectedUnit === "CAMP_VILLAGE" ? (
                   <>
-                    <th className="py-3 px-3 border-r border-slate-700 min-w-[100px]">Check In</th>
-                    <th className="py-3 px-3 border-r border-slate-700 min-w-[100px]">Check Out</th>
+                    <th className="py-3.5 px-3 border-r border-slate-200 min-w-[100px]">Check In</th>
+                    <th className="py-3.5 px-3 border-r border-slate-200 min-w-[100px]">Check Out</th>
                   </>
                 ) : (
-                  <th className="py-3 px-3 border-r border-slate-700 min-w-[100px]">Date</th>
+                  <th className="py-3.5 px-3 border-r border-slate-200 min-w-[100px]">Event Date</th>
                 )}
-                <th className="py-3 px-3 border-r border-slate-700 min-w-[120px]">Type of Event</th>
+                <th className="py-3.5 px-3 border-r border-slate-200 min-w-[120px]">Type of Event</th>
                 {selectedUnit === "PARK" && (
-                  <th className="py-3 px-3 border-r border-slate-700 min-w-[100px]">Venue</th>
+                  <th className="py-3.5 px-3 border-r border-slate-200 min-w-[100px]">Venue</th>
                 )}
-                <th className="py-3 px-3 border-r border-slate-700 text-center w-16">QTY Pax</th>
+                <th className="py-3.5 px-3 border-r border-slate-200 text-center w-16">Pax</th>
                 {selectedUnit === "CAMP_VILLAGE" && (
-                  <th className="py-3 px-3 border-r border-slate-700 text-center w-20">Room</th>
+                  <th className="py-3.5 px-3 border-r border-slate-200 text-center w-20">Room</th>
                 )}
-                <th className="py-3 px-3 border-r border-slate-700 text-right min-w-[100px]">Rate (Rp)</th>
+                <th className="py-3.5 px-3 border-r border-slate-200 text-right min-w-[100px]">Rate (Rp)</th>
                 
-                {/* Excel-style Colored Status Revenue Columns */}
-                <th className="py-3 px-3 border-r border-slate-700 text-right bg-emerald-700 text-white min-w-[120px]">
+                {/* Colored Status Revenue Headers */}
+                <th className="py-3.5 px-3 border-r border-slate-200 text-right bg-emerald-600 text-white min-w-[120px]">
                   Confirm (Green)
                 </th>
-                <th className="py-3 px-3 border-r border-slate-700 text-right bg-amber-600 text-white min-w-[120px]">
+                <th className="py-3.5 px-3 border-r border-slate-200 text-right bg-amber-500 text-white min-w-[120px]">
                   Tentative (Yellow)
                 </th>
-                <th className="py-3 px-3 border-r border-slate-700 text-right bg-rose-700 text-white min-w-[120px]">
+                <th className="py-3.5 px-3 border-r border-slate-200 text-right bg-rose-600 text-white min-w-[120px]">
                   Cancel (Red)
                 </th>
 
-                <th className="py-3 px-3 border-r border-slate-700 min-w-[90px]">PIC</th>
-                <th className="py-3 px-3 border-r border-slate-700 min-w-[140px]">Remarks</th>
+                <th className="py-3.5 px-3 border-r border-slate-200 min-w-[90px]">PIC</th>
+                <th className="py-3.5 px-3 border-r border-slate-200 min-w-[140px]">Remarks</th>
                 {selectedUnit === "PARK" && (
-                  <th className="py-3 px-3 border-r border-slate-700 min-w-[100px]">Segment</th>
+                  <th className="py-3.5 px-3 border-r border-slate-200 min-w-[100px]">Segment</th>
                 )}
-                <th className="py-3 px-3 border-r border-slate-700 min-w-[100px]">Source</th>
-                <th className="py-3 px-3 text-center min-w-[80px]">Aksi</th>
+                <th className="py-3.5 px-3 border-r border-slate-200 min-w-[100px]">Source</th>
+                <th className="py-3.5 px-3 text-center min-w-[80px]">Aksi</th>
               </tr>
             </thead>
 
             {/* Table Body */}
-            <tbody className="divide-y divide-slate-200 text-slate-700">
+            <tbody className="divide-y divide-slate-100 text-slate-700">
               {loading ? (
                 <tr>
                   <td colSpan={18} className="py-12 text-center text-slate-400">
-                    <RefreshCw className="animate-spin inline-block mb-2 text-emerald-600" size={24} />
+                    <RefreshCw className="animate-spin inline-block mb-2 text-primary-600" size={24} />
                     <p className="font-medium text-sm">Memuat data forecast...</p>
                   </td>
                 </tr>
@@ -514,8 +519,8 @@ export default function ForecastDashboard() {
                 <tr>
                   <td colSpan={18} className="py-12 text-center text-slate-400">
                     <Building2 className="inline-block mb-2 text-slate-300" size={32} />
-                    <p className="font-medium text-sm">Belum ada data forecast untuk periode ini.</p>
-                    <p className="text-xs text-slate-400 mt-1">Klik tombol &quot;Tambah Forecast&quot; untuk menginput data baru.</p>
+                    <p className="font-medium text-sm text-slate-600">Belum ada data forecast untuk periode ini.</p>
+                    <p className="text-xs text-slate-400 mt-1">Klik tombol &quot;Tambah Forecast&quot; di kanan atas untuk menginput data.</p>
                   </td>
                 </tr>
               ) : (
@@ -529,56 +534,56 @@ export default function ForecastDashboard() {
                       key={item.id}
                       className="hover:bg-slate-50/80 transition-colors font-sans"
                     >
-                      <td className="py-2.5 px-3 border-r border-slate-200 text-center font-medium text-slate-400">
+                      <td className="py-3 px-3 border-r border-slate-100 text-center font-medium text-slate-400">
                         {index + 1}
                       </td>
-                      <td className="py-2.5 px-3 border-r border-slate-200 font-semibold text-slate-900">
+                      <td className="py-3 px-3 border-r border-slate-100 font-semibold text-slate-800">
                         {item.company}
                       </td>
-                      <td className="py-2.5 px-3 border-r border-slate-200 whitespace-nowrap">
+                      <td className="py-3 px-3 border-r border-slate-100 whitespace-nowrap text-slate-600">
                         {formatDateStr(item.reservationDate)}
                       </td>
                       {selectedUnit === "CAMP_VILLAGE" ? (
                         <>
-                          <td className="py-2.5 px-3 border-r border-slate-200 whitespace-nowrap">
+                          <td className="py-3 px-3 border-r border-slate-100 whitespace-nowrap text-slate-600">
                             {formatDateStr(item.checkIn)}
                           </td>
-                          <td className="py-2.5 px-3 border-r border-slate-200 whitespace-nowrap">
+                          <td className="py-3 px-3 border-r border-slate-100 whitespace-nowrap text-slate-600">
                             {formatDateStr(item.checkOut)}
                           </td>
                         </>
                       ) : (
-                        <td className="py-2.5 px-3 border-r border-slate-200 whitespace-nowrap">
+                        <td className="py-3 px-3 border-r border-slate-100 whitespace-nowrap text-slate-600">
                           {formatDateStr(item.eventDate)}
                         </td>
                       )}
-                      <td className="py-2.5 px-3 border-r border-slate-200">
+                      <td className="py-3 px-3 border-r border-slate-100 text-slate-600">
                         {item.eventType || "-"}
                       </td>
                       {selectedUnit === "PARK" && (
-                        <td className="py-2.5 px-3 border-r border-slate-200 font-medium">
+                        <td className="py-3 px-3 border-r border-slate-100 font-medium text-slate-700">
                           {item.venue || "-"}
                         </td>
                       )}
-                      <td className="py-2.5 px-3 border-r border-slate-200 text-center font-semibold">
+                      <td className="py-3 px-3 border-r border-slate-100 text-center font-semibold text-slate-800">
                         {item.pax || 0}
                       </td>
                       {selectedUnit === "CAMP_VILLAGE" && (
-                        <td className="py-2.5 px-3 border-r border-slate-200 text-center">
+                        <td className="py-3 px-3 border-r border-slate-100 text-center text-slate-600">
                           {item.room || "-"}
                         </td>
                       )}
-                      <td className="py-2.5 px-3 border-r border-slate-200 text-right whitespace-nowrap font-mono text-slate-600">
+                      <td className="py-3 px-3 border-r border-slate-100 text-right whitespace-nowrap text-slate-600">
                         {formatCurrency(item.rate)}
                       </td>
 
-                      {/* Status Column Breakdown matching Excel */}
+                      {/* Status Column Breakdown */}
                       {/* Confirm (Green) */}
                       <td
-                        className={`py-2.5 px-3 border-r border-slate-200 text-right whitespace-nowrap font-mono font-bold ${
+                        className={`py-3 px-3 border-r border-slate-100 text-right whitespace-nowrap font-bold ${
                           isConfirm
-                            ? "bg-emerald-100 text-emerald-900"
-                            : "text-slate-300 bg-slate-50/50"
+                            ? "bg-emerald-50 text-emerald-800"
+                            : "text-slate-300 text-center"
                         }`}
                       >
                         {isConfirm ? formatCurrency(item.total) : "-"}
@@ -586,10 +591,10 @@ export default function ForecastDashboard() {
 
                       {/* Tentative (Yellow) */}
                       <td
-                        className={`py-2.5 px-3 border-r border-slate-200 text-right whitespace-nowrap font-mono font-bold ${
+                        className={`py-3 px-3 border-r border-slate-100 text-right whitespace-nowrap font-bold ${
                           isTentative
-                            ? "bg-amber-100 text-amber-900"
-                            : "text-slate-300 bg-slate-50/50"
+                            ? "bg-amber-50 text-amber-800"
+                            : "text-slate-300 text-center"
                         }`}
                       >
                         {isTentative ? formatCurrency(item.total) : "-"}
@@ -597,44 +602,44 @@ export default function ForecastDashboard() {
 
                       {/* Cancel (Red) */}
                       <td
-                        className={`py-2.5 px-3 border-r border-slate-200 text-right whitespace-nowrap font-mono font-bold ${
+                        className={`py-3 px-3 border-r border-slate-100 text-right whitespace-nowrap font-bold ${
                           isCancel
-                            ? "bg-rose-100 text-rose-900"
-                            : "text-slate-300 bg-slate-50/50"
+                            ? "bg-rose-50 text-rose-800"
+                            : "text-slate-300 text-center"
                         }`}
                       >
                         {isCancel ? formatCurrency(item.total) : "-"}
                       </td>
 
-                      <td className="py-2.5 px-3 border-r border-slate-200 font-medium">
+                      <td className="py-3 px-3 border-r border-slate-100 font-medium text-slate-700">
                         {item.pic || "-"}
                       </td>
-                      <td className="py-2.5 px-3 border-r border-slate-200 text-slate-500 max-w-[200px] truncate" title={item.remarks}>
+                      <td className="py-3 px-3 border-r border-slate-100 text-slate-500 max-w-[200px] truncate" title={item.remarks}>
                         {item.remarks || "-"}
                       </td>
                       {selectedUnit === "PARK" && (
-                        <td className="py-2.5 px-3 border-r border-slate-200">
+                        <td className="py-3 px-3 border-r border-slate-100 text-slate-600">
                           {item.segment || "-"}
                         </td>
                       )}
-                      <td className="py-2.5 px-3 border-r border-slate-200">
+                      <td className="py-3 px-3 border-r border-slate-100 text-slate-600">
                         {item.source || "-"}
                       </td>
-                      <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                      <td className="py-3 px-3 text-center whitespace-nowrap">
                         <div className="flex items-center justify-center gap-1">
                           <button
                             onClick={() => {
                               setEditingItem(item);
                               setIsModalOpen(true);
                             }}
-                            className="p-1 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                            className="p-1.5 text-slate-400 hover:text-primary-700 hover:bg-primary-50 rounded-lg transition-colors"
                             title="Edit"
                           >
                             <Edit2 size={15} />
                           </button>
                           <button
                             onClick={() => handleDelete(item.id)}
-                            className="p-1 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
                             title="Hapus"
                           >
                             <Trash2 size={15} />
@@ -647,34 +652,34 @@ export default function ForecastDashboard() {
               )}
             </tbody>
 
-            {/* Table Footer Totals */}
+            {/* Table Footer Totals - Clean Light Row */}
             {!loading && items.length > 0 && (
               <tfoot>
-                <tr className="bg-slate-900 text-white font-bold text-xs uppercase tracking-wider">
-                  <td colSpan={selectedUnit === "CAMP_VILLAGE" ? 6 : 6} className="py-3 px-3 text-right border-r border-slate-700">
-                    TOTAL FORECAST PERIODE INI:
+                <tr className="bg-slate-100 text-slate-800 font-bold text-xs border-t-2 border-slate-200">
+                  <td colSpan={selectedUnit === "CAMP_VILLAGE" ? 6 : 6} className="py-3.5 px-3 text-right border-r border-slate-200 uppercase tracking-wider">
+                    TOTAL FORECAST:
                   </td>
-                  <td className="py-3 px-3 text-center border-r border-slate-700 text-emerald-400 font-bold">
+                  <td className="py-3.5 px-3 text-center border-r border-slate-200 text-emerald-800 font-bold">
                     {stats.totalPax} Pax
                   </td>
                   {selectedUnit === "CAMP_VILLAGE" && (
-                    <td className="py-3 px-3 text-center border-r border-slate-700 text-indigo-300 font-bold">
+                    <td className="py-3.5 px-3 text-center border-r border-slate-200 text-blue-800 font-bold">
                       {stats.totalRoomCount} Unit
                     </td>
                   )}
-                  <td className="py-3 px-3 border-r border-slate-700"></td>
+                  <td className="py-3.5 px-3 border-r border-slate-200"></td>
                   
-                  <td className="py-3 px-3 text-right border-r border-slate-700 bg-emerald-800 text-emerald-100 font-mono">
+                  <td className="py-3.5 px-3 text-right border-r border-slate-200 bg-emerald-100 text-emerald-900 font-mono font-bold">
                     {formatCurrency(stats.confirmTotal)}
                   </td>
-                  <td className="py-3 px-3 text-right border-r border-slate-700 bg-amber-700 text-amber-100 font-mono">
+                  <td className="py-3.5 px-3 text-right border-r border-slate-200 bg-amber-100 text-amber-900 font-mono font-bold">
                     {formatCurrency(stats.tentativeTotal)}
                   </td>
-                  <td className="py-3 px-3 text-right border-r border-slate-700 bg-rose-800 text-rose-100 font-mono">
+                  <td className="py-3.5 px-3 text-right border-r border-slate-200 bg-rose-100 text-rose-900 font-mono font-bold">
                     {formatCurrency(stats.cancelTotal)}
                   </td>
                   
-                  <td colSpan={selectedUnit === "PARK" ? 5 : 4} className="py-3 px-3"></td>
+                  <td colSpan={selectedUnit === "PARK" ? 5 : 4} className="py-3.5 px-3"></td>
                 </tr>
               </tfoot>
             )}
@@ -696,4 +701,3 @@ export default function ForecastDashboard() {
     </div>
   );
 }
-
