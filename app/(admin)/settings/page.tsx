@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Loader2, Upload, Image as ImageIcon, Save } from "lucide-react";
+import { Loader2, Upload, Image as ImageIcon, Save, Eye, EyeOff } from "lucide-react";
 import { getSettingsSnapshot, updateAdminProfile, updateAppSettings } from "@/actions/settings";
 
 type Snapshot = Awaited<ReturnType<typeof getSettingsSnapshot>>;
@@ -13,6 +13,7 @@ export default function SettingsPage() {
   const [isPending, startTransition] = useTransition();
   const [isLoading, setIsLoading] = useState(true);
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
+  const [showToken, setShowToken] = useState(false);
 
   const [adminName, setAdminName] = useState("");
   const [adminImage, setAdminImage] = useState("");
@@ -420,99 +421,53 @@ export default function SettingsPage() {
           {/* WhatsApp API Settings */}
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-              <div className="text-lg font-bold text-slate-800">WhatsApp Cloud API (Meta)</div>
-              <div className="text-sm text-slate-500">Konfigurasi WhatsApp Business API resmi dari Meta.</div>
+              <div className="text-lg font-bold text-slate-800">WhatsApp Cloud API (Meta Resmi)</div>
+              <div className="text-sm text-slate-500">Konfigurasi WhatsApp Business API resmi dari Meta Cloud.</div>
             </div>
             <div className="p-6 space-y-6">
-              {/* WhatsApp Provider Selection */}
-              <div className="mb-4">
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Provider WhatsApp API</label>
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-6">
-                  <label className="flex items-center gap-2 cursor-pointer p-3 rounded-xl border border-slate-100 bg-slate-50 sm:bg-transparent sm:border-none sm:p-0">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Phone Number ID</label>
+                  <input
+                    value={whatsappApiUrl}
+                    onChange={(e) => setWhatsappApiUrl(e.target.value)}
+                    className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-300 text-sm font-mono"
+                    placeholder="Contoh: 123456789012345"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">Dapatkan dari Dashboard Meta Developer &gt; WhatsApp &gt; Getting Started.</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Access Token (Meta)</label>
+                  <div className="relative">
                     <input
-                      type="radio"
-                      name="waProvider"
-                      value="OPENWA"
-                      checked={whatsappProvider === "OPENWA"}
-                      onChange={(e) => setWhatsappProvider(e.target.value)}
-                      className="text-primary-600 focus:ring-primary-500"
+                      type={showToken ? "text" : "password"}
+                      value={whatsappApiKey}
+                      onChange={(e) => setWhatsappApiKey(e.target.value)}
+                      className="w-full px-4 py-2 pr-10 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-300 font-mono text-sm"
+                      placeholder="EAAGm0..."
                     />
-                    <span className="text-sm">OpenWA (Tidak Resmi)</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer p-3 rounded-xl border border-slate-100 bg-slate-50 sm:bg-transparent sm:border-none sm:p-0">
-                    <input
-                      type="radio"
-                      name="waProvider"
-                      value="OFFICIAL_META"
-                      checked={whatsappProvider === "OFFICIAL_META"}
-                      onChange={(e) => setWhatsappProvider(e.target.value)}
-                      className="text-primary-600 focus:ring-primary-500"
-                    />
-                    <span className="text-sm">Meta Cloud API (Resmi)</span>
-                  </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowToken(!showToken)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+                      title={showToken ? "Sembunyikan Token" : "Tampilkan Token"}
+                    >
+                      {showToken ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-1">Permanent Access Token dari System User Meta (Tersimpan Aman).</p>
                 </div>
               </div>
 
-              {whatsappProvider === "OPENWA" ? (
-                <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">Endpoint URL OpenWA</label>
-                      <input
-                        value={whatsappApiUrl}
-                        onChange={(e) => setWhatsappApiUrl(e.target.value)}
-                        className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-300"
-                        placeholder="https://api.thelodgegroup.id/api/sessions/main/messages/send-text"
-                      />
-                      <p className="text-[10px] text-slate-400 mt-1">URL API OpenWA Anda (Method POST).</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">API Key OpenWA</label>
-                      <input
-                        value={whatsappApiKey}
-                        onChange={(e) => setWhatsappApiKey(e.target.value)}
-                        className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-300"
-                        placeholder="Contoh: owa_k1_abcdefghijklmnop"
-                      />
-                      <p className="text-[10px] text-slate-400 mt-1">Header x-api-key untuk otentikasi.</p>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">Phone Number ID</label>
-                      <input
-                        value={whatsappApiUrl}
-                        onChange={(e) => setWhatsappApiUrl(e.target.value)}
-                        className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-300"
-                        placeholder="Contoh: 123456789012345"
-                      />
-                      <p className="text-[10px] text-slate-400 mt-1">Dapatkan dari Dashboard Meta Developer &gt; WhatsApp &gt; Getting Started.</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">Access Token</label>
-                      <input
-                        value={whatsappApiKey}
-                        onChange={(e) => setWhatsappApiKey(e.target.value)}
-                        className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-300"
-                        placeholder="EAAGm0..."
-                      />
-                      <p className="text-[10px] text-slate-400 mt-1">Permanent Access Token dari System User Meta.</p>
-                    </div>
-                  </div>
-
-                  <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl mt-4">
-                    <p className="text-xs text-amber-800 leading-relaxed">
-                      <b>Catatan Penting Meta API:</b> Pengiriman pesan massal menggunakan Meta API <b>wajib menggunakan Template Message</b> yang sudah disetujui. Buat Campaign WA Anda dengan nama subjek yang <b>sama persis</b> dengan nama template di dashboard Meta.
-                    </p>
-                  </div>
-                </>
-              )}
+              <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl mt-4">
+                <p className="text-xs text-emerald-800 leading-relaxed">
+                  <b>Catatan Penting Meta API Resmi:</b> Pengiriman pesan menggunakan Meta Cloud API <b>wajib menggunakan Template Message</b> yang sudah disetujui di Meta Developer Console.
+                </p>
+              </div>
 
               <div className="mt-6 p-4 border border-slate-200 rounded-xl bg-slate-50">
-                <div className="font-semibold text-sm mb-3">Test Kirim Pesan</div>
+                <div className="font-semibold text-sm mb-3">Test Kirim Pesan Meta API</div>
                 <div className="flex gap-2">
                   <input
                     value={testWaNumber}
