@@ -148,13 +148,13 @@ export default function ForecastModal({
 
   return (
     <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden my-8">
-        <div className="px-6 py-4 bg-slate-800 text-white flex items-center justify-between">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden my-8 border border-slate-100">
+        <div className="px-6 py-4 bg-primary-700 text-white flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-bold">
+            <h2 className="text-lg font-bold font-judul">
               {initialData ? "Edit Forecast Item" : "Tambah Forecast Item"}
             </h2>
-            <p className="text-xs text-slate-300">
+            <p className="text-xs text-primary-100 font-subjudul">
               {unit === "CAMP_VILLAGE"
                 ? "The Lodge Camp & Village"
                 : "The Lodge Park (Kawasan Wisata)"}
@@ -162,7 +162,7 @@ export default function ForecastModal({
           </div>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-slate-700 rounded-lg transition-colors text-slate-300 hover:text-white"
+            className="p-1 hover:bg-primary-800 rounded-lg transition-colors text-primary-100 hover:text-white"
           >
             <X size={20} />
           </button>
@@ -187,7 +187,7 @@ export default function ForecastModal({
                 placeholder="Contoh: PT Telkom / Sekolah Bina Insani"
                 value={formData.company}
                 onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
 
@@ -201,7 +201,7 @@ export default function ForecastModal({
                 onChange={(e) =>
                   setFormData({ ...formData, status: e.target.value as ForecastStatusType })
                 }
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               >
                 <option value="TENTATIVE">Tentative (Kuning)</option>
                 <option value="CONFIRM">Confirm (Hijau)</option>
@@ -218,7 +218,7 @@ export default function ForecastModal({
                 type="date"
                 value={formData.reservationDate}
                 onChange={(e) => setFormData({ ...formData, reservationDate: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
 
@@ -233,7 +233,7 @@ export default function ForecastModal({
                     type="date"
                     value={formData.checkIn}
                     onChange={(e) => setFormData({ ...formData, checkIn: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   />
                 </div>
                 <div>
@@ -244,7 +244,7 @@ export default function ForecastModal({
                     type="date"
                     value={formData.checkOut}
                     onChange={(e) => setFormData({ ...formData, checkOut: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   />
                 </div>
               </>
@@ -260,7 +260,7 @@ export default function ForecastModal({
                   type="date"
                   value={formData.eventDate}
                   onChange={(e) => setFormData({ ...formData, eventDate: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 />
               </div>
             )}
@@ -275,7 +275,7 @@ export default function ForecastModal({
                 placeholder="Contoh: Gathering / Outbound / Meeting / Wedding"
                 value={formData.eventType}
                 onChange={(e) => setFormData({ ...formData, eventType: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
 
@@ -290,7 +290,7 @@ export default function ForecastModal({
                   placeholder="Contoh: TLM, Dapur Hawu, Omah, Pine Forest"
                   value={formData.venue}
                   onChange={(e) => setFormData({ ...formData, venue: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 />
               </div>
             )}
@@ -306,7 +306,7 @@ export default function ForecastModal({
                   placeholder="Contoh: 5, Villa Pine, dsb"
                   value={formData.room}
                   onChange={(e) => setFormData({ ...formData, room: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 />
               </div>
             )}
@@ -321,7 +321,7 @@ export default function ForecastModal({
                 min="0"
                 value={formData.pax}
                 onChange={(e) => setFormData({ ...formData, pax: parseInt(e.target.value) || 0 })}
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
 
@@ -336,7 +336,7 @@ export default function ForecastModal({
                 placeholder="0"
                 value={formData.rate}
                 onChange={(e) => setFormData({ ...formData, rate: parseFloat(e.target.value) || 0 })}
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
 
@@ -359,7 +359,7 @@ export default function ForecastModal({
                     isManualTotal: true,
                   })
                 }
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-semibold bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-semibold bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
 
@@ -373,7 +373,7 @@ export default function ForecastModal({
                 placeholder="Nama PIC"
                 value={formData.pic}
                 onChange={(e) => setFormData({ ...formData, pic: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
 
@@ -388,7 +388,7 @@ export default function ForecastModal({
                   placeholder="Contoh: Corporate, Govt, TA, Direct"
                   value={formData.segment}
                   onChange={(e) => setFormData({ ...formData, segment: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 />
               </div>
             )}
@@ -403,7 +403,7 @@ export default function ForecastModal({
                 placeholder="Contoh: WhatsApp / Direct / Agency"
                 value={formData.source}
                 onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
 
@@ -417,7 +417,7 @@ export default function ForecastModal({
                 placeholder="Catatan tambahan..."
                 value={formData.remarks}
                 onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
           </div>
@@ -434,7 +434,7 @@ export default function ForecastModal({
             <button
               type="submit"
               disabled={loading}
-              className="flex items-center gap-2 px-5 py-2 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-colors shadow-sm disabled:opacity-50"
+              className="flex items-center gap-2 px-5 py-2 bg-primary-700 hover:bg-primary-800 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm disabled:opacity-50"
             >
               {loading ? (
                 <>
