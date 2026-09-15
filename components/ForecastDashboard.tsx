@@ -22,6 +22,9 @@ import {
   MessageSquare,
   ChevronRight,
   Bell,
+  BarChart3,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import {
   getForecastItems,
@@ -58,6 +61,7 @@ export default function ForecastDashboard() {
   const [selectedYear, setSelectedYear] = useState<number>(currentDate.getFullYear());
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<ForecastStatusType | "ALL">("ALL");
+  const [showAnalytics, setShowAnalytics] = useState(false);
 
   const [items, setItems] = useState<any[]>([]);
   const [reminders, setReminders] = useState<any[]>([]);
@@ -308,6 +312,19 @@ export default function ForecastDashboard() {
           </button>
 
           <button
+            onClick={() => setShowAnalytics(!showAnalytics)}
+            className={`flex-1 md:flex-none flex items-center justify-center gap-2 border px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm ${
+              showAnalytics
+                ? "bg-primary-700 text-white border-primary-700"
+                : "bg-white text-slate-700 hover:text-primary-700 border-slate-200 hover:border-primary-200"
+            }`}
+          >
+            <BarChart3 size={18} />
+            <span>Analitik</span>
+            {showAnalytics ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </button>
+
+          <button
             onClick={() => {
               setEditingItem(null);
               setIsModalOpen(true);
@@ -496,13 +513,17 @@ export default function ForecastDashboard() {
         </div>
       </div>
 
-      {/* Forecast Analytics & Revenue Trend Charts */}
-      <ForecastAnalyticsCharts
-        unit={selectedUnit}
-        year={selectedYear}
-        month={selectedMonth}
-        onRefreshParent={fetchData}
-      />
+      {/* Forecast Analytics & Revenue Trend Charts (Toggleable via Analitik Button) */}
+      {showAnalytics && (
+        <div className="animate-in fade-in slide-in-from-top-4 duration-300">
+          <ForecastAnalyticsCharts
+            unit={selectedUnit}
+            year={selectedYear}
+            month={selectedMonth}
+            onRefreshParent={fetchData}
+          />
+        </div>
+      )}
 
       {/* Filter Bar */}
       <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm mb-6 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
