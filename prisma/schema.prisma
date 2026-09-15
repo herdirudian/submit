@@ -635,3 +635,45 @@ model LoginAttempt {
   @@unique([email, ip])
   @@map("login_attempts")
 }
+
+// --- Forecast Management Models ---
+
+enum ForecastUnit {
+  CAMP_VILLAGE
+  PARK
+}
+
+enum ForecastStatus {
+  CONFIRM
+  TENTATIVE
+  CANCEL
+}
+
+model ForecastItem {
+  id              String         @id @default(cuid())
+  unit            ForecastUnit   @default(CAMP_VILLAGE)
+  company         String
+  reservationDate DateTime?
+  checkIn         DateTime?      // For Camp & Village
+  checkOut        DateTime?      // For Camp & Village
+  eventDate       DateTime?      // For Park / Kawasan Wisata
+  eventType       String?        // School camp, Fullboard, Tiket Regular + Lunch, etc.
+  venue           String?        // TLM, Dapur Hawu, Omah (for Park)
+  pax             Int            @default(0)
+  room            String?        // e.g. "18", "4", "all" (for Camp & Village)
+  rate            Float          @default(0)
+  total           Float          @default(0)
+  pic             String?        // Sales PIC name
+  status          ForecastStatus @default(TENTATIVE)
+  remarks         String?        @db.Text
+  segment         String?
+  source          String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([unit])
+  @@index([status])
+  @@index([checkIn])
+  @@index([eventDate])
+  @@map("forecast_items")
+}
