@@ -28,6 +28,7 @@ import {
   getForecastStats,
   deleteForecastItem,
   getForecastReminders,
+  autoProcessForecastReminders,
   ForecastUnitType,
   ForecastStatusType,
 } from "@/actions/forecast";
@@ -88,6 +89,12 @@ export default function ForecastDashboard() {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
+
+      // Auto-trigger background WA reminders for H-7 / H-3 tentative items
+      autoProcessForecastReminders(selectedUnit).catch((err) =>
+        console.warn("Background auto reminder process:", err)
+      );
+
       const [fetchedItems, fetchedStats, fetchedReminders] = await Promise.all([
         getForecastItems({
           unit: selectedUnit,

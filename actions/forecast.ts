@@ -301,6 +301,17 @@ export async function sendForecastWaReminderAction(data: {
   }
 
   const res = await sendWaText(cleanPhone, data.message);
+
+  if (res.success) {
+    await prisma.forecastItem.update({
+      where: { id: data.forecastId },
+      data: {
+        lastReminderSentAt: new Date(),
+        reminderCount: { increment: 1 },
+      },
+    });
+  }
+
   return {
     success: res.success,
     error: res.error,
@@ -308,5 +319,77 @@ export async function sendForecastWaReminderAction(data: {
     waWebUrl: `https://wa.me/${cleanPhone}?text=${encodeURIComponent(data.message)}`,
   };
 }
+
+export async function autoProcessForecastReminders(unit?: ForecastUnitType) {
+  const session = await getServerSession(authOptions);
+  if (!session || !session.user) throw new Error("Unauthorized");
+
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+
+  const twentyHoursAgo = new Date(Date.now() - 20 * 60 * 60 * 1000);
+
+  const where: any = {
+    status: "TENTATIVE",
+    OR: [
+      { lastReminderSentAt: null },
+      { lastReminderSentAt: { lte: twentyHoursAgo } },
+    ],
+  };
+
+  if (unit) where.unit = unit;
+
+  const items = await prisma.forecastItem.findMany({ where });
+
+  const eligibleItems = items.filter((item) => {
+    const targetDate = item.unit === "CAMP_VILLAGE" ? item.checkIn : item.eventDate;
+    if (!targetDate) return false;
+
+    const dateObj = new Date(targetDate);
+    dateObj.setHours(0, 0, 0, 0);
+
+    const diffDays = Math.ceil((dateObj.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    return diffDays >= 0 && diffDays <= 7; // H-7 or H-3 window
+  });
+
+  const { sendWaText } = await import("@/lib/whatsapp");
+  let sentCount = 0;
+
+  for (const item of eligibleItems) {
+    const rawPhone = item.source || item.remarks || "";
+    const cleanPhoneMatch = rawPhone.match(/(?:08|628|\+628)\d{8,12}/);
+    if (!cleanPhoneMatch) continue;
+
+    let phone = cleanPhoneMatch[0].replace(/\D/g, "");
+    if (phone.startsWith("0")) phone = "62" + phone.substring(1);
+
+    const targetDate = item.unit === "CAMP_VILLAGE" ? item.checkIn : item.eventDate;
+    const dateStr = targetDate
+      ? new Date(targetDate).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })
+      : "";
+
+    const unitName = item.unit === "CAMP_VILLAGE" ? "The Lodge Camp & Village" : "The Lodge Park";
+    const message = `Halo Kak ${item.pic || item.company},\n\nPesan Otomatis dari *${unitName}* 👋\n\nKami mengonfirmasi reservasi grup *${item.company}* (${item.pax} Pax) untuk tanggal *${dateStr}* yang saat ini statusnya masih *Tentative*.\n\nMohon konfirmasi atau informasi kelanjutan reservasinya ya Kak. Terima kasih banyak! 🙏✨`;
+
+    try {
+      const waRes = await sendWaText(phone, message);
+      if (waRes.success) {
+        sentCount++;
+        await prisma.forecastItem.update({
+          where: { id: item.id },
+          data: {
+            lastReminderSentAt: new Date(),
+            reminderCount: { increment: 1 },
+          },
+        });
+      }
+    } catch (e) {
+      console.error("[AUTO-REMINDER-ERROR]:", e);
+    }
+  }
+
+  return { autoSentCount: sentCount };
+}
+
 
 

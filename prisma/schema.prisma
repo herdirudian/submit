@@ -668,6 +668,8 @@ model ForecastItem {
   remarks         String?        @db.Text
   segment         String?
   source          String?
+  lastReminderSentAt DateTime?
+  reminderCount   Int            @default(0)
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
