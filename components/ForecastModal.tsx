@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Loader2, Save } from "lucide-react";
+import { X, Loader2, Save, Calculator, DollarSign } from "lucide-react";
 import { createForecastItem, updateForecastItem, ForecastUnitType, ForecastStatusType } from "@/actions/forecast";
 
 interface ForecastModalProps {
@@ -22,6 +22,8 @@ export default function ForecastModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const [rateType, setRateType] = useState<"PER_PAX" | "TOTAL_DIRECT">("PER_PAX");
+
   const [formData, setFormData] = useState({
     company: "",
     reservationDate: "",
@@ -34,7 +36,6 @@ export default function ForecastModal({
     room: "",
     rate: 0,
     total: 0,
-    isManualTotal: false,
     pic: "",
     status: "TENTATIVE" as ForecastStatusType,
     remarks: "",
@@ -51,6 +52,14 @@ export default function ForecastModal({
 
   useEffect(() => {
     if (initialData) {
+      const initPax = initialData.pax || 0;
+      const initRate = initialData.rate || 0;
+      const initTotal = initialData.total || 0;
+
+      // Determine if original data was PER_PAX or TOTAL_DIRECT
+      const isPerPax = initPax > 0 && initRate > 0 && Math.abs(initRate * initPax - initTotal) < 100;
+
+      setRateType(isPerPax ? "PER_PAX" : "TOTAL_DIRECT");
       setFormData({
         company: initialData.company || "",
         reservationDate: formatDateForInput(initialData.reservationDate),
@@ -59,11 +68,10 @@ export default function ForecastModal({
         eventDate: formatDateForInput(initialData.eventDate),
         eventType: initialData.eventType || "",
         venue: initialData.venue || "",
-        pax: initialData.pax || 0,
+        pax: initPax,
         room: initialData.room || "",
-        rate: initialData.rate || 0,
-        total: initialData.total || 0,
-        isManualTotal: true,
+        rate: initRate,
+        total: initTotal,
         pic: initialData.pic || "",
         status: initialData.status || "TENTATIVE",
         remarks: initialData.remarks || "",
@@ -71,6 +79,7 @@ export default function ForecastModal({
         source: initialData.source || "",
       });
     } else {
+      setRateType("PER_PAX");
       setFormData({
         company: "",
         reservationDate: "",
@@ -83,7 +92,6 @@ export default function ForecastModal({
         room: "",
         rate: 0,
         total: 0,
-        isManualTotal: false,
         pic: "",
         status: "TENTATIVE",
         remarks: "",
@@ -94,9 +102,60 @@ export default function ForecastModal({
     setError("");
   }, [initialData, isOpen]);
 
-  const calculatedTotal = formData.isManualTotal
-    ? formData.total
-    : (Number(formData.rate) || 0) * (Number(formData.pax) || 0);
+  // Handle auto-calculations when values change
+  const handleRateChange = (val: number) => {
+    if (rateType === "PER_PAX") {
+      setFormData((prev) => ({
+        ...prev,
+        rate: val,
+        total: val * (prev.pax || 0),
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, rate: val }));
+    }
+  };
+
+  const handlePaxChange = (val: number) => {
+    if (rateType === "PER_PAX") {
+      setFormData((prev) => ({
+        ...prev,
+        pax: val,
+        total: (prev.rate || 0) * val,
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, pax: val }));
+    }
+  };
+
+  const handleTotalChange = (val: number) => {
+    if (rateType === "TOTAL_DIRECT") {
+      const calculatedRate = formData.pax > 0 ? Math.round(val / formData.pax) : val;
+      setFormData((prev) => ({
+        ...prev,
+        total: val,
+        rate: calculatedRate,
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, total: val }));
+    }
+  };
+
+  const handleRateTypeSwitch = (type: "PER_PAX" | "TOTAL_DIRECT") => {
+    setRateType(type);
+    if (type === "PER_PAX") {
+      setFormData((prev) => ({
+        ...prev,
+        total: (prev.rate || 0) * (prev.pax || 0),
+      }));
+    } else {
+      // Direct Total
+      const calculatedRate = formData.pax > 0 ? Math.round(formData.total / formData.pax) : formData.total;
+      setFormData((prev) => ({
+        ...prev,
+        rate: calculatedRate,
+      }));
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -111,6 +170,11 @@ export default function ForecastModal({
       setLoading(true);
       setError("");
 
+      const finalRate = Number(formData.rate) || 0;
+      const finalTotal = rateType === "PER_PAX" 
+        ? (Number(formData.rate) || 0) * (Number(formData.pax) || 0)
+        : Number(formData.total) || 0;
+
       const payload = {
         unit,
         company: formData.company,
@@ -122,8 +186,8 @@ export default function ForecastModal({
         venue: unit === "PARK" ? formData.venue || null : null,
         pax: Number(formData.pax) || 0,
         room: unit === "CAMP_VILLAGE" ? formData.room || null : null,
-        rate: Number(formData.rate) || 0,
-        total: calculatedTotal,
+        rate: finalRate,
+        total: finalTotal,
         pic: formData.pic || null,
         status: formData.status,
         remarks: formData.remarks || null,
@@ -311,6 +375,39 @@ export default function ForecastModal({
               </div>
             )}
 
+            {/* Rate Calculation Type Toggle */}
+            <div className="md:col-span-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+              <label className="block text-xs font-bold text-slate-700 mb-2">
+                Metode Perhitungan Revenue
+              </label>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleRateTypeSwitch("PER_PAX")}
+                  className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold border transition-all ${
+                    rateType === "PER_PAX"
+                      ? "bg-primary-700 text-white border-primary-700 shadow-sm"
+                      : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
+                  }`}
+                >
+                  <Calculator size={14} />
+                  <span>Hitung Per Pax (Rate x Pax)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleRateTypeSwitch("TOTAL_DIRECT")}
+                  className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold border transition-all ${
+                    rateType === "TOTAL_DIRECT"
+                      ? "bg-primary-700 text-white border-primary-700 shadow-sm"
+                      : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
+                  }`}
+                >
+                  <DollarSign size={14} />
+                  <span>Total Langsung (Tanpa Perkalian Pax)</span>
+                </button>
+              </div>
+            </div>
+
             {/* Pax */}
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1">
@@ -320,46 +417,48 @@ export default function ForecastModal({
                 type="number"
                 min="0"
                 value={formData.pax}
-                onChange={(e) => setFormData({ ...formData, pax: parseInt(e.target.value) || 0 })}
+                onChange={(e) => handlePaxChange(parseInt(e.target.value) || 0)}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
 
-            {/* Rate */}
+            {/* Rate / Price per Pax */}
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1">
-                Rate / Price per Pax (Rp)
+                {rateType === "PER_PAX"
+                  ? "Rate / Price per Pax (Rp)"
+                  : "Rate per Pax (Estimasi / Auto)"}
               </label>
               <input
                 type="number"
                 min="0"
                 placeholder="0"
                 value={formData.rate}
-                onChange={(e) => setFormData({ ...formData, rate: parseFloat(e.target.value) || 0 })}
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                readOnly={rateType === "TOTAL_DIRECT" && formData.pax > 0}
+                onChange={(e) => handleRateChange(parseFloat(e.target.value) || 0)}
+                className={`w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                  rateType === "TOTAL_DIRECT" && formData.pax > 0 ? "bg-slate-100 text-slate-500" : ""
+                }`}
               />
             </div>
 
-            {/* Total Calculation */}
-            <div>
+            {/* Total Revenue Input */}
+            <div className="md:col-span-2">
               <label className="block text-xs font-semibold text-slate-600 mb-1 flex justify-between">
-                <span>TOTAL Revenue (Rp)</span>
+                <span>TOTAL Revenue / Total Harga (Rp)</span>
                 <span className="text-[10px] text-slate-400 font-normal">
-                  {formData.isManualTotal ? "Manual Override" : "Otomatis (Rate x Pax)"}
+                  {rateType === "PER_PAX" ? "Otomatis Perkalian (Rate x Pax)" : "Input Langsung"}
                 </span>
               </label>
               <input
                 type="number"
                 min="0"
-                value={formData.isManualTotal ? formData.total : calculatedTotal}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    total: parseFloat(e.target.value) || 0,
-                    isManualTotal: true,
-                  })
-                }
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-semibold bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                value={formData.total}
+                readOnly={rateType === "PER_PAX"}
+                onChange={(e) => handleTotalChange(parseFloat(e.target.value) || 0)}
+                className={`w-full px-3 py-2 border border-slate-200 rounded-xl text-base font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                  rateType === "PER_PAX" ? "bg-slate-50 text-slate-700" : "bg-white"
+                }`}
               />
             </div>
 
