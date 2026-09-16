@@ -25,6 +25,8 @@ import {
   BarChart3,
   ChevronDown,
   ChevronUp,
+  FileText,
+  Loader2,
 } from "lucide-react";
 import {
   getForecastItems,
@@ -32,6 +34,7 @@ import {
   deleteForecastItem,
   getForecastReminders,
   autoProcessForecastReminders,
+  getForecastAnalyticsSummary,
   ForecastUnitType,
   ForecastStatusType,
   ForecastDpStatusType,
@@ -39,6 +42,7 @@ import {
 import ForecastModal from "@/components/ForecastModal";
 import ForecastWaModal from "@/components/ForecastWaModal";
 import ForecastAnalyticsCharts from "@/components/ForecastAnalyticsCharts";
+import { generateForecastPdfReport } from "@/utils/forecastPdfGenerator";
 
 const MONTHS = [
   "Januari",
@@ -86,6 +90,7 @@ export default function ForecastDashboard() {
   });
 
   const [loading, setLoading] = useState(true);
+  const [pdfLoading, setPdfLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any | null>(null);
 
@@ -362,6 +367,31 @@ export default function ForecastDashboard() {
     document.body.removeChild(link);
   };
 
+  const handleExportPdf = async () => {
+    try {
+      setPdfLoading(true);
+      const summary = await getForecastAnalyticsSummary({
+        unit: selectedUnit,
+        year: selectedYear,
+        month: selectedMonth,
+      });
+
+      await generateForecastPdfReport({
+        unit: selectedUnit,
+        month: selectedMonth,
+        year: selectedYear,
+        items,
+        stats,
+        targetAmount: summary?.targetRevenue || 0,
+      });
+    } catch (err) {
+      console.error("Error generating PDF report:", err);
+      alert("Gagal mengunduh laporan PDF");
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-12 font-sans">
       {/* Page Header (Agency Style) */}
@@ -395,10 +425,24 @@ export default function ForecastDashboard() {
 
           <button
             onClick={exportToCSV}
-            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/80 hover:border-slate-300 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all shadow-2xs"
+            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/80 hover:border-slate-300 px-3 py-2 rounded-xl text-xs font-semibold transition-all shadow-2xs"
           >
-            <Download size={15} />
+            <Download size={14} />
             <span>Export CSV</span>
+          </button>
+
+          <button
+            onClick={handleExportPdf}
+            disabled={pdfLoading}
+            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-rose-50 hover:bg-rose-100/80 text-rose-700 border border-rose-200/80 hover:border-rose-300 px-3 py-2 rounded-xl text-xs font-semibold transition-all shadow-2xs disabled:opacity-50"
+            title="Cetak Laporan PDF Executive Summary"
+          >
+            {pdfLoading ? (
+              <Loader2 size={14} className="animate-spin text-rose-600" />
+            ) : (
+              <FileText size={14} className="text-rose-600" />
+            )}
+            <span>Export PDF</span>
           </button>
 
           <button
