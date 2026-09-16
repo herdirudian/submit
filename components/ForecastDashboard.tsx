@@ -120,7 +120,7 @@ export default function ForecastDashboard() {
       setStats(fetchedStats);
       setReminders(fetchedReminders);
     } catch (err) {
-      console.error("Failed to fetch forecast data:", err);
+      console.error("Error fetching forecast data:", err);
     } finally {
       setLoading(false);
     }
@@ -131,28 +131,27 @@ export default function ForecastDashboard() {
   }, [fetchData]);
 
   const handleDelete = async (id: string) => {
-    if (confirm("Apakah Anda yakin ingin menghapus data forecast ini?")) {
-      try {
-        await deleteForecastItem(id);
-        fetchData();
-      } catch (err) {
-        alert("Gagal menghapus data");
-      }
+    if (!confirm("Apakah Anda yakin ingin menghapus data forecast ini?")) return;
+    try {
+      await deleteForecastItem(id);
+      fetchData();
+    } catch (err) {
+      console.error("Error deleting forecast item:", err);
+      alert("Gagal menghapus data");
     }
   };
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (val: number | null | undefined) => {
     return new Intl.NumberFormat("id-ID", {
       style: "currency",
       currency: "IDR",
       maximumFractionDigits: 0,
-    }).format(amount || 0);
+    }).format(val || 0);
   };
 
-  const formatDateStr = (d: any) => {
+  const formatDateStr = (d: string | Date | null | undefined) => {
     if (!d) return "-";
     const dateObj = new Date(d);
-    if (isNaN(dateObj.getTime())) return "-";
     return dateObj.toLocaleDateString("id-ID", {
       day: "2-digit",
       month: "short",
@@ -160,28 +159,30 @@ export default function ForecastDashboard() {
     });
   };
 
+  // Days left helper for tentative items
   const getItemUrgency = (item: any) => {
     if (item.status !== "TENTATIVE") return null;
     const targetDate = item.unit === "CAMP_VILLAGE" ? item.checkIn : item.eventDate;
     if (!targetDate) return null;
 
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    const dateObj = new Date(targetDate);
-    dateObj.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const eventD = new Date(targetDate);
+    eventD.setHours(0, 0, 0, 0);
 
-    const diffDays = Math.ceil((dateObj.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    if (diffDays >= 0 && diffDays <= 3) return { days: diffDays, level: "URGENT", label: `H-${diffDays} URGENT` };
-    if (diffDays > 3 && diffDays <= 7) return { days: diffDays, level: "WARNING", label: `H-${diffDays} WARNING` };
+    const diffTime = eventD.getTime() - today.getTime();
+    const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (daysLeft >= 0 && daysLeft <= 3) {
+      return { level: "URGENT", label: `H-${daysLeft} URGENT`, daysLeft };
+    }
+    if (daysLeft > 3 && daysLeft <= 7) {
+      return { level: "WARNING", label: `H-${daysLeft} Warning`, daysLeft };
+    }
     return null;
   };
 
   const exportToCSV = () => {
-    if (items.length === 0) {
-      alert("Tidak ada data untuk diexport");
-      return;
-    }
-
     let headers: string[] = [];
     if (selectedUnit === "CAMP_VILLAGE") {
       headers = [
@@ -275,53 +276,55 @@ export default function ForecastDashboard() {
   };
 
   return (
-    <div>
-      {/* Clean Page Header Aligned with Dashboard & Form Branding */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+    <div className="max-w-7xl mx-auto space-y-6 pb-12 font-sans">
+      {/* Page Header (Agency Style) */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <div className="flex items-center gap-2 text-xs text-slate-400 font-medium mb-1.5">
-            <Link href="/dashboard" className="hover:text-slate-600 transition-colors">
+          <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium mb-1">
+            <Link href="/dashboard" className="hover:text-slate-700 transition-colors">
               Dashboard
             </Link>
-            <span>/</span>
-            <span className="text-slate-500">Forecast</span>
+            <ChevronRight size={12} className="text-slate-300" />
+            <span className="text-slate-600 font-semibold">Forecast</span>
           </div>
-          <h1 className="text-2xl font-bold text-slate-800 font-judul">Forecast Reservasi</h1>
-          <p className="text-slate-500 text-sm mt-0.5 font-subjudul">
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight font-judul">
+            Forecast Reservasi
+          </h1>
+          <p className="text-slate-500 text-xs mt-0.5 font-subjudul">
             Estimasi pendapatan reservasi grup The Lodge Camp & Village dan Kawasan Wisata The Lodge Park.
           </p>
         </div>
 
-        {/* Action Buttons */}
+        {/* Action Header Buttons */}
         <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
           <button
             onClick={() => fetchData()}
             disabled={loading}
-            className="p-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl transition-colors shadow-sm"
+            className="p-2 bg-white border border-slate-200/80 hover:bg-slate-50 text-slate-600 rounded-xl transition-all shadow-2xs hover:border-slate-300 active:scale-95"
             title="Refresh Data"
           >
-            <RefreshCw size={18} className={loading ? "animate-spin text-primary-600" : ""} />
+            <RefreshCw size={16} className={loading ? "animate-spin text-[#0f4d39]" : ""} />
           </button>
 
           <button
             onClick={exportToCSV}
-            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white text-slate-700 hover:text-primary-700 border border-slate-200 hover:border-primary-200 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm"
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/80 hover:border-slate-300 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all shadow-2xs"
           >
-            <Download size={18} />
+            <Download size={15} />
             <span>Export CSV</span>
           </button>
 
           <button
             onClick={() => setShowAnalytics(!showAnalytics)}
-            className={`flex-1 md:flex-none flex items-center justify-center gap-2 border px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm ${
+            className={`flex-1 md:flex-none flex items-center justify-center gap-2 border px-3.5 py-2 rounded-xl text-xs font-semibold transition-all shadow-2xs ${
               showAnalytics
-                ? "bg-primary-700 text-white border-primary-700"
-                : "bg-white text-slate-700 hover:text-primary-700 border-slate-200 hover:border-primary-200"
+                ? "bg-[#0f4d39] text-white border-[#0f4d39]"
+                : "bg-white text-slate-700 hover:bg-slate-50 border-slate-200/80 hover:border-slate-300"
             }`}
           >
-            <BarChart3 size={18} />
+            <BarChart3 size={15} />
             <span>Analitik</span>
-            {showAnalytics ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            {showAnalytics ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
 
           <button
@@ -329,91 +332,92 @@ export default function ForecastDashboard() {
               setEditingItem(null);
               setIsModalOpen(true);
             }}
-            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-primary-700 hover:bg-primary-800 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shadow-sm"
+            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-[#0f4d39] hover:bg-[#0b3c2c] text-white px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-2xs hover:shadow-xs active:scale-[0.98]"
           >
-            <Plus size={18} />
+            <Plus size={16} />
             <span>Tambah Forecast</span>
           </button>
         </div>
       </div>
 
-      {/* Unit Selection Tabs */}
-      <div className="flex items-center gap-2 mb-6 bg-slate-100 p-1.5 rounded-2xl w-fit border border-slate-200/80">
+      {/* Segmented Unit Control Tabs (Vercel Style) */}
+      <div className="inline-flex items-center p-1 bg-slate-100/90 rounded-xl border border-slate-200/60 shadow-inner">
         <button
           onClick={() => setSelectedUnit("CAMP_VILLAGE")}
-          className={`flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold transition-all ${
+          className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
             selectedUnit === "CAMP_VILLAGE"
-              ? "bg-primary-700 text-white shadow-sm"
-              : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+              ? "bg-white text-[#0f4d39] shadow-xs border border-slate-200/50"
+              : "text-slate-500 hover:text-slate-900 hover:bg-white/50"
           }`}
         >
-          <Home size={16} />
+          <Home size={15} />
           <span>Camp & Village</span>
         </button>
         <button
           onClick={() => setSelectedUnit("PARK")}
-          className={`flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold transition-all ${
+          className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
             selectedUnit === "PARK"
-              ? "bg-primary-700 text-white shadow-sm"
-              : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+              ? "bg-white text-[#0f4d39] shadow-xs border border-slate-200/50"
+              : "text-slate-500 hover:text-slate-900 hover:bg-white/50"
           }`}
         >
-          <Building2 size={16} />
+          <Building2 size={15} />
           <span>The Lodge Park</span>
         </button>
       </div>
 
-      {/* Follow-up Reminder Banner (H-7 / H-3 Alert) */}
+      {/* Follow-up Reminder Banner (Modern Alert Style) */}
       {reminders.length > 0 && (
-        <div className="mb-6 bg-amber-50/90 border border-amber-200 rounded-2xl p-4 shadow-sm">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-3">
-              <div className="p-2.5 bg-amber-100 text-amber-800 rounded-xl mt-0.5">
-                <Bell size={20} className="animate-pulse" />
+        <div className="rounded-2xl border border-amber-200/80 bg-gradient-to-r from-amber-50/90 via-amber-50/40 to-white p-4 shadow-2xs relative overflow-hidden backdrop-blur-sm">
+          <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-amber-400 to-amber-600 rounded-l-2xl" />
+          <div className="flex items-start justify-between gap-4 pl-1">
+            <div className="flex items-start gap-3.5">
+              <div className="p-2 bg-amber-500/10 text-amber-700 rounded-xl border border-amber-500/20 mt-0.5">
+                <Bell size={18} className="animate-pulse" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-amber-900 flex items-center gap-2">
+                <h3 className="text-xs font-bold text-slate-900 flex items-center gap-2">
                   <span>Peringatan Follow-up Reservasi Tentative (H-7 / H-3)</span>
-                  <span className="px-2 py-0.5 bg-amber-200 text-amber-900 font-bold rounded-full text-xs">
+                  <span className="px-2 py-0.5 bg-amber-200/70 text-amber-900 font-bold rounded-full text-[10px]">
                     {reminders.length} Reservasi
                   </span>
                 </h3>
-                <p className="text-xs text-amber-800 mt-1">
-                  Terdapat {reminders.length} reservasi berstatus <span className="font-bold">Tentative</span> yang mendekati tanggal pelaksanaan dalam 14 hari ke depan. Segera lakukan follow-up atau kirim notifikasi WA.
+                <p className="text-xs text-slate-600 mt-1">
+                  Terdapat {reminders.length} reservasi berstatus <span className="font-semibold text-amber-800">Tentative</span> yang mendekati tanggal pelaksanaan dalam 14 hari ke depan. Segera lakukan follow-up atau kirim notifikasi WA.
                 </p>
 
-                {/* Reminder Cards Carousel / List */}
+                {/* Reminder Cards List */}
                 <div className="mt-3 flex flex-wrap gap-2">
                   {reminders.slice(0, 3).map((r) => (
                     <div
                       key={r.id}
-                      className="flex items-center gap-2.5 bg-white px-3 py-2 rounded-xl border border-amber-200 text-xs shadow-sm"
+                      className="flex items-center gap-2.5 bg-white/90 backdrop-blur px-3 py-1.5 rounded-xl border border-amber-200/80 text-xs shadow-2xs hover:shadow-xs transition-all"
                     >
                       <span
                         className={`font-bold px-2 py-0.5 rounded-md text-[10px] ${
                           r.urgency === "URGENT"
-                            ? "bg-rose-100 text-rose-700 border border-rose-200"
-                            : "bg-amber-100 text-amber-800 border border-amber-200"
+                            ? "bg-rose-50 text-rose-700 border border-rose-200/80"
+                            : "bg-amber-50 text-amber-800 border border-amber-200/80"
                         }`}
                       >
                         {r.urgency === "URGENT" ? `H-${r.daysLeft} URGENT` : `H-${r.daysLeft} Warning`}
                       </span>
-                      <span className="font-bold text-slate-800 truncate max-w-[150px]">{r.company}</span>
-                      <span className="text-slate-500">({r.pax} Pax)</span>
+                      <span className="font-semibold text-slate-800 truncate max-w-[140px]">{r.company}</span>
+                      <span className="text-slate-400 text-[11px]">({r.pax} Pax)</span>
                       <button
                         onClick={() => {
                           setWaModalItem(r);
                           setIsWaModalOpen(true);
                         }}
-                        className="flex items-center gap-1 text-emerald-700 hover:text-emerald-800 font-semibold bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200 hover:bg-emerald-100 transition-colors"
+                        className="flex items-center gap-1 bg-[#0f4d39] hover:bg-[#0b3c2c] text-white font-medium text-[11px] px-2.5 py-1 rounded-lg shadow-2xs transition-all hover:scale-[1.02] active:scale-[0.98]"
                       >
-                        <MessageSquare size={13} />
+                        <MessageSquare size={12} />
                         <span>Kirim WA</span>
                       </button>
                     </div>
                   ))}
                   {reminders.length > 3 && (
-                    <span className="text-xs text-amber-700 font-semibold self-center">
+                    <span className="text-xs text-amber-800 font-semibold self-center">
                       +{reminders.length - 3} reservasi lainnya di tabel
                     </span>
                   )}
@@ -424,89 +428,103 @@ export default function ForecastDashboard() {
         </div>
       )}
 
-      {/* Clean KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+      {/* Modern Refined KPI Cards (Linear / Stripe Aesthetic) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Total Grand Revenue */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between">
+        <div className="bg-white p-4.5 rounded-2xl border border-slate-200/70 shadow-2xs hover:shadow-md hover:border-slate-300 transition-all duration-200 group relative overflow-hidden flex flex-col justify-between">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-[#0f4d39]" />
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Revenue</span>
-            <div className="p-2.5 bg-primary-50 text-primary-700 rounded-xl">
-              <TrendingUp size={20} />
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Revenue</span>
+            <div className="p-2 bg-slate-50 text-[#0f4d39] group-hover:bg-emerald-50 transition-colors rounded-xl border border-slate-100">
+              <TrendingUp size={18} />
             </div>
           </div>
           <div>
-            <h3 className="text-2xl font-bold text-slate-800 font-sans">
+            <h3 className="text-2xl font-bold text-slate-900 font-mono tracking-tight">
               {formatCurrency(stats.grandTotal)}
             </h3>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-[11px] text-slate-500 mt-1 font-medium">
               {stats.totalEntries} Booking ({stats.totalPax} Pax)
             </p>
           </div>
         </div>
 
-        {/* Confirm (Green) */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between">
+        {/* Confirm */}
+        <div className="bg-white p-4.5 rounded-2xl border border-slate-200/70 shadow-2xs hover:shadow-md hover:border-slate-300 transition-all duration-200 group relative overflow-hidden flex flex-col justify-between">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500" />
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wider">Confirm</span>
-            <div className="p-2.5 bg-green-50 text-green-600 rounded-xl">
-              <CheckCircle2 size={20} />
+            <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">Confirm</span>
+            <div className="p-2 bg-emerald-50/80 text-emerald-600 rounded-xl border border-emerald-100">
+              <CheckCircle2 size={18} />
             </div>
           </div>
           <div>
-            <h3 className="text-2xl font-bold text-emerald-700 font-sans">
+            <h3 className="text-2xl font-bold text-slate-900 font-mono tracking-tight">
               {formatCurrency(stats.confirmTotal)}
             </h3>
-            <p className="text-xs text-emerald-600 mt-1 font-medium">Disetujui (Green)</p>
+            <div className="flex items-center gap-1.5 mt-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              <span className="text-[11px] text-emerald-700 font-medium">Disetujui</span>
+            </div>
           </div>
         </div>
 
-        {/* Tentative (Yellow) */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between">
+        {/* Tentative */}
+        <div className="bg-white p-4.5 rounded-2xl border border-slate-200/70 shadow-2xs hover:shadow-md hover:border-slate-300 transition-all duration-200 group relative overflow-hidden flex flex-col justify-between">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-amber-500" />
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-amber-700 uppercase tracking-wider">Tentative</span>
-            <div className="p-2.5 bg-amber-50 text-amber-600 rounded-xl">
-              <Clock size={20} />
+            <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider">Tentative</span>
+            <div className="p-2 bg-amber-50/80 text-amber-600 rounded-xl border border-amber-100">
+              <Clock size={18} />
             </div>
           </div>
           <div>
-            <h3 className="text-2xl font-bold text-amber-700 font-sans">
+            <h3 className="text-2xl font-bold text-slate-900 font-mono tracking-tight">
               {formatCurrency(stats.tentativeTotal)}
             </h3>
-            <p className="text-xs text-amber-600 mt-1 font-medium">Dalam Proses (Yellow)</p>
+            <div className="flex items-center gap-1.5 mt-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+              <span className="text-[11px] text-amber-700 font-medium">Dalam Proses</span>
+            </div>
           </div>
         </div>
 
-        {/* Cancel (Red) */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between">
+        {/* Cancel */}
+        <div className="bg-white p-4.5 rounded-2xl border border-slate-200/70 shadow-2xs hover:shadow-md hover:border-slate-300 transition-all duration-200 group relative overflow-hidden flex flex-col justify-between">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-rose-500" />
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-rose-700 uppercase tracking-wider">Cancel</span>
-            <div className="p-2.5 bg-rose-50 text-rose-600 rounded-xl">
-              <XCircle size={20} />
+            <span className="text-[11px] font-bold text-rose-700 uppercase tracking-wider">Cancel</span>
+            <div className="p-2 bg-rose-50/80 text-rose-600 rounded-xl border border-rose-100">
+              <XCircle size={18} />
             </div>
           </div>
           <div>
-            <h3 className="text-2xl font-bold text-rose-700 font-sans">
+            <h3 className="text-2xl font-bold text-slate-900 font-mono tracking-tight">
               {formatCurrency(stats.cancelTotal)}
             </h3>
-            <p className="text-xs text-rose-600 mt-1 font-medium">Dibatalkan (Red)</p>
+            <div className="flex items-center gap-1.5 mt-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+              <span className="text-[11px] text-rose-700 font-medium">Dibatalkan</span>
+            </div>
           </div>
         </div>
 
         {/* Pax / Rooms Count */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between">
+        <div className="bg-white p-4.5 rounded-2xl border border-slate-200/70 shadow-2xs hover:shadow-md hover:border-slate-300 transition-all duration-200 group relative overflow-hidden flex flex-col justify-between">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-indigo-500" />
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
               {selectedUnit === "CAMP_VILLAGE" ? "Total Rooms" : "Total Pax"}
             </span>
-            <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
-              {selectedUnit === "CAMP_VILLAGE" ? <Home size={20} /> : <Users size={20} />}
+            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl border border-indigo-100">
+              {selectedUnit === "CAMP_VILLAGE" ? <Home size={18} /> : <Users size={18} />}
             </div>
           </div>
           <div>
-            <h3 className="text-2xl font-bold text-slate-800">
+            <h3 className="text-2xl font-bold text-slate-900 tracking-tight">
               {selectedUnit === "CAMP_VILLAGE" ? `${stats.totalRoomCount} Unit` : `${stats.totalPax} Pax`}
             </h3>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-[11px] text-slate-500 mt-1 font-medium">
               {selectedUnit === "CAMP_VILLAGE" ? `${stats.totalPax} Pax Pengunjung` : "Pengunjung Event"}
             </p>
           </div>
@@ -526,15 +544,15 @@ export default function ForecastDashboard() {
       )}
 
       {/* Filter Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm mb-6 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-3">
+      <div className="bg-white p-3.5 rounded-2xl border border-slate-200/70 shadow-2xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
           {/* Month & Year Selectors */}
-          <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-xl border border-slate-200">
-            <Calendar size={16} className="text-slate-400" />
+          <div className="flex items-center gap-2 bg-slate-50/80 px-3 py-2 rounded-xl border border-slate-200/80 text-xs">
+            <Calendar size={15} className="text-slate-400" />
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(Number(e.target.value))}
-              className="bg-transparent text-sm font-semibold text-slate-700 focus:outline-none cursor-pointer"
+              className="bg-transparent text-xs font-semibold text-slate-800 focus:outline-none cursor-pointer"
             >
               {MONTHS.map((m, idx) => (
                 <option key={idx} value={idx + 1}>
@@ -542,10 +560,11 @@ export default function ForecastDashboard() {
                 </option>
               ))}
             </select>
+            <span className="text-slate-300">|</span>
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="bg-transparent text-sm font-semibold text-slate-700 focus:outline-none cursor-pointer border-l border-slate-200 pl-2"
+              className="bg-transparent text-xs font-semibold text-slate-800 focus:outline-none cursor-pointer"
             >
               {[2024, 2025, 2026, 2027, 2028].map((y) => (
                 <option key={y} value={y}>
@@ -556,79 +575,88 @@ export default function ForecastDashboard() {
           </div>
 
           {/* Search Box */}
-          <div className="relative flex-1 min-w-[220px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+          <div className="relative flex-1 min-w-[240px]">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
             <input
               type="text"
               placeholder="Cari Company / Instansi..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="w-full pl-9 pr-3.5 py-2 bg-slate-50/80 border border-slate-200/80 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0f4d39]/20 focus:border-[#0f4d39] transition-all"
             />
           </div>
 
           {/* Status Filter */}
-          <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-xl border border-slate-200">
-            <Filter size={16} className="text-slate-400" />
+          <div className="flex items-center gap-2 bg-slate-50/80 px-3 py-2 rounded-xl border border-slate-200/80 text-xs">
+            <Filter size={15} className="text-slate-400" />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="bg-transparent text-sm font-semibold text-slate-700 focus:outline-none cursor-pointer"
+              className="bg-transparent text-xs font-semibold text-slate-800 focus:outline-none cursor-pointer"
             >
               <option value="ALL">Semua Status</option>
-              <option value="CONFIRM">Confirm (Hijau)</option>
-              <option value="TENTATIVE">Tentative (Kuning)</option>
-              <option value="CANCEL">Cancel (Merah)</option>
+              <option value="CONFIRM">Confirm</option>
+              <option value="TENTATIVE">Tentative</option>
+              <option value="CANCEL">Cancel</option>
             </select>
           </div>
         </div>
       </div>
 
-      {/* Clean Data Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      {/* Refined Modern Data Table */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left border-collapse min-w-[1200px]">
-            {/* Table Header - Clean Slate Background */}
-            <thead>
-              <tr className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200 uppercase tracking-wider text-[11px]">
-                <th className="py-3.5 px-3 border-r border-slate-200 text-center w-12">No</th>
-                <th className="py-3.5 px-3 border-r border-slate-200 min-w-[180px]">Company</th>
-                <th className="py-3.5 px-3 border-r border-slate-200 min-w-[110px]">Reservation Date</th>
+            {/* Table Header */}
+            <thead className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 text-[11px] uppercase tracking-wider">
+              <tr>
+                <th className="py-3.5 px-3 border-r border-slate-200/60 text-center w-12 font-bold text-slate-400">No</th>
+                <th className="py-3.5 px-3 border-r border-slate-200/60 min-w-[180px]">Company</th>
+                <th className="py-3.5 px-3 border-r border-slate-200/60 min-w-[110px]">Reservation Date</th>
                 {selectedUnit === "CAMP_VILLAGE" ? (
                   <>
-                    <th className="py-3.5 px-3 border-r border-slate-200 min-w-[100px]">Check In</th>
-                    <th className="py-3.5 px-3 border-r border-slate-200 min-w-[100px]">Check Out</th>
+                    <th className="py-3.5 px-3 border-r border-slate-200/60 min-w-[100px]">Check In</th>
+                    <th className="py-3.5 px-3 border-r border-slate-200/60 min-w-[100px]">Check Out</th>
                   </>
                 ) : (
-                  <th className="py-3.5 px-3 border-r border-slate-200 min-w-[100px]">Event Date</th>
+                  <th className="py-3.5 px-3 border-r border-slate-200/60 min-w-[100px]">Event Date</th>
                 )}
-                <th className="py-3.5 px-3 border-r border-slate-200 min-w-[120px]">Type of Event</th>
+                <th className="py-3.5 px-3 border-r border-slate-200/60 min-w-[120px]">Type of Event</th>
                 {selectedUnit === "PARK" && (
-                  <th className="py-3.5 px-3 border-r border-slate-200 min-w-[100px]">Venue</th>
+                  <th className="py-3.5 px-3 border-r border-slate-200/60 min-w-[100px]">Venue</th>
                 )}
-                <th className="py-3.5 px-3 border-r border-slate-200 text-center w-16">Pax</th>
+                <th className="py-3.5 px-3 border-r border-slate-200/60 text-center w-16">Pax</th>
                 {selectedUnit === "CAMP_VILLAGE" && (
-                  <th className="py-3.5 px-3 border-r border-slate-200 text-center w-20">Room</th>
+                  <th className="py-3.5 px-3 border-r border-slate-200/60 text-center w-20">Room</th>
                 )}
-                <th className="py-3.5 px-3 border-r border-slate-200 text-right min-w-[100px]">Rate (Rp)</th>
+                <th className="py-3.5 px-3 border-r border-slate-200/60 text-right min-w-[100px]">Rate (Rp)</th>
                 
-                {/* Colored Status Revenue Headers */}
-                <th className="py-3.5 px-3 border-r border-slate-200 text-right bg-emerald-600 text-white min-w-[120px]">
-                  Confirm (Green)
+                {/* Modern Status Headers with Soft Tints */}
+                <th className="py-3.5 px-3 border-r border-slate-200/60 text-right bg-emerald-50/60 text-emerald-800 font-bold min-w-[120px]">
+                  <div className="flex items-center justify-end gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                    <span>Confirm (Rp)</span>
+                  </div>
                 </th>
-                <th className="py-3.5 px-3 border-r border-slate-200 text-right bg-amber-500 text-white min-w-[120px]">
-                  Tentative (Yellow)
+                <th className="py-3.5 px-3 border-r border-slate-200/60 text-right bg-amber-50/60 text-amber-800 font-bold min-w-[120px]">
+                  <div className="flex items-center justify-end gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-amber-500" />
+                    <span>Tentative (Rp)</span>
+                  </div>
                 </th>
-                <th className="py-3.5 px-3 border-r border-slate-200 text-right bg-rose-600 text-white min-w-[120px]">
-                  Cancel (Red)
+                <th className="py-3.5 px-3 border-r border-slate-200/60 text-right bg-rose-50/60 text-rose-800 font-bold min-w-[120px]">
+                  <div className="flex items-center justify-end gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-rose-500" />
+                    <span>Cancel (Rp)</span>
+                  </div>
                 </th>
 
-                <th className="py-3.5 px-3 border-r border-slate-200 min-w-[90px]">PIC</th>
-                <th className="py-3.5 px-3 border-r border-slate-200 min-w-[140px]">Remarks</th>
+                <th className="py-3.5 px-3 border-r border-slate-200/60 min-w-[90px]">PIC</th>
+                <th className="py-3.5 px-3 border-r border-slate-200/60 min-w-[140px]">Remarks</th>
                 {selectedUnit === "PARK" && (
-                  <th className="py-3.5 px-3 border-r border-slate-200 min-w-[100px]">Segment</th>
+                  <th className="py-3.5 px-3 border-r border-slate-200/60 min-w-[100px]">Segment</th>
                 )}
-                <th className="py-3.5 px-3 border-r border-slate-200 min-w-[100px]">Source</th>
+                <th className="py-3.5 px-3 border-r border-slate-200/60 min-w-[100px]">Source</th>
                 <th className="py-3.5 px-3 text-center min-w-[110px]">Aksi</th>
               </tr>
             </thead>
@@ -638,7 +666,7 @@ export default function ForecastDashboard() {
               {loading ? (
                 <tr>
                   <td colSpan={18} className="py-12 text-center text-slate-400">
-                    <RefreshCw className="animate-spin inline-block mb-2 text-primary-600" size={24} />
+                    <RefreshCw className="animate-spin inline-block mb-2 text-[#0f4d39]" size={24} />
                     <p className="font-medium text-sm">Memuat data forecast...</p>
                   </td>
                 </tr>
@@ -660,26 +688,26 @@ export default function ForecastDashboard() {
                   return (
                     <tr
                       key={item.id}
-                      className={`hover:bg-slate-50/80 transition-colors font-sans ${
+                      className={`hover:bg-slate-50/90 transition-colors font-sans ${
                         urgency?.level === "URGENT"
-                          ? "bg-rose-50/30"
+                          ? "bg-rose-50/20"
                           : urgency?.level === "WARNING"
-                          ? "bg-amber-50/30"
+                          ? "bg-amber-50/20"
                           : ""
                       }`}
                     >
                       <td className="py-3 px-3 border-r border-slate-100 text-center font-medium text-slate-400">
                         {index + 1}
                       </td>
-                      <td className="py-3 px-3 border-r border-slate-100 font-semibold text-slate-800">
+                      <td className="py-3 px-3 border-r border-slate-100 font-semibold text-slate-900">
                         <div className="flex flex-col gap-1">
                           <span>{item.company}</span>
                           {urgency && (
                             <span
-                              className={`w-fit font-bold text-[10px] px-1.5 py-0.5 rounded ${
+                              className={`w-fit font-bold text-[10px] px-2 py-0.5 rounded-full ${
                                 urgency.level === "URGENT"
-                                  ? "bg-rose-100 text-rose-700 border border-rose-200"
-                                  : "bg-amber-100 text-amber-800 border border-amber-200"
+                                  ? "bg-rose-50 text-rose-700 border border-rose-200/80"
+                                  : "bg-amber-50 text-amber-800 border border-amber-200/80"
                               }`}
                             >
                               {urgency.label}
@@ -712,7 +740,7 @@ export default function ForecastDashboard() {
                           {item.venue || "-"}
                         </td>
                       )}
-                      <td className="py-3 px-3 border-r border-slate-100 text-center font-semibold text-slate-800">
+                      <td className="py-3 px-3 border-r border-slate-100 text-center font-semibold text-slate-900">
                         {item.pax || 0}
                       </td>
                       {selectedUnit === "CAMP_VILLAGE" && (
@@ -720,42 +748,42 @@ export default function ForecastDashboard() {
                           {item.room || "-"}
                         </td>
                       )}
-                      <td className="py-3 px-3 border-r border-slate-100 text-right whitespace-nowrap text-slate-600">
+                      <td className="py-3 px-3 border-r border-slate-100 text-right whitespace-nowrap font-mono text-slate-600">
                         {formatCurrency(item.rate)}
                       </td>
 
-                      {/* Status Column Breakdown */}
-                      {/* Confirm (Green) */}
-                      <td
-                        className={`py-3 px-3 border-r border-slate-100 text-right whitespace-nowrap font-bold ${
-                          isConfirm
-                            ? "bg-emerald-50 text-emerald-800"
-                            : "text-slate-300 text-center"
-                        }`}
-                      >
-                        {isConfirm ? formatCurrency(item.total) : "-"}
+                      {/* Status Column Breakdown with Crisp Typography & Pill Badges */}
+                      {/* Confirm Column */}
+                      <td className="py-3 px-3 border-r border-slate-100 text-right whitespace-nowrap">
+                        {isConfirm ? (
+                          <span className="inline-block bg-emerald-50 text-emerald-800 font-mono font-bold px-2 py-0.5 rounded-md border border-emerald-200/60">
+                            {formatCurrency(item.total)}
+                          </span>
+                        ) : (
+                          <span className="text-slate-300 font-mono text-center block">-</span>
+                        )}
                       </td>
 
-                      {/* Tentative (Yellow) */}
-                      <td
-                        className={`py-3 px-3 border-r border-slate-100 text-right whitespace-nowrap font-bold ${
-                          isTentative
-                            ? "bg-amber-50 text-amber-800"
-                            : "text-slate-300 text-center"
-                        }`}
-                      >
-                        {isTentative ? formatCurrency(item.total) : "-"}
+                      {/* Tentative Column */}
+                      <td className="py-3 px-3 border-r border-slate-100 text-right whitespace-nowrap">
+                        {isTentative ? (
+                          <span className="inline-block bg-amber-50 text-amber-800 font-mono font-bold px-2 py-0.5 rounded-md border border-amber-200/60">
+                            {formatCurrency(item.total)}
+                          </span>
+                        ) : (
+                          <span className="text-slate-300 font-mono text-center block">-</span>
+                        )}
                       </td>
 
-                      {/* Cancel (Red) */}
-                      <td
-                        className={`py-3 px-3 border-r border-slate-100 text-right whitespace-nowrap font-bold ${
-                          isCancel
-                            ? "bg-rose-50 text-rose-800"
-                            : "text-slate-300 text-center"
-                        }`}
-                      >
-                        {isCancel ? formatCurrency(item.total) : "-"}
+                      {/* Cancel Column */}
+                      <td className="py-3 px-3 border-r border-slate-100 text-right whitespace-nowrap">
+                        {isCancel ? (
+                          <span className="inline-block bg-rose-50 text-rose-800 font-mono font-bold px-2 py-0.5 rounded-md border border-rose-200/60">
+                            {formatCurrency(item.total)}
+                          </span>
+                        ) : (
+                          <span className="text-slate-300 font-mono text-center block">-</span>
+                        )}
                       </td>
 
                       <td className="py-3 px-3 border-r border-slate-100 font-medium text-slate-700">
@@ -790,7 +818,7 @@ export default function ForecastDashboard() {
                               setEditingItem(item);
                               setIsModalOpen(true);
                             }}
-                            className="p-1.5 text-slate-400 hover:text-primary-700 hover:bg-primary-50 rounded-lg transition-colors"
+                            className="p-1.5 text-slate-400 hover:text-[#0f4d39] hover:bg-slate-100 rounded-lg transition-colors"
                             title="Edit"
                           >
                             <Edit2 size={15} />
@@ -810,30 +838,30 @@ export default function ForecastDashboard() {
               )}
             </tbody>
 
-            {/* Table Footer Totals - Clean Light Row */}
+            {/* Table Footer Totals */}
             {!loading && items.length > 0 && (
               <tfoot>
-                <tr className="bg-slate-100 text-slate-800 font-bold text-xs border-t-2 border-slate-200">
-                  <td colSpan={selectedUnit === "CAMP_VILLAGE" ? 6 : 6} className="py-3.5 px-3 text-right border-r border-slate-200 uppercase tracking-wider">
-                    TOTAL FORECAST:
+                <tr className="bg-slate-50/90 text-slate-800 font-bold text-xs border-t-2 border-slate-200/80">
+                  <td colSpan={selectedUnit === "CAMP_VILLAGE" ? 6 : 6} className="py-3.5 px-3 text-right border-r border-slate-200/60 uppercase tracking-wider text-slate-500 font-bold">
+                    Total Forecast:
                   </td>
-                  <td className="py-3.5 px-3 text-center border-r border-slate-200 text-emerald-800 font-bold">
+                  <td className="py-3.5 px-3 text-center border-r border-slate-200/60 text-slate-900 font-bold">
                     {stats.totalPax} Pax
                   </td>
                   {selectedUnit === "CAMP_VILLAGE" && (
-                    <td className="py-3.5 px-3 text-center border-r border-slate-200 text-blue-800 font-bold">
+                    <td className="py-3.5 px-3 text-center border-r border-slate-200/60 text-indigo-700 font-bold">
                       {stats.totalRoomCount} Unit
                     </td>
                   )}
-                  <td className="py-3.5 px-3 border-r border-slate-200"></td>
+                  <td className="py-3.5 px-3 border-r border-slate-200/60"></td>
                   
-                  <td className="py-3.5 px-3 text-right border-r border-slate-200 bg-emerald-100 text-emerald-900 font-mono font-bold">
+                  <td className="py-3.5 px-3 text-right border-r border-slate-200/60 bg-emerald-50/80 text-emerald-900 font-mono font-bold">
                     {formatCurrency(stats.confirmTotal)}
                   </td>
-                  <td className="py-3.5 px-3 text-right border-r border-slate-200 bg-amber-100 text-amber-900 font-mono font-bold">
+                  <td className="py-3.5 px-3 text-right border-r border-slate-200/60 bg-amber-50/80 text-amber-900 font-mono font-bold">
                     {formatCurrency(stats.tentativeTotal)}
                   </td>
-                  <td className="py-3.5 px-3 text-right border-r border-slate-200 bg-rose-100 text-rose-900 font-mono font-bold">
+                  <td className="py-3.5 px-3 text-right border-r border-slate-200/60 bg-rose-50/80 text-rose-900 font-mono font-bold">
                     {formatCurrency(stats.cancelTotal)}
                   </td>
                   
