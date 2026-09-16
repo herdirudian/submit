@@ -412,10 +412,13 @@ export default function ForecastModal({
         remarks: formData.remarks || null,
       };
 
-      if (initialData?.id) {
-        await updateForecastItem(initialData.id, payload);
-      } else {
-        await createForecastItem(payload);
+      const res = initialData?.id
+        ? await updateForecastItem(initialData.id, payload)
+        : await createForecastItem(payload);
+
+      if (!res || !res.success) {
+        setError(res?.error || "Gagal menyimpan data forecast");
+        return;
       }
 
       onSuccess();

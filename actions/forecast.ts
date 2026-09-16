@@ -179,153 +179,167 @@ export async function createForecastItem(data: {
   reasonForLossHold?: string | null;
   finalDealValue?: number;
 }) {
-  const session = await getServerSession(authOptions);
-  if (!session || !session.user) throw new Error("Unauthorized");
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+      return { success: false, error: "Unauthorized: Session login telah berakhir." };
+    }
 
-  const rate = Number(data.rate || 0);
-  const pax = Number(data.pax || 0);
-  const total = data.total !== undefined && data.total !== null ? Number(data.total) : rate * pax;
+    const rate = Number(data.rate || 0);
+    const pax = Number(data.pax || 0);
+    const total = data.total !== undefined && data.total !== null ? Number(data.total) : rate * pax;
 
-  // Auto probability based on leadStatus
-  const lStatus = data.leadStatus || "New Lead";
-  const prob = data.closingProbability !== undefined && data.closingProbability !== null
-    ? Number(data.closingProbability)
-    : LEAD_STATUS_PROBABILITIES[lStatus] ?? 10;
+    // Auto probability based on leadStatus
+    const lStatus = data.leadStatus || "New Lead";
+    const prob = data.closingProbability !== undefined && data.closingProbability !== null
+      ? Number(data.closingProbability)
+      : LEAD_STATUS_PROBABILITIES[lStatus] ?? 10;
 
-  // Sync main status (CONFIRM, TENTATIVE, CANCEL) based on leadStatus
-  let mainStatus: ForecastStatusType = data.status || "TENTATIVE";
-  if (lStatus === "Confirmed / Deal") {
-    mainStatus = "CONFIRM";
-  } else if (lStatus === "Lost / Cancelled") {
-    mainStatus = "CANCEL";
-  } else {
-    mainStatus = "TENTATIVE";
+    // Sync main status (CONFIRM, TENTATIVE, CANCEL) based on leadStatus
+    let mainStatus: ForecastStatusType = data.status || "TENTATIVE";
+    if (lStatus === "Confirmed / Deal") {
+      mainStatus = "CONFIRM";
+    } else if (lStatus === "Lost / Cancelled") {
+      mainStatus = "CANCEL";
+    } else {
+      mainStatus = "TENTATIVE";
+    }
+
+    const dateReceivedVal = safeDate(data.dateReceived) || new Date();
+    const proposedEventDateVal = safeDate(data.proposedEventDate) || safeDate(data.eventDate) || safeDate(data.checkIn);
+    const eventDateVal = safeDate(data.eventDate) || proposedEventDateVal;
+
+    const item = await prisma.forecastItem.create({
+      data: {
+        unit: (data.unit === "PARK" ? "PARK" : "CAMP_VILLAGE") as any,
+        company: data.company,
+        dateReceived: dateReceivedVal,
+        contactPerson: data.contactPerson || null,
+        phoneEmail: data.phoneEmail || null,
+        leadSource: data.leadSource || data.source || null,
+        segment: data.segment || null,
+        eventType: data.eventType || null,
+        proposedEventDate: proposedEventDateVal,
+        pax,
+        room: data.room || null,
+        rate,
+        total,
+        salesPerson: data.salesPerson || data.pic || null,
+        reservationDate: safeDate(data.reservationDate) || dateReceivedVal,
+        checkIn: safeDate(data.checkIn) || proposedEventDateVal,
+        checkOut: safeDate(data.checkOut),
+        eventDate: eventDateVal,
+        venue: data.venue || null,
+        dpStatus: data.dpStatus || "BELUM_DP",
+        dpAmount: Number(data.dpAmount || 0),
+        dueDate: safeDate(data.dueDate),
+        pic: data.pic || data.salesPerson || null,
+        picPhone: data.picPhone || null,
+        status: mainStatus,
+        remarks: data.remarks || null,
+        source: data.source || data.leadSource || null,
+        firstResponseDate: safeDate(data.firstResponseDate),
+        lastFollowUpDate: safeDate(data.lastFollowUpDate),
+        latestClientResponse: data.latestClientResponse || null,
+        nextAction: data.nextAction || null,
+        nextActionDueDate: safeDate(data.nextActionDueDate),
+        leadStatus: lStatus,
+        closingProbability: prob,
+        expectedClosingMonth: safeDate(data.expectedClosingMonth),
+        reasonForLossHold: data.reasonForLossHold || null,
+        finalDealValue: data.finalDealValue !== undefined ? Number(data.finalDealValue) : lStatus === "Confirmed / Deal" ? total : 0,
+      },
+    });
+
+    revalidatePath("/forecast");
+    return { success: true, item: JSON.parse(JSON.stringify(item)) };
+  } catch (err: any) {
+    console.error("Error createForecastItem:", err);
+    return { success: false, error: err?.message || "Gagal menyimpan data forecast." };
   }
-
-  const dateReceivedVal = safeDate(data.dateReceived) || new Date();
-  const proposedEventDateVal = safeDate(data.proposedEventDate) || safeDate(data.eventDate) || safeDate(data.checkIn);
-  const eventDateVal = safeDate(data.eventDate) || proposedEventDateVal;
-
-  const item = await prisma.forecastItem.create({
-    data: {
-      unit: (data.unit === "PARK" ? "PARK" : "CAMP_VILLAGE") as any,
-      company: data.company,
-      dateReceived: dateReceivedVal,
-      contactPerson: data.contactPerson || null,
-      phoneEmail: data.phoneEmail || null,
-      leadSource: data.leadSource || data.source || null,
-      segment: data.segment || null,
-      eventType: data.eventType || null,
-      proposedEventDate: proposedEventDateVal,
-      pax,
-      room: data.room || null,
-      rate,
-      total,
-      salesPerson: data.salesPerson || data.pic || null,
-      reservationDate: safeDate(data.reservationDate) || dateReceivedVal,
-      checkIn: safeDate(data.checkIn) || proposedEventDateVal,
-      checkOut: safeDate(data.checkOut),
-      eventDate: eventDateVal,
-      venue: data.venue || null,
-      dpStatus: data.dpStatus || "BELUM_DP",
-      dpAmount: Number(data.dpAmount || 0),
-      dueDate: safeDate(data.dueDate),
-      pic: data.pic || data.salesPerson || null,
-      picPhone: data.picPhone || null,
-      status: mainStatus,
-      remarks: data.remarks || null,
-      source: data.source || data.leadSource || null,
-      firstResponseDate: safeDate(data.firstResponseDate),
-      lastFollowUpDate: safeDate(data.lastFollowUpDate),
-      latestClientResponse: data.latestClientResponse || null,
-      nextAction: data.nextAction || null,
-      nextActionDueDate: safeDate(data.nextActionDueDate),
-      leadStatus: lStatus,
-      closingProbability: prob,
-      expectedClosingMonth: safeDate(data.expectedClosingMonth),
-      reasonForLossHold: data.reasonForLossHold || null,
-      finalDealValue: data.finalDealValue !== undefined ? Number(data.finalDealValue) : lStatus === "Confirmed / Deal" ? total : 0,
-    },
-  });
-
-  revalidatePath("/forecast");
-  return JSON.parse(JSON.stringify(item));
 }
 
 export async function updateForecastItem(
   id: string,
   data: Partial<Parameters<typeof createForecastItem>[0]> & { unit?: ForecastUnitType }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session || !session.user) throw new Error("Unauthorized");
-
-  const updateData: any = {};
-
-  if (data.company !== undefined) updateData.company = data.company;
-  if (data.contactPerson !== undefined) updateData.contactPerson = data.contactPerson;
-  if (data.phoneEmail !== undefined) updateData.phoneEmail = data.phoneEmail;
-  if (data.leadSource !== undefined) updateData.leadSource = data.leadSource;
-  if (data.segment !== undefined) updateData.segment = data.segment;
-  if (data.eventType !== undefined) updateData.eventType = data.eventType;
-  if (data.room !== undefined) updateData.room = data.room;
-  if (data.venue !== undefined) updateData.venue = data.venue;
-  if (data.salesPerson !== undefined) updateData.salesPerson = data.salesPerson;
-  if (data.pic !== undefined) updateData.pic = data.pic;
-  if (data.picPhone !== undefined) updateData.picPhone = data.picPhone;
-  if (data.remarks !== undefined) updateData.remarks = data.remarks;
-  if (data.source !== undefined) updateData.source = data.source;
-  if (data.latestClientResponse !== undefined) updateData.latestClientResponse = data.latestClientResponse;
-  if (data.nextAction !== undefined) updateData.nextAction = data.nextAction;
-  if (data.reasonForLossHold !== undefined) updateData.reasonForLossHold = data.reasonForLossHold;
-  if (data.dpStatus !== undefined) updateData.dpStatus = data.dpStatus;
-
-  if (data.dateReceived !== undefined) updateData.dateReceived = safeDate(data.dateReceived);
-  if (data.proposedEventDate !== undefined) updateData.proposedEventDate = safeDate(data.proposedEventDate);
-  if (data.reservationDate !== undefined) updateData.reservationDate = safeDate(data.reservationDate);
-  if (data.checkIn !== undefined) updateData.checkIn = safeDate(data.checkIn);
-  if (data.checkOut !== undefined) updateData.checkOut = safeDate(data.checkOut);
-  if (data.eventDate !== undefined) updateData.eventDate = safeDate(data.eventDate);
-  if (data.dueDate !== undefined) updateData.dueDate = safeDate(data.dueDate);
-  if (data.firstResponseDate !== undefined) updateData.firstResponseDate = safeDate(data.firstResponseDate);
-  if (data.lastFollowUpDate !== undefined) updateData.lastFollowUpDate = safeDate(data.lastFollowUpDate);
-  if (data.nextActionDueDate !== undefined) updateData.nextActionDueDate = safeDate(data.nextActionDueDate);
-  if (data.expectedClosingMonth !== undefined) updateData.expectedClosingMonth = safeDate(data.expectedClosingMonth);
-
-  if (data.dpAmount !== undefined) updateData.dpAmount = Number(data.dpAmount || 0);
-  if (data.pax !== undefined) updateData.pax = Number(data.pax || 0);
-  if (data.rate !== undefined) updateData.rate = Number(data.rate || 0);
-
-  if (data.rate !== undefined || data.pax !== undefined || data.total !== undefined) {
-    const rate = Number(data.rate ?? 0);
-    const pax = Number(data.pax ?? 0);
-    updateData.total = data.total !== undefined && data.total !== null ? Number(data.total) : rate * pax;
-  }
-
-  if (data.leadStatus !== undefined) {
-    const lStatus = data.leadStatus;
-    updateData.leadStatus = lStatus;
-    if (data.closingProbability === undefined) {
-      updateData.closingProbability = lStatus ? (LEAD_STATUS_PROBABILITIES[lStatus] ?? 10) : 10;
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+      return { success: false, error: "Unauthorized: Session login telah berakhir." };
     }
-    if (lStatus === "Confirmed / Deal") {
-      updateData.status = "CONFIRM";
-    } else if (lStatus === "Lost / Cancelled") {
-      updateData.status = "CANCEL";
-    } else {
-      updateData.status = "TENTATIVE";
+
+    const updateData: any = {};
+
+    if (data.company !== undefined) updateData.company = data.company;
+    if (data.contactPerson !== undefined) updateData.contactPerson = data.contactPerson;
+    if (data.phoneEmail !== undefined) updateData.phoneEmail = data.phoneEmail;
+    if (data.leadSource !== undefined) updateData.leadSource = data.leadSource;
+    if (data.segment !== undefined) updateData.segment = data.segment;
+    if (data.eventType !== undefined) updateData.eventType = data.eventType;
+    if (data.room !== undefined) updateData.room = data.room;
+    if (data.venue !== undefined) updateData.venue = data.venue;
+    if (data.salesPerson !== undefined) updateData.salesPerson = data.salesPerson;
+    if (data.pic !== undefined) updateData.pic = data.pic;
+    if (data.picPhone !== undefined) updateData.picPhone = data.picPhone;
+    if (data.remarks !== undefined) updateData.remarks = data.remarks;
+    if (data.source !== undefined) updateData.source = data.source;
+    if (data.latestClientResponse !== undefined) updateData.latestClientResponse = data.latestClientResponse;
+    if (data.nextAction !== undefined) updateData.nextAction = data.nextAction;
+    if (data.reasonForLossHold !== undefined) updateData.reasonForLossHold = data.reasonForLossHold;
+    if (data.dpStatus !== undefined) updateData.dpStatus = data.dpStatus;
+
+    if (data.dateReceived !== undefined) updateData.dateReceived = safeDate(data.dateReceived);
+    if (data.proposedEventDate !== undefined) updateData.proposedEventDate = safeDate(data.proposedEventDate);
+    if (data.reservationDate !== undefined) updateData.reservationDate = safeDate(data.reservationDate);
+    if (data.checkIn !== undefined) updateData.checkIn = safeDate(data.checkIn);
+    if (data.checkOut !== undefined) updateData.checkOut = safeDate(data.checkOut);
+    if (data.eventDate !== undefined) updateData.eventDate = safeDate(data.eventDate);
+    if (data.dueDate !== undefined) updateData.dueDate = safeDate(data.dueDate);
+    if (data.firstResponseDate !== undefined) updateData.firstResponseDate = safeDate(data.firstResponseDate);
+    if (data.lastFollowUpDate !== undefined) updateData.lastFollowUpDate = safeDate(data.lastFollowUpDate);
+    if (data.nextActionDueDate !== undefined) updateData.nextActionDueDate = safeDate(data.nextActionDueDate);
+    if (data.expectedClosingMonth !== undefined) updateData.expectedClosingMonth = safeDate(data.expectedClosingMonth);
+
+    if (data.dpAmount !== undefined) updateData.dpAmount = Number(data.dpAmount || 0);
+    if (data.pax !== undefined) updateData.pax = Number(data.pax || 0);
+    if (data.rate !== undefined) updateData.rate = Number(data.rate || 0);
+
+    if (data.rate !== undefined || data.pax !== undefined || data.total !== undefined) {
+      const rate = Number(data.rate ?? 0);
+      const pax = Number(data.pax ?? 0);
+      updateData.total = data.total !== undefined && data.total !== null ? Number(data.total) : rate * pax;
     }
+
+    if (data.leadStatus !== undefined) {
+      const lStatus = data.leadStatus;
+      updateData.leadStatus = lStatus;
+      if (data.closingProbability === undefined) {
+        updateData.closingProbability = lStatus ? (LEAD_STATUS_PROBABILITIES[lStatus] ?? 10) : 10;
+      }
+      if (lStatus === "Confirmed / Deal") {
+        updateData.status = "CONFIRM";
+      } else if (lStatus === "Lost / Cancelled") {
+        updateData.status = "CANCEL";
+      } else {
+        updateData.status = "TENTATIVE";
+      }
+    }
+
+    if (data.closingProbability !== undefined) updateData.closingProbability = Number(data.closingProbability);
+    if (data.finalDealValue !== undefined) updateData.finalDealValue = Number(data.finalDealValue);
+
+    const item = await prisma.forecastItem.update({
+      where: { id },
+      data: updateData,
+    });
+
+    revalidatePath("/forecast");
+    return { success: true, item: JSON.parse(JSON.stringify(item)) };
+  } catch (err: any) {
+    console.error("Error updateForecastItem:", err);
+    return { success: false, error: err?.message || "Gagal memperbarui data forecast." };
   }
-
-  if (data.closingProbability !== undefined) updateData.closingProbability = Number(data.closingProbability);
-  if (data.finalDealValue !== undefined) updateData.finalDealValue = Number(data.finalDealValue);
-
-  const item = await prisma.forecastItem.update({
-    where: { id },
-    data: updateData,
-  });
-
-  revalidatePath("/forecast");
-  return JSON.parse(JSON.stringify(item));
 }
 
 export async function deleteForecastItem(id: string) {
