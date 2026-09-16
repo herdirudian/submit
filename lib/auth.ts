@@ -96,6 +96,7 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           image: user.image,
           role: user.role,
+          permissions: user.permissions,
         };
       },
     }),
@@ -113,17 +114,19 @@ export const authOptions: NextAuthOptions = {
       if (session.user && token.sub) {
         (session.user as any).id = token.sub;
         (session.user as any).role = token.role;
+        (session.user as any).permissions = token.permissions ? (typeof token.permissions === "string" ? JSON.parse(token.permissions) : token.permissions) : null;
       }
       if (session.user && token.sub) {
         const user = await prisma.user.findUnique({
           where: { id: token.sub },
-          select: { name: true, email: true, image: true, role: true },
+          select: { name: true, email: true, image: true, role: true, permissions: true },
         });
         if (user) {
           session.user.name = user.name;
           session.user.email = user.email;
           session.user.image = user.image;
           (session.user as any).role = user.role;
+          (session.user as any).permissions = user.permissions ? JSON.parse(user.permissions) : null;
         }
       }
       return session;
@@ -135,6 +138,7 @@ export const authOptions: NextAuthOptions = {
         token.email = user.email;
         token.picture = (user as any).image ?? null;
         token.role = (user as any).role;
+        token.permissions = (user as any).permissions;
       }
       return token;
     },

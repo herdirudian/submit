@@ -13,6 +13,8 @@ import { signOut, useSession } from "next-auth/react";
 import NotificationDropdown from "@/components/NotificationDropdown";
 import { usePathname } from "next/navigation";
 
+import { isFeatureAllowed } from "@/lib/permissions";
+
 export default function AdminLayout({
   children,
 }: {
@@ -26,6 +28,7 @@ export default function AdminLayout({
   React.useEffect(() => {
     setIsSidebarOpen(false);
   }, [pathname]);
+
   const getActiveKey = (path: string) => {
     if (path === "/dashboard" || path.startsWith("/dashboard/")) return "dashboard";
     if (path === "/forms" || path.startsWith("/forms/") || path.startsWith("/builder/")) return "forms";
@@ -52,27 +55,30 @@ export default function AdminLayout({
   const activeKey = getActiveKey(pathname);
 
   const sidebarLinks = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, id: 'dashboard', roles: ['ADMIN'] },
-    { name: 'My Forms', href: '/forms', icon: FileText, id: 'forms', roles: ['ADMIN'] },
-    { name: 'Responses', href: '/responses', icon: Inbox, id: 'responses', roles: ['ADMIN'] },
-    { name: 'Analytics', href: '/analytics', icon: BarChart3, id: 'analytics', roles: ['ADMIN'] },
-    { name: 'Polling', href: '/polls', icon: PieChart, id: 'polls', roles: ['ADMIN'] },
-    { name: 'Forecast', href: '/forecast', icon: TrendingUp, id: 'forecast', roles: ['ADMIN'] },
-    { name: 'Users', href: '/users', icon: Users, id: 'users', roles: ['ADMIN'] },
-    { name: 'Blast Email', href: '/blast-email', icon: Mail, id: 'blast-email', roles: ['ADMIN'] },
-    { name: 'Blast WA', href: '/blast-wa', icon: MessageCircle, id: 'blast-wa', roles: ['ADMIN'] },
-    { name: 'Contacts', href: '/contacts', icon: Contact2, id: 'contacts', roles: ['ADMIN', 'CASHIER'] },
-    { name: 'WA CRM', href: '/whatsapp', icon: MessageSquare, id: 'whatsapp', roles: ['ADMIN'] },
-    { name: 'Analitik WA', href: '/whatsapp/analytics', icon: BarChart3, id: 'wa-analytics', roles: ['ADMIN'] },
-    { name: 'Balasan Cepat', href: '/whatsapp/quick-replies', icon: Hash, id: 'quick-replies', roles: ['ADMIN'] },
-    { name: 'Chatbot FAQ', href: '/whatsapp/chatbot', icon: MessageSquare, id: 'wa-chatbot', roles: ['ADMIN'] },
-    { name: 'Template WA', href: '/whatsapp/templates', icon: FileText, id: 'wa-templates', roles: ['ADMIN'] },
-    { name: 'Campaigns', href: '/campaigns', icon: Megaphone, id: 'campaigns', roles: ['ADMIN'] },
-    { name: 'Histori Email', href: '/campaigns/logs', icon: History, id: 'email-logs', roles: ['ADMIN'] },
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, id: 'dashboard' },
+    { name: 'My Forms', href: '/forms', icon: FileText, id: 'forms' },
+    { name: 'Responses', href: '/responses', icon: Inbox, id: 'responses' },
+    { name: 'Analytics', href: '/analytics', icon: BarChart3, id: 'analytics' },
+    { name: 'Polling', href: '/polls', icon: PieChart, id: 'polls' },
+    { name: 'Forecast', href: '/forecast', icon: TrendingUp, id: 'forecast' },
+    { name: 'Users', href: '/users', icon: Users, id: 'users' },
+    { name: 'Blast Email', href: '/blast-email', icon: Mail, id: 'blast-email' },
+    { name: 'Blast WA', href: '/blast-wa', icon: MessageCircle, id: 'blast-wa' },
+    { name: 'Contacts', href: '/contacts', icon: Contact2, id: 'contacts' },
+    { name: 'WA CRM', href: '/whatsapp', icon: MessageSquare, id: 'whatsapp' },
+    { name: 'Analitik WA', href: '/whatsapp/analytics', icon: BarChart3, id: 'wa-analytics' },
+    { name: 'Balasan Cepat', href: '/whatsapp/quick-replies', icon: Hash, id: 'quick-replies' },
+    { name: 'Chatbot FAQ', href: '/whatsapp/chatbot', icon: MessageSquare, id: 'wa-chatbot' },
+    { name: 'Template WA', href: '/whatsapp/templates', icon: FileText, id: 'wa-templates' },
+    { name: 'Campaigns', href: '/campaigns', icon: Megaphone, id: 'campaigns' },
+    { name: 'Histori Email', href: '/campaigns/logs', icon: History, id: 'email-logs' },
   ];
 
-  const filteredLinks = sidebarLinks.filter(item => 
-    !item.roles || item.roles.includes((session?.user as any)?.role || 'ADMIN')
+  const userRole = (session?.user as any)?.role || "ADMIN";
+  const userPermissions = (session?.user as any)?.permissions || null;
+
+  const filteredLinks = sidebarLinks.filter((item) =>
+    isFeatureAllowed(item.id, userRole, userPermissions)
   );
 
   const navItemClassName = (key: string) =>

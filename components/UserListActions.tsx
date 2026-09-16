@@ -8,11 +8,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 
+import { ALL_SYSTEM_FEATURES, DEFAULT_ROLE_PERMISSIONS } from "@/lib/permissions";
+
 const editUserSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters").optional().or(z.literal("")),
-  role: z.enum(["ADMIN", "CASHIER"]),
+  role: z.enum(["ADMIN", "CASHIER", "SALES", "CUSTOM"]),
 });
 
 type EditUserValues = z.infer<typeof editUserSchema>;
@@ -21,11 +23,26 @@ export default function UserListActions({ user }: { user: any }) {
     const [isDeleting, setIsDeleting] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
 
+    // Initial permissions
+    const parseInitPerms = (): string[] => {
+      if (!user.permissions) {
+        return DEFAULT_ROLE_PERMISSIONS[user.role] || [];
+      }
+      try {
+        return typeof user.permissions === "string" ? JSON.parse(user.permissions) : user.permissions;
+      } catch (e) {
+        return [];
+      }
+    };
+
+    const [selectedPermissions, setSelectedPermissions] = useState<string[]>(parseInitPerms());
+
     const {
         register,
         handleSubmit,
+        setValue,
+        watch,
         formState: { errors, isSubmitting },
-        reset,
     } = useForm<EditUserValues>({
         resolver: zodResolver(editUserSchema),
         defaultValues: {
@@ -35,9 +52,33 @@ export default function UserListActions({ user }: { user: any }) {
         }
     });
 
+    const selectedRole = watch("role");
+
+    const handleRoleChange = (role: "ADMIN" | "CASHIER" | "SALES" | "CUSTOM") => {
+      setValue("role", role);
+      if (role === "ADMIN") {
+        setSelectedPermissions(ALL_SYSTEM_FEATURES.map((f) => f.id));
+      } else if (role === "SALES") {
+        setSelectedPermissions(["forecast"]);
+      } else if (role === "CASHIER") {
+        setSelectedPermissions(["contacts"]);
+      }
+    };
+
+    const togglePermission = (featureId: string) => {
+      if (selectedPermissions.includes(featureId)) {
+        setSelectedPermissions(selectedPermissions.filter((id) => id !== featureId));
+      } else {
+        setSelectedPermissions([...selectedPermissions, featureId]);
+      }
+    };
+
     const onEditSubmit = async (data: EditUserValues) => {
         try {
-            await updateUser(user.id, data);
+            await updateUser(user.id, {
+              ...data,
+              permissions: selectedPermissions,
+            });
             toast.success("User updated successfully");
             setIsEditOpen(false);
         } catch (error: unknown) {
@@ -59,6 +100,8 @@ export default function UserListActions({ user }: { user: any }) {
         }
     };
 
+    const categories = ["Utama", "CRM & Messaging", "Sistem"] as const;
+
     return (
         <div className="flex justify-end gap-2">
             <button 
@@ -79,9 +122,12 @@ export default function UserListActions({ user }: { user: any }) {
 
             {isEditOpen && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200 text-left">
-                    <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
-                        <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-                            <h2 className="text-xl font-bold text-slate-800">Edit User</h2>
+                    <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl scale-100 animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col overflow-hidden">
+                        <div className="p-6 border-b border-slate-100 flex justify-between items-center shrink-0">
+                            <div>
+                              <h2 className="text-xl font-bold text-slate-800">Edit User Permissions</h2>
+                              <p className="text-xs text-slate-500 mt-0.5">Edit profil dan atur hak akses fitur user.</p>
+                            </div>
                             <button 
                                 onClick={() => setIsEditOpen(false)}
                                 className="text-slate-400 hover:text-slate-600 transition-colors"
@@ -90,76 +136,138 @@ export default function UserListActions({ user }: { user: any }) {
                             </button>
                         </div>
                         
-                        <form onSubmit={handleSubmit(onEditSubmit)} className="p-6 space-y-4">
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-1">Full Name</label>
-                                <div className="relative">
-                                    <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                    <input
-                                    {...register("name")}
-                                    type="text"
-                                    className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 outline-none transition-all"
-                                    placeholder="John Doe"
-                                    />
-                                </div>
-                                {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
+                        <form onSubmit={handleSubmit(onEditSubmit)} className="p-6 space-y-5 overflow-y-auto flex-1">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                  <label className="block text-sm font-semibold text-slate-700 mb-1">Full Name</label>
+                                  <div className="relative">
+                                      <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                      <input
+                                      {...register("name")}
+                                      type="text"
+                                      className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 outline-none transition-all text-sm"
+                                      placeholder="Nama Lengkap"
+                                      />
+                                  </div>
+                                  {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
+                              </div>
+
+                              <div>
+                                  <label className="block text-sm font-semibold text-slate-700 mb-1">Email Address</label>
+                                  <div className="relative">
+                                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                      <input
+                                      {...register("email")}
+                                      type="email"
+                                      className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 outline-none transition-all text-sm"
+                                      placeholder="email@example.com"
+                                      />
+                                  </div>
+                                  {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
+                              </div>
+
+                              <div>
+                                  <label className="block text-sm font-semibold text-slate-700 mb-1">Role</label>
+                                  <div className="relative">
+                                      <Shield className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                      <select
+                                      value={selectedRole}
+                                      onChange={(e) => handleRoleChange(e.target.value as any)}
+                                      className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 outline-none transition-all appearance-none bg-white text-sm font-medium"
+                                      >
+                                          <option value="ADMIN">Admin (Akses Penuh Semua Fitur)</option>
+                                          <option value="SALES">Sales (Khusus Forecast Reservasi)</option>
+                                          <option value="CASHIER">Cashier (Khusus Contacts CRM)</option>
+                                          <option value="CUSTOM">Role Custom (Pilih Checklist Fitur)</option>
+                                      </select>
+                                  </div>
+                                  {errors.role && <p className="text-red-500 text-xs mt-1">{errors.role.message}</p>}
+                              </div>
+
+                              <div>
+                                  <label className="block text-sm font-semibold text-slate-700 mb-1">Password (Kosongkan jika tidak diubah)</label>
+                                  <div className="relative">
+                                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                      <input
+                                      {...register("password")}
+                                      type="password"
+                                      className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 outline-none transition-all text-sm"
+                                      placeholder="••••••••"
+                                      />
+                                  </div>
+                                  {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
+                              </div>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-1">Email Address</label>
-                                <div className="relative">
-                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                    <input
-                                    {...register("email")}
-                                    type="email"
-                                    className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 outline-none transition-all"
-                                    placeholder="john@example.com"
-                                    />
+                            {/* Granular Permission Checklist Section */}
+                            <div className="pt-2 border-t border-slate-100">
+                              <div className="flex items-center justify-between mb-3">
+                                <div>
+                                  <h3 className="text-sm font-bold text-slate-800">Checklist Fitur & Hak Akses User</h3>
+                                  <p className="text-xs text-slate-500">
+                                    {selectedRole === "CUSTOM"
+                                      ? "Pilih modul/fitur yang dapat diakses oleh user ini."
+                                      : `Otomatis diset untuk role ${selectedRole}. Pilih "Role Custom" untuk kustomisasi.`}
+                                  </p>
                                 </div>
-                                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
+                                <span className="text-xs font-bold text-primary-700 bg-primary-50 px-2.5 py-1 rounded-full border border-primary-100">
+                                  {selectedPermissions.length} Fitur Terpilih
+                                </span>
+                              </div>
+
+                              <div className="space-y-4">
+                                {categories.map((cat) => {
+                                  const catFeatures = ALL_SYSTEM_FEATURES.filter((f) => f.category === cat);
+                                  return (
+                                    <div key={cat} className="bg-slate-50/80 p-3 rounded-xl border border-slate-200/70">
+                                      <h4 className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+                                        {cat}
+                                      </h4>
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        {catFeatures.map((feature) => {
+                                          const isChecked = selectedPermissions.includes(feature.id);
+                                          return (
+                                            <label
+                                              key={feature.id}
+                                              className={`flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-all ${
+                                                isChecked
+                                                  ? "bg-white border-primary-500/60 shadow-2xs text-slate-800"
+                                                  : "bg-white/50 border-slate-200/60 text-slate-500 hover:bg-white"
+                                              }`}
+                                            >
+                                              <input
+                                                type="checkbox"
+                                                checked={isChecked}
+                                                disabled={selectedRole !== "CUSTOM" && selectedRole !== "ADMIN"}
+                                                onChange={() => togglePermission(feature.id)}
+                                                className="mt-0.5 rounded text-primary-600 focus:ring-primary-500"
+                                              />
+                                              <div>
+                                                <span className="text-xs font-bold block leading-tight">{feature.name}</span>
+                                                <span className="text-[10px] text-slate-400 block mt-0.5">{feature.description}</span>
+                                              </div>
+                                            </label>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-1">Role</label>
-                                <div className="relative">
-                                    <Shield className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                    <select
-                                    {...register("role")}
-                                    className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 outline-none transition-all appearance-none bg-white"
-                                    >
-                                        <option value="ADMIN">Admin (Full Access)</option>
-                                        <option value="CASHIER">Cashier (Contact Only)</option>
-                                    </select>
-                                </div>
-                                {errors.role && <p className="text-red-500 text-xs mt-1">{errors.role.message}</p>}
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-1">Password (Leave blank to keep current)</label>
-                                <div className="relative">
-                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                    <input
-                                    {...register("password")}
-                                    type="password"
-                                    className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 outline-none transition-all"
-                                    placeholder="••••••••"
-                                    />
-                                </div>
-                                {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
-                            </div>
-
-                            <div className="pt-4 flex gap-3">
+                            <div className="pt-4 border-t border-slate-100 flex gap-3 shrink-0">
                                 <button
                                     type="button"
                                     onClick={() => setIsEditOpen(false)}
-                                    className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition-colors"
+                                    className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition-colors text-sm"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="flex-1 py-2.5 rounded-xl bg-primary-600 text-white font-semibold hover:bg-primary-700 transition-colors shadow-lg shadow-primary-600/20 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                                    className="flex-1 py-2.5 rounded-xl bg-primary-600 text-white font-semibold hover:bg-primary-700 transition-colors shadow-lg shadow-primary-600/20 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed text-sm"
                                 >
                                     {isSubmitting ? (
                                         <>

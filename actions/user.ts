@@ -6,6 +6,8 @@ import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
+export type UserRoleType = "ADMIN" | "CASHIER" | "SALES" | "CUSTOM";
+
 export async function getUsers() {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -18,6 +20,7 @@ export async function getUsers() {
             name: true,
             email: true,
             role: true,
+            permissions: true,
             image: true,
             createdAt: true,
             updatedAt: true
@@ -26,7 +29,7 @@ export async function getUsers() {
     });
 }
 
-export async function createUser(data: { name: string; email: string; password: string; role?: "ADMIN" | "CASHIER" }) {
+export async function createUser(data: { name: string; email: string; password: string; role?: UserRoleType; permissions?: string[] | string }) {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
         throw new Error("Unauthorized");
@@ -42,13 +45,17 @@ export async function createUser(data: { name: string; email: string; password: 
     }
 
     const hashedPassword = await bcrypt.hash(data.password, 10);
+    const permString = Array.isArray(data.permissions)
+        ? JSON.stringify(data.permissions)
+        : data.permissions || null;
 
     const user = await prisma.user.create({
         data: {
             name: data.name,
             email: data.email,
             password: hashedPassword,
-            role: data.role || "ADMIN"
+            role: data.role || "ADMIN",
+            permissions: permString,
         }
     });
 
@@ -56,17 +63,27 @@ export async function createUser(data: { name: string; email: string; password: 
     return user;
 }
 
-export async function updateUser(id: string, data: { name?: string; email?: string; password?: string; role?: "ADMIN" | "CASHIER" }) {
+export async function updateUser(id: string, data: { name?: string; email?: string; password?: string; role?: UserRoleType; permissions?: string[] | string }) {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
         throw new Error("Unauthorized");
     }
+
+    const permString = Array.isArray(data.permissions)
+        ? JSON.stringify(data.permissions)
+        : data.permissions !== undefined
+        ? data.permissions
+        : undefined;
 
     const updateData: any = {
         name: data.name,
         email: data.email,
         role: data.role
     };
+
+    if (permString !== undefined) {
+        updateData.permissions = permString;
+    }
 
     if (data.password) {
         updateData.password = await bcrypt.hash(data.password, 10);
@@ -94,6 +111,7 @@ export async function getUserById(id: string) {
             name: true,
             email: true,
             role: true,
+            permissions: true,
             image: true
         }
     });

@@ -18,6 +18,7 @@ model User {
   email         String    @unique
   password      String?   // Hashed password
   role          UserRole  @default(ADMIN)
+  permissions   String?   @db.Text // JSON array of allowed feature IDs
   emailVerified DateTime?
   image         String?
   createdAt     DateTime  @default(now())
@@ -39,6 +40,8 @@ model User {
 enum UserRole {
   ADMIN
   CASHIER
+  SALES
+  CUSTOM
 }
 
 model Account {

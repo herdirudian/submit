@@ -69,10 +69,27 @@ export default async function UsersPage() {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-full w-fit">
-                                                <Shield size={12} />
-                                                {user.role === "CASHIER" ? "Cashier" : "Admin"}
-                                            </div>
+                                            {user.role === "SALES" ? (
+                                                <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-2.5 py-1 rounded-full w-fit">
+                                                    <Shield size={12} />
+                                                    Sales (Forecast Only)
+                                                </div>
+                                            ) : user.role === "CUSTOM" ? (
+                                                <div className="flex items-center gap-1.5 text-xs font-bold text-purple-700 bg-purple-50 border border-purple-200/80 px-2.5 py-1 rounded-full w-fit">
+                                                    <Shield size={12} />
+                                                    Custom Role
+                                                </div>
+                                            ) : user.role === "CASHIER" ? (
+                                                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-full w-fit">
+                                                    <Shield size={12} />
+                                                    Cashier
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-full w-fit">
+                                                    <Shield size={12} />
+                                                    Super Admin
+                                                </div>
+                                            )}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span className="text-xs font-bold text-green-600 bg-green-50 px-2.5 py-1 rounded-full border border-green-100">
