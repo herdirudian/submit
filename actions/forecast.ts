@@ -86,7 +86,7 @@ export async function getForecastItems(params: {
     ],
   });
 
-  return items;
+  return JSON.parse(JSON.stringify(items));
 }
 
 export async function getSalesPics() {
@@ -249,7 +249,7 @@ export async function createForecastItem(data: {
   });
 
   revalidatePath("/forecast");
-  return item;
+  return JSON.parse(JSON.stringify(item));
 }
 
 export async function updateForecastItem(
@@ -325,7 +325,7 @@ export async function updateForecastItem(
   });
 
   revalidatePath("/forecast");
-  return item;
+  return JSON.parse(JSON.stringify(item));
 }
 
 export async function deleteForecastItem(id: string) {
@@ -437,7 +437,7 @@ export async function getForecastReminders(unit?: ForecastUnitType) {
     })
     .filter(Boolean);
 
-  return reminders.sort((a: any, b: any) => a.daysLeft - b.daysLeft);
+  return JSON.parse(JSON.stringify(reminders.sort((a: any, b: any) => a.daysLeft - b.daysLeft)));
 }
 
 export async function sendForecastWaReminderAction(data: {
@@ -582,7 +582,7 @@ export async function saveForecastTarget(data: {
   });
 
   revalidatePath("/forecast");
-  return target;
+  return JSON.parse(JSON.stringify(target));
 }
 
 export async function getForecastYearlyTrend(params: {
@@ -674,7 +674,7 @@ export async function getForecastYearlyTrend(params: {
     };
   });
 
-  return trendData;
+  return JSON.parse(JSON.stringify(trendData));
 }
 
 export async function getForecastAnalyticsSummary(params: {
@@ -685,8 +685,8 @@ export async function getForecastAnalyticsSummary(params: {
   const session = await getServerSession(authOptions);
   if (!session || !session.user) throw new Error("Unauthorized");
 
-  const trend = await getForecastYearlyTrend({ unit: params.unit, year: params.year });
-  const monthData = trend.find((t) => t.month === params.month) || {
+  const trend: any[] = await getForecastYearlyTrend({ unit: params.unit, year: params.year });
+  const monthData = trend.find((t: any) => t.month === params.month) || {
     confirmRevenue: 0,
     tentativeRevenue: 0,
     cancelRevenue: 0,
@@ -702,10 +702,10 @@ export async function getForecastAnalyticsSummary(params: {
     ? Math.round((monthData.confirmRevenue / monthData.targetRevenue) * 100)
     : 0;
 
-  return {
+  return JSON.parse(JSON.stringify({
     ...monthData,
     targetProgress,
-  };
+  }));
 }
 
 
