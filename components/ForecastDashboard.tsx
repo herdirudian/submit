@@ -393,7 +393,7 @@ export default function ForecastDashboard() {
   };
 
   return (
-    <div className="w-full space-y-6 pb-12 font-sans">
+    <div className="w-full max-w-[1500px] mx-auto space-y-6 pb-12 font-sans overflow-x-hidden">
       {/* Page Header (Agency Style) */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
@@ -413,7 +413,7 @@ export default function ForecastDashboard() {
         </div>
 
         {/* Action Header Buttons */}
-        <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto shrink-0">
           <button
             onClick={() => fetchData()}
             disabled={loading}
@@ -747,68 +747,68 @@ export default function ForecastDashboard() {
       </div>
 
       {/* Refined Modern Data Table */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs text-left border-collapse min-w-[1350px]">
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden max-w-full">
+        <div className="overflow-x-auto w-full custom-scrollbar">
+          <table className="w-full text-xs text-left border-collapse min-w-[1050px]">
             {/* Table Header */}
             <thead className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 text-[11px] uppercase tracking-wider">
               <tr>
-                <th className="py-3.5 px-3 border-r border-slate-200/60 text-center w-12 font-bold text-slate-400">No</th>
-                <th className="py-3.5 px-3 border-r border-slate-200/60 min-w-[180px]">Company</th>
-                <th className="py-3.5 px-3 border-r border-slate-200/60 min-w-[110px]">Reservation Date</th>
+                <th className="py-3 px-2.5 border-r border-slate-200/60 text-center w-10 font-bold text-slate-400">No</th>
+                <th className="py-3 px-2.5 border-r border-slate-200/60 min-w-[150px]">Company</th>
+                <th className="py-3 px-2.5 border-r border-slate-200/60 min-w-[95px]">Reservation Date</th>
                 {selectedUnit === "CAMP_VILLAGE" ? (
                   <>
-                    <th className="py-3.5 px-3 border-r border-slate-200/60 min-w-[100px]">Check In</th>
-                    <th className="py-3.5 px-3 border-r border-slate-200/60 min-w-[100px]">Check Out</th>
+                    <th className="py-3 px-2.5 border-r border-slate-200/60 min-w-[90px]">Check In</th>
+                    <th className="py-3 px-2.5 border-r border-slate-200/60 min-w-[90px]">Check Out</th>
                   </>
                 ) : (
-                  <th className="py-3.5 px-3 border-r border-slate-200/60 min-w-[100px]">Event Date</th>
+                  <th className="py-3 px-2.5 border-r border-slate-200/60 min-w-[95px]">Event Date</th>
                 )}
-                <th className="py-3.5 px-3 border-r border-slate-200/60 min-w-[120px]">Type of Event</th>
+                <th className="py-3 px-2.5 border-r border-slate-200/60 min-w-[110px]">Type of Event</th>
                 {selectedUnit === "PARK" && (
-                  <th className="py-3.5 px-3 border-r border-slate-200/60 min-w-[100px]">Venue</th>
+                  <th className="py-3 px-2.5 border-r border-slate-200/60 min-w-[90px]">Venue</th>
                 )}
-                <th className="py-3.5 px-3 border-r border-slate-200/60 text-center w-16">Pax</th>
+                <th className="py-3 px-2 text-center w-14">Pax</th>
                 {selectedUnit === "CAMP_VILLAGE" && (
-                  <th className="py-3.5 px-3 border-r border-slate-200/60 text-center w-20">Room</th>
+                  <th className="py-3 px-2 text-center w-16">Room</th>
                 )}
-                <th className="py-3.5 px-3 border-r border-slate-200/60 text-right min-w-[100px]">Rate (Rp)</th>
+                <th className="py-3 px-2.5 border-r border-slate-200/60 text-right min-w-[90px]">Rate (Rp)</th>
                 
                 {/* Modern Status Headers with Soft Tints */}
-                <th className="py-3.5 px-3 border-r border-slate-200/60 text-right bg-emerald-50/60 text-emerald-800 font-bold min-w-[120px]">
-                  <div className="flex items-center justify-end gap-1.5">
+                <th className="py-3 px-2.5 border-r border-slate-200/60 text-right bg-emerald-50/60 text-emerald-800 font-bold min-w-[110px]">
+                  <div className="flex items-center justify-end gap-1">
                     <span className="w-2 h-2 rounded-full bg-emerald-500" />
                     <span>Confirm (Rp)</span>
                   </div>
                 </th>
-                <th className="py-3.5 px-3 border-r border-slate-200/60 text-right bg-amber-50/60 text-amber-800 font-bold min-w-[120px]">
-                  <div className="flex items-center justify-end gap-1.5">
+                <th className="py-3 px-2.5 border-r border-slate-200/60 text-right bg-amber-50/60 text-amber-800 font-bold min-w-[110px]">
+                  <div className="flex items-center justify-end gap-1">
                     <span className="w-2 h-2 rounded-full bg-amber-500" />
                     <span>Tentative (Rp)</span>
                   </div>
                 </th>
-                <th className="py-3.5 px-3 border-r border-slate-200/60 text-right bg-rose-50/60 text-rose-800 font-bold min-w-[120px]">
-                  <div className="flex items-center justify-end gap-1.5">
+                <th className="py-3 px-2.5 border-r border-slate-200/60 text-right bg-rose-50/60 text-rose-800 font-bold min-w-[110px]">
+                  <div className="flex items-center justify-end gap-1">
                     <span className="w-2 h-2 rounded-full bg-rose-500" />
                     <span>Cancel (Rp)</span>
                   </div>
                 </th>
 
                 {/* Tracking DP & Due Date Headers */}
-                <th className="py-3.5 px-3 border-r border-slate-200/60 text-center min-w-[130px]">
+                <th className="py-3 px-2.5 border-r border-slate-200/60 text-center min-w-[120px]">
                   Status DP & Nominal
                 </th>
-                <th className="py-3.5 px-3 border-r border-slate-200/60 text-center min-w-[125px]">
+                <th className="py-3 px-2.5 border-r border-slate-200/60 text-center min-w-[115px]">
                   Jatuh Tempo Pelunasan
                 </th>
 
-                <th className="py-3.5 px-3 border-r border-slate-200/60 min-w-[90px]">PIC</th>
-                <th className="py-3.5 px-3 border-r border-slate-200/60 min-w-[140px]">Remarks</th>
+                <th className="py-3 px-2.5 border-r border-slate-200/60 min-w-[85px]">PIC</th>
+                <th className="py-3 px-2.5 border-r border-slate-200/60 min-w-[120px]">Remarks</th>
                 {selectedUnit === "PARK" && (
-                  <th className="py-3.5 px-3 border-r border-slate-200/60 min-w-[100px]">Segment</th>
+                  <th className="py-3 px-2.5 border-r border-slate-200/60 min-w-[90px]">Segment</th>
                 )}
-                <th className="py-3.5 px-3 border-r border-slate-200/60 min-w-[100px]">Source</th>
-                <th className="py-3.5 px-3 text-center min-w-[110px]">Aksi</th>
+                <th className="py-3 px-2.5 border-r border-slate-200/60 min-w-[90px]">Source</th>
+                <th className="py-3 px-2.5 text-center min-w-[100px]">Aksi</th>
               </tr>
             </thead>
 
