@@ -30,103 +30,114 @@ export async function getForecastItems(params: {
   dpStatus?: ForecastDpStatusType | "ALL";
   leadStatus?: string;
 }) {
-  const session = await getServerSession(authOptions);
-  if (!session || !session.user) throw new Error("Unauthorized");
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) return [];
 
-  const { unit, month, year, search, status, dpStatus, leadStatus } = params;
+    const { unit, month, year, search, status, dpStatus, leadStatus } = params;
 
-  // Build query
-  const where: any = {};
+    // Build query
+    const where: any = {};
 
-  if (unit && unit !== "ALL") {
-    where.unit = unit;
+    if (unit && unit !== "ALL") {
+      where.unit = unit;
+    }
+
+    if (status && status !== "ALL") {
+      where.status = status;
+    }
+
+    if (dpStatus && dpStatus !== "ALL") {
+      where.dpStatus = dpStatus;
+    }
+
+    if (leadStatus && leadStatus !== "ALL") {
+      where.leadStatus = leadStatus;
+    }
+
+    if (search && search.trim()) {
+      where.OR = [
+        { company: { contains: search.trim() } },
+        { contactPerson: { contains: search.trim() } },
+        { salesPerson: { contains: search.trim() } },
+        { pic: { contains: search.trim() } },
+      ];
+    }
+
+    if (month && year) {
+      const startDate = new Date(year, month - 1, 1);
+      const endDate = new Date(year, month, 0, 23, 59, 59, 999);
+
+      where.OR = [
+        { proposedEventDate: { gte: startDate, lte: endDate } },
+        { checkIn: { gte: startDate, lte: endDate } },
+        { eventDate: { gte: startDate, lte: endDate } },
+        { reservationDate: { gte: startDate, lte: endDate } },
+        { dateReceived: { gte: startDate, lte: endDate } },
+        { proposedEventDate: null, checkIn: null, eventDate: null },
+      ];
+    }
+
+    const items = await prisma.forecastItem.findMany({
+      where,
+      orderBy: [
+        { dateReceived: "desc" },
+        { proposedEventDate: "asc" },
+        { createdAt: "desc" },
+      ],
+    });
+
+    return JSON.parse(JSON.stringify(items));
+  } catch (err) {
+    console.error("Error getForecastItems:", err);
+    return [];
   }
-
-  if (status && status !== "ALL") {
-    where.status = status;
-  }
-
-  if (dpStatus && dpStatus !== "ALL") {
-    where.dpStatus = dpStatus;
-  }
-
-  if (leadStatus && leadStatus !== "ALL") {
-    where.leadStatus = leadStatus;
-  }
-
-  if (search && search.trim()) {
-    where.OR = [
-      { company: { contains: search.trim() } },
-      { contactPerson: { contains: search.trim() } },
-      { salesPerson: { contains: search.trim() } },
-      { pic: { contains: search.trim() } },
-    ];
-  }
-
-  if (month && year) {
-    const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 0, 23, 59, 59, 999);
-
-    where.OR = [
-      { proposedEventDate: { gte: startDate, lte: endDate } },
-      { checkIn: { gte: startDate, lte: endDate } },
-      { eventDate: { gte: startDate, lte: endDate } },
-      { reservationDate: { gte: startDate, lte: endDate } },
-      { dateReceived: { gte: startDate, lte: endDate } },
-      { proposedEventDate: null, checkIn: null, eventDate: null },
-    ];
-  }
-
-  const items = await prisma.forecastItem.findMany({
-    where,
-    orderBy: [
-      { dateReceived: "desc" },
-      { proposedEventDate: "asc" },
-      { createdAt: "desc" },
-    ],
-  });
-
-  return JSON.parse(JSON.stringify(items));
 }
 
 export async function getSalesPics() {
-  const session = await getServerSession(authOptions);
-  if (!session || !session.user) throw new Error("Unauthorized");
-
-  const users = await prisma.user.findMany({
-    select: { id: true, name: true },
-  });
-
-  const forecastPics = await prisma.forecastItem.findMany({
-    select: { pic: true, picPhone: true, salesPerson: true },
-  });
-
-  const map = new Map<string, { name: string; phone: string }>();
-
-  // Default sales team
   const defaultTeam = ["Sri", "Rizki Kiki", "Rizkita", "Riki"];
-  defaultTeam.forEach((name) => {
-    map.set(name.toLowerCase(), { name, phone: "" });
-  });
+  const fallbackList = defaultTeam.map((name) => ({ name, phone: "" }));
 
-  users.forEach((u) => {
-    if (u.name) {
-      map.set(u.name.toLowerCase(), { name: u.name, phone: "" });
-    }
-  });
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) return fallbackList;
 
-  forecastPics.forEach((f) => {
-    const pName = f.salesPerson || f.pic;
-    if (pName) {
-      const existing = map.get(pName.toLowerCase());
-      map.set(pName.toLowerCase(), {
-        name: pName,
-        phone: f.picPhone || existing?.phone || "",
-      });
-    }
-  });
+    const users = await prisma.user.findMany({
+      select: { id: true, name: true },
+    });
 
-  return Array.from(map.values());
+    const forecastPics = await prisma.forecastItem.findMany({
+      select: { pic: true, picPhone: true, salesPerson: true },
+    });
+
+    const map = new Map<string, { name: string; phone: string }>();
+
+    defaultTeam.forEach((name) => {
+      map.set(name.toLowerCase(), { name, phone: "" });
+    });
+
+    users.forEach((u) => {
+      if (u.name) {
+        map.set(u.name.toLowerCase(), { name: u.name, phone: "" });
+      }
+    });
+
+    forecastPics.forEach((f) => {
+      const pName = f.salesPerson || f.pic;
+      if (pName) {
+        const existing = map.get(pName.toLowerCase());
+        map.set(pName.toLowerCase(), {
+          name: pName,
+          phone: f.picPhone || existing?.phone || "",
+        });
+      }
+    });
+
+    return Array.from(map.values());
+  } catch (err) {
+    console.error("Error getSalesPics:", err);
+    return fallbackList;
+  }
 }
 
 const safeDate = (d: any): Date | null => {
@@ -358,100 +369,120 @@ export async function getForecastStats(params: {
   month?: number;
   year?: number;
 }) {
-  const session = await getServerSession(authOptions);
-  if (!session || !session.user) throw new Error("Unauthorized");
-
-  const items = await getForecastItems(params);
-
-  let confirmTotal = 0;
-  let tentativeTotal = 0;
-  let cancelTotal = 0;
-  let totalPax = 0;
-  let totalRoomCount = 0;
-
-  for (const item of items) {
-    totalPax += item.pax || 0;
-    
-    // Parse room count if numeric
-    if (item.room) {
-      const roomNum = parseInt(item.room, 10);
-      if (!isNaN(roomNum)) totalRoomCount += roomNum;
-    }
-
-    if (item.status === "CONFIRM") {
-      confirmTotal += item.total || 0;
-    } else if (item.status === "TENTATIVE") {
-      tentativeTotal += item.total || 0;
-    } else if (item.status === "CANCEL") {
-      cancelTotal += item.total || 0;
-    }
-  }
-
-  const grandTotal = confirmTotal + tentativeTotal + cancelTotal;
-
-  return {
-    confirmTotal,
-    tentativeTotal,
-    cancelTotal,
-    grandTotal,
-    totalPax,
-    totalRoomCount,
-    totalEntries: items.length,
+  const fallback = {
+    confirmTotal: 0,
+    tentativeTotal: 0,
+    cancelTotal: 0,
+    grandTotal: 0,
+    totalPax: 0,
+    totalRoomCount: 0,
+    totalEntries: 0,
   };
+
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) return fallback;
+
+    const items = await getForecastItems(params);
+
+    let confirmTotal = 0;
+    let tentativeTotal = 0;
+    let cancelTotal = 0;
+    let totalPax = 0;
+    let totalRoomCount = 0;
+
+    for (const item of items) {
+      totalPax += item.pax || 0;
+      
+      // Parse room count if numeric
+      if (item.room) {
+        const roomNum = parseInt(item.room, 10);
+        if (!isNaN(roomNum)) totalRoomCount += roomNum;
+      }
+
+      if (item.status === "CONFIRM") {
+        confirmTotal += item.total || 0;
+      } else if (item.status === "TENTATIVE") {
+        tentativeTotal += item.total || 0;
+      } else if (item.status === "CANCEL") {
+        cancelTotal += item.total || 0;
+      }
+    }
+
+    const grandTotal = confirmTotal + tentativeTotal + cancelTotal;
+
+    return {
+      confirmTotal,
+      tentativeTotal,
+      cancelTotal,
+      grandTotal,
+      totalPax,
+      totalRoomCount,
+      totalEntries: items.length,
+    };
+  } catch (err) {
+    console.error("Error getForecastStats:", err);
+    return fallback;
+  }
 }
 
 export async function getForecastReminders(unit?: ForecastUnitType) {
-  const session = await getServerSession(authOptions);
-  if (!session || !session.user) throw new Error("Unauthorized");
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) return [];
 
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
 
-  const maxDate = new Date(now);
-  maxDate.setDate(maxDate.getDate() + 14); // Next 14 days
+    const maxDate = new Date(now);
+    maxDate.setDate(maxDate.getDate() + 14); // Next 14 days
 
-  const where: any = {
-    status: "TENTATIVE",
-  };
+    const where: any = {
+      status: "TENTATIVE",
+    };
 
-  if (unit && unit !== "ALL") {
-    where.unit = unit;
+    if (unit && unit !== "ALL") {
+      where.unit = unit;
+    }
+
+    const items = await prisma.forecastItem.findMany({
+      where,
+      orderBy: [
+        { checkIn: "asc" },
+        { eventDate: "asc" },
+      ],
+    });
+
+    const reminders = items
+      .map((item) => {
+        const targetDate = item.unit === "CAMP_VILLAGE" ? item.checkIn : item.eventDate;
+        if (!targetDate) return null;
+
+        const dateObj = new Date(targetDate);
+        dateObj.setHours(0, 0, 0, 0);
+
+        const diffTime = dateObj.getTime() - now.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays < 0 || diffDays > 14) return null;
+
+        const urgency: "URGENT" | "WARNING" | "INFO" =
+          diffDays <= 3 ? "URGENT" : diffDays <= 7 ? "WARNING" : "INFO";
+
+        return {
+          ...item,
+          targetDate: dateObj,
+          daysLeft: diffDays,
+          urgency,
+        };
+      })
+      .filter(Boolean);
+
+    return JSON.parse(JSON.stringify(reminders.sort((a: any, b: any) => a.daysLeft - b.daysLeft)));
+  } catch (err) {
+    console.error("Error getForecastReminders:", err);
+    return [];
   }
-
-  const items = await prisma.forecastItem.findMany({
-    where,
-    orderBy: [
-      { checkIn: "asc" },
-      { eventDate: "asc" },
-    ],
-  });
-
-  const reminders = items
-    .map((item) => {
-      const targetDate = item.unit === "CAMP_VILLAGE" ? item.checkIn : item.eventDate;
-      if (!targetDate) return null;
-
-      const dateObj = new Date(targetDate);
-      dateObj.setHours(0, 0, 0, 0);
-
-      const diffTime = dateObj.getTime() - now.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-      if (diffDays < 0 || diffDays > 14) return null;
-
-      const urgency: "URGENT" | "WARNING" | "INFO" =
-        diffDays <= 3 ? "URGENT" : diffDays <= 7 ? "WARNING" : "INFO";
-
-      return {
-        ...item,
-        targetDate: dateObj,
-        daysLeft: diffDays,
-        urgency,
-      };
-    })
-    .filter(Boolean);
-
-  return JSON.parse(JSON.stringify(reminders.sort((a: any, b: any) => a.daysLeft - b.daysLeft)));
 }
 
 export async function sendForecastWaReminderAction(data: {
@@ -494,75 +525,80 @@ export async function sendForecastWaReminderAction(data: {
 }
 
 export async function autoProcessForecastReminders(unit?: ForecastUnitType) {
-  const session = await getServerSession(authOptions);
-  if (!session || !session.user) throw new Error("Unauthorized");
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) return { autoSentCount: 0 };
 
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
 
-  const twentyHoursAgo = new Date(Date.now() - 20 * 60 * 60 * 1000);
+    const twentyHoursAgo = new Date(Date.now() - 20 * 60 * 60 * 1000);
 
-  const where: any = {
-    status: "TENTATIVE",
-    OR: [
-      { lastReminderSentAt: null },
-      { lastReminderSentAt: { lte: twentyHoursAgo } },
-    ],
-  };
+    const where: any = {
+      status: "TENTATIVE",
+      OR: [
+        { lastReminderSentAt: null },
+        { lastReminderSentAt: { lte: twentyHoursAgo } },
+      ],
+    };
 
-  if (unit && unit !== "ALL") where.unit = unit;
+    if (unit && unit !== "ALL") where.unit = unit;
 
-  const items = await prisma.forecastItem.findMany({ where });
+    const items = await prisma.forecastItem.findMany({ where });
 
-  const eligibleItems = items.filter((item) => {
-    const targetDate = item.unit === "CAMP_VILLAGE" ? item.checkIn : item.eventDate;
-    if (!targetDate) return false;
+    const eligibleItems = items.filter((item) => {
+      const targetDate = item.unit === "CAMP_VILLAGE" ? item.checkIn : item.eventDate;
+      if (!targetDate) return false;
 
-    const dateObj = new Date(targetDate);
-    dateObj.setHours(0, 0, 0, 0);
+      const dateObj = new Date(targetDate);
+      dateObj.setHours(0, 0, 0, 0);
 
-    const diffDays = Math.ceil((dateObj.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    return diffDays >= 0 && diffDays <= 7; // H-7 or H-3 window
-  });
+      const diffDays = Math.ceil((dateObj.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      return diffDays >= 0 && diffDays <= 7; // H-7 or H-3 window
+    });
 
-  const { sendWaText } = await import("@/lib/whatsapp");
-  let sentCount = 0;
+    const { sendWaText } = await import("@/lib/whatsapp");
+    let sentCount = 0;
 
-  for (const item of eligibleItems) {
-    // Target Internal Sales PIC Phone Number
-    const rawPhone = item.picPhone || item.source || item.remarks || "";
-    const cleanPhoneMatch = rawPhone.match(/(?:08|628|\+628)\d{8,12}/);
-    if (!cleanPhoneMatch) continue;
+    for (const item of eligibleItems) {
+      // Target Internal Sales PIC Phone Number
+      const rawPhone = item.picPhone || item.source || item.remarks || "";
+      const cleanPhoneMatch = rawPhone.match(/(?:08|628|\+628)\d{8,12}/);
+      if (!cleanPhoneMatch) continue;
 
-    let phone = cleanPhoneMatch[0].replace(/\D/g, "");
-    if (phone.startsWith("0")) phone = "62" + phone.substring(1);
+      let phone = cleanPhoneMatch[0].replace(/\D/g, "");
+      if (phone.startsWith("0")) phone = "62" + phone.substring(1);
 
-    const targetDate = item.unit === "CAMP_VILLAGE" ? item.checkIn : item.eventDate;
-    const dateStr = targetDate
-      ? new Date(targetDate).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })
-      : "";
+      const targetDate = item.unit === "CAMP_VILLAGE" ? item.checkIn : item.eventDate;
+      const dateStr = targetDate
+        ? new Date(targetDate).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })
+        : "";
 
-    const unitName = item.unit === "CAMP_VILLAGE" ? "The Lodge Camp & Village" : "The Lodge Park";
-    const message = `Halo Kak ${item.pic || "Sales"},\n\n*Peringatan Reservasi Tentative (Internal Sales)* 📌\n\nReservasi grup *${item.company}* (${item.pax} Pax) untuk tanggal *${dateStr}* di *${unitName}* statusnya masih *TENTATIVE*.\n\nMohon segera difollow-up kelanjutan atau pelunasannya ya Kak. Terima kasih! 🙏✨`;
+      const unitName = item.unit === "CAMP_VILLAGE" ? "The Lodge Camp & Village" : "The Lodge Park";
+      const message = `Halo Kak ${item.pic || "Sales"},\n\n*Peringatan Reservasi Tentative (Internal Sales)* 📌\n\nReservasi grup *${item.company}* (${item.pax} Pax) untuk tanggal *${dateStr}* di *${unitName}* statusnya masih *TENTATIVE*.\n\nMohon segera difollow-up kelanjutan atau pelunasannya ya Kak. Terima kasih! 🙏✨`;
 
-    try {
-      const waRes = await sendWaText(phone, message);
-      if (waRes.success) {
-        sentCount++;
-        await prisma.forecastItem.update({
-          where: { id: item.id },
-          data: {
-            lastReminderSentAt: new Date(),
-            reminderCount: { increment: 1 },
-          },
-        });
+      try {
+        const waRes = await sendWaText(phone, message);
+        if (waRes.success) {
+          sentCount++;
+          await prisma.forecastItem.update({
+            where: { id: item.id },
+            data: {
+              lastReminderSentAt: new Date(),
+              reminderCount: { increment: 1 },
+            },
+          });
+        }
+      } catch (e) {
+        console.error("[AUTO-REMINDER-ERROR]:", e);
       }
-    } catch (e) {
-      console.error("[AUTO-REMINDER-ERROR]:", e);
     }
-  }
 
-  return { autoSentCount: sentCount };
+    return { autoSentCount: sentCount };
+  } catch (err) {
+    console.error("Error autoProcessForecastReminders:", err);
+    return { autoSentCount: 0 };
+  }
 }
 
 export async function saveForecastTarget(data: {
