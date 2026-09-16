@@ -172,8 +172,8 @@ export default function ForecastDashboard() {
         </span>
       );
     }
-    if (dpStatus === "DP_30" || dpStatus === "DP_50") {
-      const pct = dpStatus === "DP_30" ? "DP 30%" : "DP 50%";
+    if (dpStatus === "DP_30" || dpStatus === "DP_50" || dpStatus === "DP_CUSTOM") {
+      const pct = dpStatus === "DP_30" ? "DP 30%" : dpStatus === "DP_50" ? "DP 50%" : "Sudah DP";
       return (
         <div className="flex flex-col items-center gap-0.5">
           <span className="inline-flex items-center gap-1 font-bold text-[11px] px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/80">
@@ -304,7 +304,7 @@ export default function ForecastDashboard() {
       const confirmVal = item.status === "CONFIRM" ? item.total : 0;
       const tentativeVal = item.status === "TENTATIVE" ? item.total : 0;
       const cancelVal = item.status === "CANCEL" ? item.total : 0;
-      const dpStatusText = item.dpStatus === "LUNAS" ? "Lunas" : item.dpStatus === "DP_30" ? "DP 30%" : item.dpStatus === "DP_50" ? "DP 50%" : "Belum DP";
+      const dpStatusText = item.dpStatus === "LUNAS" ? "Lunas" : item.dpStatus === "DP_30" ? "DP 30%" : item.dpStatus === "DP_50" ? "DP 50%" : item.dpStatus === "DP_CUSTOM" ? "Sudah DP (Custom)" : "Belum DP";
 
       if (selectedUnit === "CAMP_VILLAGE") {
         return [
@@ -695,6 +695,7 @@ export default function ForecastDashboard() {
               <option value="BELUM_DP">Belum DP</option>
               <option value="DP_30">DP 30%</option>
               <option value="DP_50">DP 50%</option>
+              <option value="DP_CUSTOM">Sudah DP (Custom)</option>
               <option value="LUNAS">Lunas</option>
             </select>
           </div>

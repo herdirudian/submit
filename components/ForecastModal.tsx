@@ -194,13 +194,15 @@ export default function ForecastModal({
   };
 
   const handleDpStatusChange = (status: ForecastDpStatusType) => {
-    let suggestedDp = 0;
+    let suggestedDp = formData.dpAmount;
     if (status === "DP_30") {
       suggestedDp = Math.round(formData.total * 0.3);
     } else if (status === "DP_50") {
       suggestedDp = Math.round(formData.total * 0.5);
     } else if (status === "LUNAS") {
       suggestedDp = formData.total;
+    } else if (status === "BELUM_DP") {
+      suggestedDp = 0;
     }
     setFormData((prev) => ({
       ...prev,
@@ -532,6 +534,7 @@ export default function ForecastModal({
                   <option value="BELUM_DP">Belum DP</option>
                   <option value="DP_30">DP 30%</option>
                   <option value="DP_50">DP 50%</option>
+                  <option value="DP_CUSTOM">Sudah DP (Nominal Custom)</option>
                   <option value="LUNAS">Lunas</option>
                 </select>
               </div>
@@ -545,7 +548,14 @@ export default function ForecastModal({
                   min="0"
                   placeholder="0"
                   value={formData.dpAmount}
-                  onChange={(e) => setFormData({ ...formData, dpAmount: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value) || 0;
+                    setFormData((prev) => ({
+                      ...prev,
+                      dpAmount: val,
+                      dpStatus: prev.dpStatus === "BELUM_DP" && val > 0 ? "DP_CUSTOM" : prev.dpStatus,
+                    }));
+                  }}
                   className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0f4d39]/20 focus:border-[#0f4d39]"
                 />
               </div>

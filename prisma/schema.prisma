@@ -653,6 +653,7 @@ enum ForecastDpStatus {
   BELUM_DP
   DP_30
   DP_50
+  DP_CUSTOM
   LUNAS
 }
 

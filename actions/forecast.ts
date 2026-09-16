@@ -7,7 +7,7 @@ import { authOptions } from "@/lib/auth";
 
 export type ForecastUnitType = "CAMP_VILLAGE" | "PARK";
 export type ForecastStatusType = "CONFIRM" | "TENTATIVE" | "CANCEL";
-export type ForecastDpStatusType = "BELUM_DP" | "DP_30" | "DP_50" | "LUNAS";
+export type ForecastDpStatusType = "BELUM_DP" | "DP_30" | "DP_50" | "DP_CUSTOM" | "LUNAS";
 
 export async function getForecastItems(params: {
   unit: ForecastUnitType;
