@@ -129,6 +129,13 @@ export async function getSalesPics() {
   return Array.from(map.values());
 }
 
+const safeDate = (d: any): Date | null => {
+  if (!d) return null;
+  const dateObj = new Date(d);
+  if (isNaN(dateObj.getTime())) return null;
+  return dateObj;
+};
+
 export async function createForecastItem(data: {
   unit?: ForecastUnitType;
   company: string;
@@ -195,43 +202,47 @@ export async function createForecastItem(data: {
     mainStatus = "TENTATIVE";
   }
 
+  const dateReceivedVal = safeDate(data.dateReceived) || new Date();
+  const proposedEventDateVal = safeDate(data.proposedEventDate) || safeDate(data.eventDate) || safeDate(data.checkIn);
+  const eventDateVal = safeDate(data.eventDate) || proposedEventDateVal;
+
   const item = await prisma.forecastItem.create({
     data: {
       unit: (data.unit === "PARK" ? "PARK" : "CAMP_VILLAGE") as any,
       company: data.company,
-      dateReceived: data.dateReceived ? new Date(data.dateReceived) : new Date(),
+      dateReceived: dateReceivedVal,
       contactPerson: data.contactPerson || null,
       phoneEmail: data.phoneEmail || null,
       leadSource: data.leadSource || data.source || null,
       segment: data.segment || null,
       eventType: data.eventType || null,
-      proposedEventDate: data.proposedEventDate ? new Date(data.proposedEventDate) : data.eventDate ? new Date(data.eventDate) : null,
+      proposedEventDate: proposedEventDateVal,
       pax,
       room: data.room || null,
       rate,
       total,
       salesPerson: data.salesPerson || data.pic || null,
-      reservationDate: data.reservationDate ? new Date(data.reservationDate) : null,
-      checkIn: data.checkIn ? new Date(data.checkIn) : null,
-      checkOut: data.checkOut ? new Date(data.checkOut) : null,
-      eventDate: data.eventDate ? new Date(data.eventDate) : data.proposedEventDate ? new Date(data.proposedEventDate) : null,
+      reservationDate: safeDate(data.reservationDate) || dateReceivedVal,
+      checkIn: safeDate(data.checkIn) || proposedEventDateVal,
+      checkOut: safeDate(data.checkOut),
+      eventDate: eventDateVal,
       venue: data.venue || null,
       dpStatus: data.dpStatus || "BELUM_DP",
       dpAmount: Number(data.dpAmount || 0),
-      dueDate: data.dueDate ? new Date(data.dueDate) : null,
+      dueDate: safeDate(data.dueDate),
       pic: data.pic || data.salesPerson || null,
       picPhone: data.picPhone || null,
       status: mainStatus,
       remarks: data.remarks || null,
       source: data.source || data.leadSource || null,
-      firstResponseDate: data.firstResponseDate ? new Date(data.firstResponseDate) : null,
-      lastFollowUpDate: data.lastFollowUpDate ? new Date(data.lastFollowUpDate) : null,
+      firstResponseDate: safeDate(data.firstResponseDate),
+      lastFollowUpDate: safeDate(data.lastFollowUpDate),
       latestClientResponse: data.latestClientResponse || null,
       nextAction: data.nextAction || null,
-      nextActionDueDate: data.nextActionDueDate ? new Date(data.nextActionDueDate) : null,
+      nextActionDueDate: safeDate(data.nextActionDueDate),
       leadStatus: lStatus,
       closingProbability: prob,
-      expectedClosingMonth: data.expectedClosingMonth ? new Date(data.expectedClosingMonth) : null,
+      expectedClosingMonth: safeDate(data.expectedClosingMonth),
       reasonForLossHold: data.reasonForLossHold || null,
       finalDealValue: data.finalDealValue !== undefined ? Number(data.finalDealValue) : lStatus === "Confirmed / Deal" ? total : 0,
     },
@@ -268,17 +279,17 @@ export async function updateForecastItem(
   if (data.reasonForLossHold !== undefined) updateData.reasonForLossHold = data.reasonForLossHold;
   if (data.dpStatus !== undefined) updateData.dpStatus = data.dpStatus;
 
-  if (data.dateReceived !== undefined) updateData.dateReceived = data.dateReceived ? new Date(data.dateReceived) : null;
-  if (data.proposedEventDate !== undefined) updateData.proposedEventDate = data.proposedEventDate ? new Date(data.proposedEventDate) : null;
-  if (data.reservationDate !== undefined) updateData.reservationDate = data.reservationDate ? new Date(data.reservationDate) : null;
-  if (data.checkIn !== undefined) updateData.checkIn = data.checkIn ? new Date(data.checkIn) : null;
-  if (data.checkOut !== undefined) updateData.checkOut = data.checkOut ? new Date(data.checkOut) : null;
-  if (data.eventDate !== undefined) updateData.eventDate = data.eventDate ? new Date(data.eventDate) : null;
-  if (data.dueDate !== undefined) updateData.dueDate = data.dueDate ? new Date(data.dueDate) : null;
-  if (data.firstResponseDate !== undefined) updateData.firstResponseDate = data.firstResponseDate ? new Date(data.firstResponseDate) : null;
-  if (data.lastFollowUpDate !== undefined) updateData.lastFollowUpDate = data.lastFollowUpDate ? new Date(data.lastFollowUpDate) : null;
-  if (data.nextActionDueDate !== undefined) updateData.nextActionDueDate = data.nextActionDueDate ? new Date(data.nextActionDueDate) : null;
-  if (data.expectedClosingMonth !== undefined) updateData.expectedClosingMonth = data.expectedClosingMonth ? new Date(data.expectedClosingMonth) : null;
+  if (data.dateReceived !== undefined) updateData.dateReceived = safeDate(data.dateReceived);
+  if (data.proposedEventDate !== undefined) updateData.proposedEventDate = safeDate(data.proposedEventDate);
+  if (data.reservationDate !== undefined) updateData.reservationDate = safeDate(data.reservationDate);
+  if (data.checkIn !== undefined) updateData.checkIn = safeDate(data.checkIn);
+  if (data.checkOut !== undefined) updateData.checkOut = safeDate(data.checkOut);
+  if (data.eventDate !== undefined) updateData.eventDate = safeDate(data.eventDate);
+  if (data.dueDate !== undefined) updateData.dueDate = safeDate(data.dueDate);
+  if (data.firstResponseDate !== undefined) updateData.firstResponseDate = safeDate(data.firstResponseDate);
+  if (data.lastFollowUpDate !== undefined) updateData.lastFollowUpDate = safeDate(data.lastFollowUpDate);
+  if (data.nextActionDueDate !== undefined) updateData.nextActionDueDate = safeDate(data.nextActionDueDate);
+  if (data.expectedClosingMonth !== undefined) updateData.expectedClosingMonth = safeDate(data.expectedClosingMonth);
 
   if (data.dpAmount !== undefined) updateData.dpAmount = Number(data.dpAmount || 0);
   if (data.pax !== undefined) updateData.pax = Number(data.pax || 0);
