@@ -258,6 +258,37 @@ export default function ForecastModal({
     }));
   };
 
+  const handleMainStatusChange = (newStatus: ForecastStatusType) => {
+    setFormData((prev) => {
+      let newLeadStatus = prev.leadStatus;
+      let newProb = prev.closingProbability;
+      let dealValue = prev.finalDealValue;
+
+      if (newStatus === "CONFIRM") {
+        newLeadStatus = "Confirmed / Deal";
+        newProb = 100;
+        dealValue = prev.total > 0 ? prev.total : dealValue;
+      } else if (newStatus === "CANCEL") {
+        newLeadStatus = "Lost / Cancelled";
+        newProb = 0;
+        dealValue = 0;
+      } else if (newStatus === "TENTATIVE") {
+        if (prev.leadStatus === "Confirmed / Deal" || prev.leadStatus === "Lost / Cancelled") {
+          newLeadStatus = "Negotiation";
+          newProb = LEAD_STATUS_PROBABILITIES["Negotiation"] ?? 50;
+        }
+      }
+
+      return {
+        ...prev,
+        status: newStatus,
+        leadStatus: newLeadStatus,
+        closingProbability: newProb,
+        finalDealValue: dealValue,
+      };
+    });
+  };
+
   const handleRateChange = (val: number) => {
     if (rateType === "PER_PAX") {
       const tot = val * (formData.pax || 0);
@@ -976,7 +1007,7 @@ export default function ForecastModal({
                   </label>
                   <select
                     value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value as ForecastStatusType })}
+                    onChange={(e) => handleMainStatusChange(e.target.value as ForecastStatusType)}
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0f4d39]/20 focus:border-[#0f4d39]"
                   >
                     <option value="TENTATIVE">Tentative (Kuning)</option>

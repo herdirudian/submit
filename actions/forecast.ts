@@ -193,21 +193,30 @@ export async function createForecastItem(data: {
     const pax = Number(data.pax || 0);
     const total = data.total !== undefined && data.total !== null ? Number(data.total) : rate * pax;
 
-    // Auto probability based on leadStatus
-    const lStatus = data.leadStatus || "New Lead";
+    // Sync main status (CONFIRM, TENTATIVE, CANCEL) and leadStatus bidirectionally
+    let lStatus = data.leadStatus || "New Lead";
+    let mainStatus: ForecastStatusType = data.status || "TENTATIVE";
+
+    if (data.status) {
+      mainStatus = data.status;
+      if (mainStatus === "CONFIRM" && lStatus !== "Confirmed / Deal") {
+        lStatus = "Confirmed / Deal";
+      } else if (mainStatus === "CANCEL" && lStatus !== "Lost / Cancelled") {
+        lStatus = "Lost / Cancelled";
+      }
+    } else {
+      if (lStatus === "Confirmed / Deal") {
+        mainStatus = "CONFIRM";
+      } else if (lStatus === "Lost / Cancelled") {
+        mainStatus = "CANCEL";
+      } else {
+        mainStatus = "TENTATIVE";
+      }
+    }
+
     const prob = data.closingProbability !== undefined && data.closingProbability !== null
       ? Number(data.closingProbability)
       : LEAD_STATUS_PROBABILITIES[lStatus] ?? 10;
-
-    // Sync main status (CONFIRM, TENTATIVE, CANCEL) based on leadStatus
-    let mainStatus: ForecastStatusType = data.status || "TENTATIVE";
-    if (lStatus === "Confirmed / Deal") {
-      mainStatus = "CONFIRM";
-    } else if (lStatus === "Lost / Cancelled") {
-      mainStatus = "CANCEL";
-    } else {
-      mainStatus = "TENTATIVE";
-    }
 
     const dateReceivedVal = safeDate(data.dateReceived) || new Date();
     const proposedEventDateVal = safeDate(data.proposedEventDate) || safeDate(data.eventDate) || safeDate(data.checkIn);
@@ -251,7 +260,7 @@ export async function createForecastItem(data: {
         closingProbability: prob,
         expectedClosingMonth: safeDate(data.expectedClosingMonth),
         reasonForLossHold: data.reasonForLossHold || null,
-        finalDealValue: data.finalDealValue !== undefined ? Number(data.finalDealValue) : lStatus === "Confirmed / Deal" ? total : 0,
+        finalDealValue: data.finalDealValue !== undefined ? Number(data.finalDealValue) : (mainStatus === "CONFIRM" || lStatus === "Confirmed / Deal") ? total : 0,
       },
     });
 
@@ -327,6 +336,18 @@ export async function updateForecastItem(
         updateData.status = "CANCEL";
       } else {
         updateData.status = "TENTATIVE";
+      }
+    }
+
+    // Prioritize explicit data.status and update leadStatus / closingProbability accordingly
+    if (data.status !== undefined) {
+      updateData.status = data.status;
+      if (data.status === "CONFIRM") {
+        updateData.leadStatus = "Confirmed / Deal";
+        if (data.closingProbability === undefined) updateData.closingProbability = 100;
+      } else if (data.status === "CANCEL") {
+        updateData.leadStatus = "Lost / Cancelled";
+        if (data.closingProbability === undefined) updateData.closingProbability = 0;
       }
     }
 
