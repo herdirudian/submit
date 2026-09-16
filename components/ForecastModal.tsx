@@ -9,8 +9,8 @@ import {
   ForecastUnitType,
   ForecastStatusType,
   ForecastDpStatusType,
-  LEAD_STATUS_PROBABILITIES,
 } from "@/actions/forecast";
+import { LEAD_STATUS_PROBABILITIES } from "@/lib/forecastConstants";
 
 interface ForecastModalProps {
   isOpen: boolean;
