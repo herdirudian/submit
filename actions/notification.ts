@@ -6,26 +6,38 @@ import { authOptions } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
 export async function getNotifications() {
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) return [];
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session || !session.user) return [];
 
-    return await prisma.notification.findMany({
-        where: { userId: session.user.id },
-        orderBy: { createdAt: "desc" },
-        take: 10 // Limit to recent 10 notifications
-    });
+        const data = await prisma.notification.findMany({
+            where: { userId: session.user.id },
+            orderBy: { createdAt: "desc" },
+            take: 10 // Limit to recent 10 notifications
+        });
+
+        return JSON.parse(JSON.stringify(data));
+    } catch (err) {
+        console.error("Error getNotifications:", err);
+        return [];
+    }
 }
 
 export async function getUnreadCount() {
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) return 0;
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session || !session.user) return 0;
 
-    return await prisma.notification.count({
-        where: { 
-            userId: session.user.id,
-            read: false
-        }
-    });
+        return await prisma.notification.count({
+            where: { 
+                userId: session.user.id,
+                read: false
+            }
+        });
+    } catch (err) {
+        console.error("Error getUnreadCount:", err);
+        return 0;
+    }
 }
 
 export async function markAllAsRead() {
