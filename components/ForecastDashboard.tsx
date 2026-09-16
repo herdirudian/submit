@@ -27,6 +27,8 @@ import {
   ChevronUp,
   FileText,
   Loader2,
+  Layers,
+  Layers3,
 } from "lucide-react";
 import {
   getForecastItems,
@@ -61,7 +63,8 @@ const MONTHS = [
 
 export default function ForecastDashboard() {
   const currentDate = new Date();
-  const [selectedUnit, setSelectedUnit] = useState<ForecastUnitType>("CAMP_VILLAGE");
+  const [selectedUnit, setSelectedUnit] = useState<ForecastUnitType>("ALL");
+  const [stageView, setStageView] = useState<"ALL" | "STAGE1" | "STAGE2" | "STAGE3">("ALL");
   const [selectedMonth, setSelectedMonth] = useState<number>(currentDate.getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState<number>(currentDate.getFullYear());
   const [searchQuery, setSearchQuery] = useState("");
@@ -102,8 +105,8 @@ export default function ForecastDashboard() {
     try {
       setLoading(true);
 
-      // Auto-trigger background WA reminders for H-7 / H-3 tentative items
-      autoProcessForecastReminders(selectedUnit).catch((err) =>
+      // Auto-trigger background WA reminders
+      autoProcessForecastReminders(selectedUnit === "ALL" ? "CAMP_VILLAGE" : selectedUnit).catch((err) =>
         console.warn("Background auto reminder process:", err)
       );
 
@@ -121,7 +124,7 @@ export default function ForecastDashboard() {
           month: selectedMonth,
           year: selectedYear,
         }),
-        getForecastReminders(selectedUnit),
+        getForecastReminders(selectedUnit === "ALL" ? "CAMP_VILLAGE" : selectedUnit),
       ]);
 
       setItems(fetchedItems);
@@ -160,6 +163,7 @@ export default function ForecastDashboard() {
   const formatDateStr = (d: string | Date | null | undefined) => {
     if (!d) return "-";
     const dateObj = new Date(d);
+    if (isNaN(dateObj.getTime())) return "-";
     return dateObj.toLocaleDateString("id-ID", {
       day: "2-digit",
       month: "short",
@@ -241,7 +245,7 @@ export default function ForecastDashboard() {
   // Days left helper for tentative items
   const getItemUrgency = (item: any) => {
     if (item.status !== "TENTATIVE") return null;
-    const targetDate = item.unit === "CAMP_VILLAGE" ? item.checkIn : item.eventDate;
+    const targetDate = item.proposedEventDate || item.eventDate || item.checkIn;
     if (!targetDate) return null;
 
     const today = new Date();
@@ -262,96 +266,68 @@ export default function ForecastDashboard() {
   };
 
   const exportToCSV = () => {
-    let headers: string[] = [];
-    if (selectedUnit === "CAMP_VILLAGE") {
-      headers = [
-        "Company",
-        "Reservation Date",
-        "Check In",
-        "Check Out",
-        "Type of Event",
-        "Pax",
-        "Room",
-        "Rate",
-        "Confirm (Rp)",
-        "Tentative (Rp)",
-        "Cancel (Rp)",
-        "Status DP",
-        "Nominal DP",
-        "Jatuh Tempo Pelunasan",
-        "PIC",
-        "Remarks",
-        "Source",
-      ];
-    } else {
-      headers = [
-        "Company",
-        "Reservation Date",
-        "Event Date",
-        "Type of Event",
-        "Venue",
-        "Pax",
-        "Rate",
-        "Confirm (Rp)",
-        "Tentative (Rp)",
-        "Cancel (Rp)",
-        "Status DP",
-        "Nominal DP",
-        "Jatuh Tempo Pelunasan",
-        "PIC",
-        "Remarks",
-        "Segment",
-        "Source",
-      ];
-    }
+    const headers = [
+      "Company",
+      "Tanggal Terima Lead",
+      "Contact Person",
+      "No HP / Email",
+      "Lead Source",
+      "Segment",
+      "Jenis Event",
+      "Tanggal Event",
+      "Pax",
+      "Room / Venue",
+      "Rate",
+      "Total Revenue",
+      "PIC Sales",
+      "First Response Date",
+      "Last Follow Up Date",
+      "Respon Terakhir Client",
+      "Next Action",
+      "Jatuh Tempo Next Action",
+      "Lead Status Stage",
+      "Closing Prob (%)",
+      "Alasan Loss / Hold",
+      "Nilai Deal Akhir",
+      "Status DP",
+      "Nominal DP",
+      "Jatuh Tempo Pelunasan",
+      "Status Utama",
+      "Remarks",
+    ];
 
     const rows = items.map((item) => {
-      const confirmVal = item.status === "CONFIRM" ? item.total : 0;
-      const tentativeVal = item.status === "TENTATIVE" ? item.total : 0;
-      const cancelVal = item.status === "CANCEL" ? item.total : 0;
       const dpStatusText = item.dpStatus === "LUNAS" ? "Lunas" : item.dpStatus === "DP_30" ? "DP 30%" : item.dpStatus === "DP_50" ? "DP 50%" : item.dpStatus === "DP_CUSTOM" ? "Sudah DP (Custom)" : "Belum DP";
 
-      if (selectedUnit === "CAMP_VILLAGE") {
-        return [
-          `"${item.company || ""}"`,
-          formatDateStr(item.reservationDate),
-          formatDateStr(item.checkIn),
-          formatDateStr(item.checkOut),
-          `"${item.eventType || ""}"`,
-          item.pax || 0,
-          `"${item.room || ""}"`,
-          item.rate || 0,
-          confirmVal,
-          tentativeVal,
-          cancelVal,
-          `"${dpStatusText}"`,
-          item.dpAmount || 0,
-          formatDateStr(item.dueDate),
-          `"${item.pic || ""}"`,
-          `"${item.remarks || ""}"`,
-          `"${item.source || ""}"`,
-        ].join(",");
-      } else {
-        return [
-          `"${item.company || ""}"`,
-          formatDateStr(item.reservationDate),
-          formatDateStr(item.eventDate),
-          `"${item.eventType || ""}"`,
-          `"${item.venue || ""}"`,
-          item.pax || 0,
-          item.rate || 0,
-          confirmVal,
-          tentativeVal,
-          cancelVal,
-          `"${dpStatusText}"`,
-          item.dpAmount || 0,
-          formatDateStr(item.dueDate),
-          `"${item.pic || ""}"`,
-          `"${item.remarks || ""}"`,
-          `"${item.segment || ""}"`,
-          `"${item.source || ""}"`,
-        ].join(",");
-      }
+      return [
+        `"${item.company || ""}"`,
+        formatDateStr(item.dateReceived || item.reservationDate),
+        `"${item.contactPerson || ""}"`,
+        `"${item.phoneEmail || item.picPhone || ""}"`,
+        `"${item.leadSource || item.source || ""}"`,
+        `"${item.segment || ""}"`,
+        `"${item.eventType || ""}"`,
+        formatDateStr(item.proposedEventDate || item.eventDate || item.checkIn),
+        item.pax || 0,
+        `"${item.room || item.venue || ""}"`,
+        item.rate || 0,
+        item.total || 0,
+        `"${item.salesPerson || item.pic || ""}"`,
+        formatDateStr(item.firstResponseDate),
+        formatDateStr(item.lastFollowUpDate),
+        `"${item.latestClientResponse || ""}"`,
+        `"${item.nextAction || ""}"`,
+        formatDateStr(item.nextActionDueDate),
+        `"${item.leadStatus || "New Lead"}"`,
+        `${item.closingProbability || 10}%`,
+        `"${item.reasonForLossHold || ""}"`,
+        item.finalDealValue || 0,
+        `"${dpStatusText}"`,
+        item.dpAmount || 0,
+        formatDateStr(item.dueDate),
+        `"${item.status || "TENTATIVE"}"`,
+        `"${item.remarks || ""}"`,
+      ].join(",");
     });
 
     const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(","), ...rows].join("\n");
@@ -360,7 +336,7 @@ export default function ForecastDashboard() {
     link.setAttribute("href", encodedUri);
     link.setAttribute(
       "download",
-      `Forecast_${selectedUnit}_${MONTHS[selectedMonth - 1]}_${selectedYear}.csv`
+      `Forecast_3Stage_${selectedUnit}_${MONTHS[selectedMonth - 1]}_${selectedYear}.csv`
     );
     document.body.appendChild(link);
     link.click();
@@ -393,22 +369,22 @@ export default function ForecastDashboard() {
   };
 
   return (
-    <div className="w-full max-w-[1500px] mx-auto space-y-6 pb-12 font-sans overflow-x-hidden">
-      {/* Page Header (Agency Style) */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="w-full max-w-[1700px] mx-auto space-y-5 pb-12 font-sans overflow-x-hidden px-2 sm:px-4">
+      {/* Page Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pt-2">
         <div>
           <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium mb-1">
             <Link href="/dashboard" className="hover:text-slate-700 transition-colors">
               Dashboard
             </Link>
             <ChevronRight size={12} className="text-slate-300" />
-            <span className="text-slate-600 font-semibold">Forecast</span>
+            <span className="text-slate-600 font-semibold">Consolidated 3-Stage Sales Pipeline & Forecast</span>
           </div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight font-judul">
-            Forecast Reservasi
+            Sales Pipeline & Forecast System
           </h1>
           <p className="text-slate-500 text-xs mt-0.5 font-subjudul">
-            Estimasi pendapatan reservasi grup The Lodge Camp & Village dan Kawasan Wisata The Lodge Park.
+            Sistem Terpadu 3-Stage Sales Pipeline & Forecast Reservasi Grup (Camp, Village & Park).
           </p>
         </div>
 
@@ -417,7 +393,7 @@ export default function ForecastDashboard() {
           <button
             onClick={() => fetchData()}
             disabled={loading}
-            className="p-2 bg-white border border-slate-200/80 hover:bg-slate-50 text-slate-600 rounded-xl transition-all shadow-2xs hover:border-slate-300 active:scale-95"
+            className="p-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl transition-all shadow-xs active:scale-95"
             title="Refresh Data"
           >
             <RefreshCw size={16} className={loading ? "animate-spin text-[#0f4d39]" : ""} />
@@ -425,7 +401,7 @@ export default function ForecastDashboard() {
 
           <button
             onClick={exportToCSV}
-            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/80 hover:border-slate-300 px-3 py-2 rounded-xl text-xs font-semibold transition-all shadow-2xs"
+            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-3 py-2 rounded-xl text-xs font-semibold transition-all shadow-xs"
           >
             <Download size={14} />
             <span>Export CSV</span>
@@ -434,7 +410,7 @@ export default function ForecastDashboard() {
           <button
             onClick={handleExportPdf}
             disabled={pdfLoading}
-            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-rose-50 hover:bg-rose-100/80 text-rose-700 border border-rose-200/80 hover:border-rose-300 px-3 py-2 rounded-xl text-xs font-semibold transition-all shadow-2xs disabled:opacity-50"
+            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-rose-50 hover:bg-rose-100/80 text-rose-700 border border-rose-200 px-3 py-2 rounded-xl text-xs font-semibold transition-all shadow-xs disabled:opacity-50"
             title="Cetak Laporan PDF Executive Summary"
           >
             {pdfLoading ? (
@@ -447,10 +423,10 @@ export default function ForecastDashboard() {
 
           <button
             onClick={() => setShowAnalytics(!showAnalytics)}
-            className={`flex-1 md:flex-none flex items-center justify-center gap-2 border px-3.5 py-2 rounded-xl text-xs font-semibold transition-all shadow-2xs ${
+            className={`flex-1 md:flex-none flex items-center justify-center gap-2 border px-3.5 py-2 rounded-xl text-xs font-semibold transition-all shadow-xs ${
               showAnalytics
                 ? "bg-[#0f4d39] text-white border-[#0f4d39]"
-                : "bg-white text-slate-700 hover:bg-slate-50 border-slate-200/80 hover:border-slate-300"
+                : "bg-white text-slate-700 hover:bg-slate-50 border-slate-200"
             }`}
           >
             <BarChart3 size={15} />
@@ -463,43 +439,102 @@ export default function ForecastDashboard() {
               setEditingItem(null);
               setIsModalOpen(true);
             }}
-            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-[#0f4d39] hover:bg-[#0b3c2c] text-white px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-2xs hover:shadow-xs active:scale-[0.98]"
+            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-[#0f4d39] hover:bg-[#0b3c2c] text-white px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-xs hover:shadow-md active:scale-[0.98]"
           >
             <Plus size={16} />
-            <span>Tambah Forecast</span>
+            <span>Tambah Lead / Forecast</span>
           </button>
         </div>
       </div>
 
-      {/* Segmented Unit Control Tabs (Vercel Style) */}
-      <div className="inline-flex items-center p-1 bg-slate-100/90 rounded-xl border border-slate-200/60 shadow-inner">
-        <button
-          onClick={() => setSelectedUnit("CAMP_VILLAGE")}
-          className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
-            selectedUnit === "CAMP_VILLAGE"
-              ? "bg-white text-[#0f4d39] shadow-xs border border-slate-200/50"
-              : "text-slate-500 hover:text-slate-900 hover:bg-white/50"
-          }`}
-        >
-          <Home size={15} />
-          <span>Camp & Village</span>
-        </button>
-        <button
-          onClick={() => setSelectedUnit("PARK")}
-          className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
-            selectedUnit === "PARK"
-              ? "bg-white text-[#0f4d39] shadow-xs border border-slate-200/50"
-              : "text-slate-500 hover:text-slate-900 hover:bg-white/50"
-          }`}
-        >
-          <Building2 size={15} />
-          <span>The Lodge Park</span>
-        </button>
+      {/* Segmented Unit & Stage Controls */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-2.5 rounded-2xl border border-slate-200 shadow-xs">
+        {/* Unit Selector */}
+        <div className="inline-flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200/80">
+          <button
+            onClick={() => setSelectedUnit("ALL")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              selectedUnit === "ALL"
+                ? "bg-white text-[#0f4d39] shadow-xs border border-slate-200"
+                : "text-slate-500 hover:text-slate-900"
+            }`}
+          >
+            <Layers size={14} />
+            <span>Semua Unit (Consolidated)</span>
+          </button>
+          <button
+            onClick={() => setSelectedUnit("CAMP_VILLAGE")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              selectedUnit === "CAMP_VILLAGE"
+                ? "bg-white text-[#0f4d39] shadow-xs border border-slate-200"
+                : "text-slate-500 hover:text-slate-900"
+            }`}
+          >
+            <Home size={14} />
+            <span>Camp & Village</span>
+          </button>
+          <button
+            onClick={() => setSelectedUnit("PARK")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              selectedUnit === "PARK"
+                ? "bg-white text-[#0f4d39] shadow-xs border border-slate-200"
+                : "text-slate-500 hover:text-slate-900"
+            }`}
+          >
+            <Building2 size={14} />
+            <span>The Lodge Park</span>
+          </button>
+        </div>
+
+        {/* 3-Stage Pipeline View Filter */}
+        <div className="inline-flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200/80">
+          <button
+            onClick={() => setStageView("ALL")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              stageView === "ALL"
+                ? "bg-white text-slate-900 shadow-xs border border-slate-200"
+                : "text-slate-500 hover:text-slate-900"
+            }`}
+          >
+            <Layers3 size={14} />
+            <span>Consolidated View</span>
+          </button>
+          <button
+            onClick={() => setStageView("STAGE1")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              stageView === "STAGE1"
+                ? "bg-amber-500 text-white shadow-xs"
+                : "text-amber-800 hover:bg-amber-100/60"
+            }`}
+          >
+            <span>Stage 1: Leads</span>
+          </button>
+          <button
+            onClick={() => setStageView("STAGE2")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              stageView === "STAGE2"
+                ? "bg-indigo-600 text-white shadow-xs"
+                : "text-indigo-800 hover:bg-indigo-100/60"
+            }`}
+          >
+            <span>Stage 2: Follow-Up</span>
+          </button>
+          <button
+            onClick={() => setStageView("STAGE3")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              stageView === "STAGE3"
+                ? "bg-emerald-600 text-white shadow-xs"
+                : "text-emerald-800 hover:bg-emerald-100/60"
+            }`}
+          >
+            <span>Stage 3: Closing</span>
+          </button>
+        </div>
       </div>
 
-      {/* Follow-up Reminder Banner (Modern Alert Style) */}
+      {/* Follow-up Reminder Banner */}
       {reminders.length > 0 && (
-        <div className="rounded-2xl border border-amber-200/80 bg-gradient-to-r from-amber-50/90 via-amber-50/40 to-white p-4 shadow-2xs relative overflow-hidden backdrop-blur-sm">
+        <div className="rounded-2xl border border-amber-200/80 bg-gradient-to-r from-amber-50/90 via-amber-50/40 to-white p-4 shadow-xs relative overflow-hidden backdrop-blur-sm">
           <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-amber-400 to-amber-600 rounded-l-2xl" />
           <div className="flex items-start justify-between gap-4 pl-1">
             <div className="flex items-start gap-3.5">
@@ -514,7 +549,7 @@ export default function ForecastDashboard() {
                   </span>
                 </h3>
                 <p className="text-xs text-slate-600 mt-1">
-                  Terdapat {reminders.length} reservasi berstatus <span className="font-semibold text-amber-800">Tentative</span> yang mendekati tanggal pelaksanaan dalam 14 hari ke depan. Segera lakukan follow-up atau kirim notifikasi WA.
+                  Terdapat {reminders.length} reservasi berstatus <span className="font-semibold text-amber-800">Tentative</span> yang mendekati tanggal pelaksanaan. Segera lakukan follow-up atau kirim pesan WA.
                 </p>
 
                 {/* Reminder Cards List */}
@@ -560,11 +595,11 @@ export default function ForecastDashboard() {
       )}
 
       {/* Modern Refined KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5">
         {/* Total Grand Revenue */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 border-t-4 border-t-[#0f4d39] shadow-2xs hover:shadow-md transition-all duration-200 group flex flex-col justify-between min-h-[125px]">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Revenue</span>
+        <div className="bg-white p-4 rounded-2xl border border-slate-200 border-t-4 border-t-[#0f4d39] shadow-xs hover:shadow-md transition-all duration-200 group flex flex-col justify-between min-h-[120px]">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Potential Revenue</span>
             <div className="p-2 bg-slate-50 text-[#0f4d39] group-hover:bg-emerald-50 transition-colors rounded-xl border border-slate-100">
               <TrendingUp size={18} />
             </div>
@@ -574,15 +609,15 @@ export default function ForecastDashboard() {
               {formatCurrency(stats.grandTotal)}
             </h3>
             <p className="text-xs text-slate-500 mt-1 font-medium whitespace-nowrap">
-              {stats.totalEntries} Booking ({stats.totalPax} Pax)
+              {stats.totalEntries} Leads ({stats.totalPax} Pax)
             </p>
           </div>
         </div>
 
         {/* Confirm */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 border-t-4 border-t-emerald-500 shadow-2xs hover:shadow-md transition-all duration-200 group flex flex-col justify-between min-h-[125px]">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">Confirm</span>
+        <div className="bg-white p-4 rounded-2xl border border-slate-200 border-t-4 border-t-emerald-500 shadow-xs hover:shadow-md transition-all duration-200 group flex flex-col justify-between min-h-[120px]">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">Confirm / Deal</span>
             <div className="p-2 bg-emerald-50/80 text-emerald-600 rounded-xl border border-emerald-100">
               <CheckCircle2 size={18} />
             </div>
@@ -593,15 +628,15 @@ export default function ForecastDashboard() {
             </h3>
             <div className="flex items-center gap-1.5 mt-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              <span className="text-xs text-emerald-700 font-medium">Disetujui</span>
+              <span className="text-xs text-emerald-700 font-medium">Closing Realized</span>
             </div>
           </div>
         </div>
 
         {/* Tentative */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 border-t-4 border-t-amber-500 shadow-2xs hover:shadow-md transition-all duration-200 group flex flex-col justify-between min-h-[125px]">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider">Tentative</span>
+        <div className="bg-white p-4 rounded-2xl border border-slate-200 border-t-4 border-t-amber-500 shadow-xs hover:shadow-md transition-all duration-200 group flex flex-col justify-between min-h-[120px]">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider">Tentative Prospek</span>
             <div className="p-2 bg-amber-50/80 text-amber-600 rounded-xl border border-amber-100">
               <Clock size={18} />
             </div>
@@ -612,15 +647,15 @@ export default function ForecastDashboard() {
             </h3>
             <div className="flex items-center gap-1.5 mt-1">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-              <span className="text-xs text-amber-700 font-medium">Dalam Proses</span>
+              <span className="text-xs text-amber-700 font-medium">Dalam Follow-Up</span>
             </div>
           </div>
         </div>
 
         {/* Cancel */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 border-t-4 border-t-rose-500 shadow-2xs hover:shadow-md transition-all duration-200 group flex flex-col justify-between min-h-[125px]">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-bold text-rose-700 uppercase tracking-wider">Cancel</span>
+        <div className="bg-white p-4 rounded-2xl border border-slate-200 border-t-4 border-t-rose-500 shadow-xs hover:shadow-md transition-all duration-200 group flex flex-col justify-between min-h-[120px]">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[11px] font-bold text-rose-700 uppercase tracking-wider">Lost / Cancel</span>
             <div className="p-2 bg-rose-50/80 text-rose-600 rounded-xl border border-rose-100">
               <XCircle size={18} />
             </div>
@@ -631,37 +666,35 @@ export default function ForecastDashboard() {
             </h3>
             <div className="flex items-center gap-1.5 mt-1">
               <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-              <span className="text-xs text-rose-700 font-medium">Dibatalkan</span>
+              <span className="text-xs text-rose-700 font-medium">Batal / Lost</span>
             </div>
           </div>
         </div>
 
-        {/* Pax / Rooms Count */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 border-t-4 border-t-indigo-500 shadow-2xs hover:shadow-md transition-all duration-200 group flex flex-col justify-between min-h-[125px]">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-              {selectedUnit === "CAMP_VILLAGE" ? "Total Rooms" : "Total Pax"}
-            </span>
+        {/* Total Pax */}
+        <div className="bg-white p-4 rounded-2xl border border-slate-200 border-t-4 border-t-indigo-500 shadow-xs hover:shadow-md transition-all duration-200 group flex flex-col justify-between min-h-[120px]">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Pax Prospek</span>
             <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl border border-indigo-100">
-              {selectedUnit === "CAMP_VILLAGE" ? <Home size={18} /> : <Users size={18} />}
+              <Users size={18} />
             </div>
           </div>
           <div>
             <h3 className="text-xl xl:text-2xl font-bold text-slate-900 tracking-tight leading-tight">
-              {selectedUnit === "CAMP_VILLAGE" ? `${stats.totalRoomCount} Unit` : `${stats.totalPax} Pax`}
+              {stats.totalPax} Pax
             </h3>
             <p className="text-xs text-slate-500 mt-1 font-medium whitespace-nowrap">
-              {selectedUnit === "CAMP_VILLAGE" ? `${stats.totalPax} Pax Pengunjung` : "Pengunjung Event"}
+              Estimasi Pengunjung Grup
             </p>
           </div>
         </div>
       </div>
 
-      {/* Forecast Analytics & Revenue Trend Charts (Toggleable via Analitik Button) */}
+      {/* Analytics Charts Toggle */}
       {showAnalytics && (
         <div className="animate-in fade-in slide-in-from-top-4 duration-300">
           <ForecastAnalyticsCharts
-            unit={selectedUnit}
+            unit={selectedUnit === "ALL" ? "CAMP_VILLAGE" : selectedUnit}
             year={selectedYear}
             month={selectedMonth}
             onRefreshParent={fetchData}
@@ -670,10 +703,10 @@ export default function ForecastDashboard() {
       )}
 
       {/* Filter Bar */}
-      <div className="bg-white p-3.5 rounded-2xl border border-slate-200/70 shadow-2xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+      <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Month & Year Selectors */}
-          <div className="flex items-center gap-2 bg-slate-50/80 px-3 py-2 rounded-xl border border-slate-200/80 text-xs">
+          <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-xl border border-slate-200 text-xs">
             <Calendar size={15} className="text-slate-400" />
             <select
               value={selectedMonth}
@@ -705,30 +738,30 @@ export default function ForecastDashboard() {
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
             <input
               type="text"
-              placeholder="Cari Company / Instansi..."
+              placeholder="Cari Company / Instansi / Contact..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3.5 py-2 bg-slate-50/80 border border-slate-200/80 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0f4d39]/20 focus:border-[#0f4d39] transition-all"
+              className="w-full pl-9 pr-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0f4d39]/20 focus:border-[#0f4d39] transition-all"
             />
           </div>
 
           {/* Status Filter */}
-          <div className="flex items-center gap-2 bg-slate-50/80 px-3 py-2 rounded-xl border border-slate-200/80 text-xs">
+          <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-xl border border-slate-200 text-xs">
             <Filter size={15} className="text-slate-400" />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
               className="bg-transparent text-xs font-semibold text-slate-800 focus:outline-none cursor-pointer"
             >
-              <option value="ALL">Semua Status</option>
-              <option value="CONFIRM">Confirm</option>
-              <option value="TENTATIVE">Tentative</option>
-              <option value="CANCEL">Cancel</option>
+              <option value="ALL">Semua Status Booking</option>
+              <option value="CONFIRM">Confirm (Hijau)</option>
+              <option value="TENTATIVE">Tentative (Kuning)</option>
+              <option value="CANCEL">Cancel (Merah)</option>
             </select>
           </div>
 
           {/* DP Status Filter */}
-          <div className="flex items-center gap-2 bg-slate-50/80 px-3 py-2 rounded-xl border border-slate-200/80 text-xs">
+          <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-xl border border-slate-200 text-xs">
             <Filter size={15} className="text-slate-400" />
             <select
               value={dpStatusFilter}
@@ -746,70 +779,80 @@ export default function ForecastDashboard() {
         </div>
       </div>
 
-      {/* Refined Modern Data Table */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden max-w-full">
+      {/* Main Data Table */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden w-full">
         <div className="overflow-x-auto w-full custom-scrollbar">
-          <table className="w-full text-xs text-left border-collapse min-w-[1050px]">
-            {/* Table Header */}
-            <thead className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 text-[11px] uppercase tracking-wider">
-              <tr>
-                <th className="py-3 px-2.5 border-r border-slate-200/60 text-center w-10 font-bold text-slate-400">No</th>
-                <th className="py-3 px-2.5 border-r border-slate-200/60 min-w-[150px]">Company</th>
-                <th className="py-3 px-2.5 border-r border-slate-200/60 min-w-[95px]">Reservation Date</th>
-                {selectedUnit === "CAMP_VILLAGE" ? (
-                  <>
-                    <th className="py-3 px-2.5 border-r border-slate-200/60 min-w-[90px]">Check In</th>
-                    <th className="py-3 px-2.5 border-r border-slate-200/60 min-w-[90px]">Check Out</th>
-                  </>
-                ) : (
-                  <th className="py-3 px-2.5 border-r border-slate-200/60 min-w-[95px]">Event Date</th>
-                )}
-                <th className="py-3 px-2.5 border-r border-slate-200/60 min-w-[110px]">Type of Event</th>
-                {selectedUnit === "PARK" && (
-                  <th className="py-3 px-2.5 border-r border-slate-200/60 min-w-[90px]">Venue</th>
-                )}
-                <th className="py-3 px-2 text-center w-14">Pax</th>
-                {selectedUnit === "CAMP_VILLAGE" && (
-                  <th className="py-3 px-2 text-center w-16">Room</th>
-                )}
-                <th className="py-3 px-2.5 border-r border-slate-200/60 text-right min-w-[90px]">Rate (Rp)</th>
-                
-                {/* Modern Status Headers with Soft Tints */}
-                <th className="py-3 px-2.5 border-r border-slate-200/60 text-right bg-emerald-50/60 text-emerald-800 font-bold min-w-[110px]">
-                  <div className="flex items-center justify-end gap-1">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                    <span>Confirm (Rp)</span>
-                  </div>
-                </th>
-                <th className="py-3 px-2.5 border-r border-slate-200/60 text-right bg-amber-50/60 text-amber-800 font-bold min-w-[110px]">
-                  <div className="flex items-center justify-end gap-1">
-                    <span className="w-2 h-2 rounded-full bg-amber-500" />
-                    <span>Tentative (Rp)</span>
-                  </div>
-                </th>
-                <th className="py-3 px-2.5 border-r border-slate-200/60 text-right bg-rose-50/60 text-rose-800 font-bold min-w-[110px]">
-                  <div className="flex items-center justify-end gap-1">
-                    <span className="w-2 h-2 rounded-full bg-rose-500" />
-                    <span>Cancel (Rp)</span>
-                  </div>
-                </th>
+          <table className="w-full text-xs text-left border-collapse min-w-[1200px]">
+            {/* STAGE-BASED TABLE HEADERS */}
+            <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 text-[11px] uppercase tracking-wider">
+              {stageView === "ALL" && (
+                <tr>
+                  <th className="py-3 px-2.5 border-r border-slate-200 text-center w-10 font-bold text-slate-400">No</th>
+                  <th className="py-3 px-3 border-r border-slate-200 min-w-[170px]">Company / Instansi</th>
+                  <th className="py-3 px-2.5 border-r border-slate-200 min-w-[95px]">Terima Lead</th>
+                  <th className="py-3 px-2.5 border-r border-slate-200 min-w-[95px]">Tanggal Event</th>
+                  <th className="py-3 px-2.5 border-r border-slate-200 min-w-[110px]">Jenis Acara</th>
+                  <th className="py-3 px-2 text-center w-14">Pax</th>
+                  <th className="py-3 px-2.5 border-r border-slate-200 text-right min-w-[100px]">Rate (Rp)</th>
+                  <th className="py-3 px-2.5 border-r border-slate-200 text-right bg-emerald-50/60 text-emerald-800 min-w-[110px]">Confirm (Rp)</th>
+                  <th className="py-3 px-2.5 border-r border-slate-200 text-right bg-amber-50/60 text-amber-800 min-w-[110px]">Tentative (Rp)</th>
+                  <th className="py-3 px-2.5 border-r border-slate-200 text-right bg-rose-50/60 text-rose-800 min-w-[110px]">Cancel (Rp)</th>
+                  <th className="py-3 px-2.5 border-r border-slate-200 text-center min-w-[120px]">Pipeline Stage</th>
+                  <th className="py-3 px-2.5 border-r border-slate-200 text-center min-w-[110px]">Status DP</th>
+                  <th className="py-3 px-2.5 border-r border-slate-200 min-w-[85px]">PIC Sales</th>
+                  <th className="py-3 px-2.5 text-center min-w-[90px]">Aksi</th>
+                </tr>
+              )}
 
-                {/* Tracking DP & Due Date Headers */}
-                <th className="py-3 px-2.5 border-r border-slate-200/60 text-center min-w-[120px]">
-                  Status DP & Nominal
-                </th>
-                <th className="py-3 px-2.5 border-r border-slate-200/60 text-center min-w-[115px]">
-                  Jatuh Tempo Pelunasan
-                </th>
+              {stageView === "STAGE1" && (
+                <tr className="bg-amber-50/80 text-amber-900">
+                  <th className="py-3 px-2.5 border-r border-amber-200/80 text-center w-10">No</th>
+                  <th className="py-3 px-2.5 border-r border-amber-200/80 min-w-[95px]">Tgl Terima</th>
+                  <th className="py-3 px-3 border-r border-amber-200/80 min-w-[160px]">Company / Instansi</th>
+                  <th className="py-3 px-2.5 border-r border-amber-200/80 min-w-[120px]">Contact Person</th>
+                  <th className="py-3 px-2.5 border-r border-amber-200/80 min-w-[120px]">HP / Email</th>
+                  <th className="py-3 px-2.5 border-r border-amber-200/80 min-w-[100px]">Sumber Lead</th>
+                  <th className="py-3 px-2.5 border-r border-amber-200/80 min-w-[100px]">Segment</th>
+                  <th className="py-3 px-2.5 border-r border-amber-200/80 min-w-[120px]">Jenis Acara</th>
+                  <th className="py-3 px-2.5 border-r border-amber-200/80 min-w-[95px]">Tgl Event</th>
+                  <th className="py-3 px-2 text-center w-14">Pax</th>
+                  <th className="py-3 px-2.5 border-r border-amber-200/80 text-right min-w-[90px]">Rate</th>
+                  <th className="py-3 px-2.5 border-r border-amber-200/80 text-right font-bold min-w-[110px]">Total Rev</th>
+                  <th className="py-3 px-2.5 border-r border-amber-200/80 min-w-[90px]">Sales PIC</th>
+                  <th className="py-3 px-2.5 text-center min-w-[90px]">Aksi</th>
+                </tr>
+              )}
 
-                <th className="py-3 px-2.5 border-r border-slate-200/60 min-w-[85px]">PIC</th>
-                <th className="py-3 px-2.5 border-r border-slate-200/60 min-w-[120px]">Remarks</th>
-                {selectedUnit === "PARK" && (
-                  <th className="py-3 px-2.5 border-r border-slate-200/60 min-w-[90px]">Segment</th>
-                )}
-                <th className="py-3 px-2.5 border-r border-slate-200/60 min-w-[90px]">Source</th>
-                <th className="py-3 px-2.5 text-center min-w-[100px]">Aksi</th>
-              </tr>
+              {stageView === "STAGE2" && (
+                <tr className="bg-indigo-50/80 text-indigo-900">
+                  <th className="py-3 px-2.5 border-r border-indigo-200/80 text-center w-10">No</th>
+                  <th className="py-3 px-3 border-r border-indigo-200/80 min-w-[170px]">Company / Instansi</th>
+                  <th className="py-3 px-2.5 border-r border-indigo-200/80 min-w-[90px]">Sales PIC</th>
+                  <th className="py-3 px-2.5 border-r border-indigo-200/80 min-w-[95px]">First Response</th>
+                  <th className="py-3 px-2.5 border-r border-indigo-200/80 min-w-[95px]">Last Follow-Up</th>
+                  <th className="py-3 px-3 border-r border-indigo-200/80 min-w-[200px]">Respon Terakhir Client</th>
+                  <th className="py-3 px-3 border-r border-indigo-200/80 min-w-[170px]">Next Action</th>
+                  <th className="py-3 px-2.5 border-r border-indigo-200/80 min-w-[95px]">Due Next Action</th>
+                  <th className="py-3 px-2.5 border-r border-indigo-200/80 text-center min-w-[130px]">Pipeline Stage</th>
+                  <th className="py-3 px-2.5 text-center min-w-[90px]">Aksi</th>
+                </tr>
+              )}
+
+              {stageView === "STAGE3" && (
+                <tr className="bg-emerald-50/80 text-emerald-900">
+                  <th className="py-3 px-2.5 border-r border-emerald-200/80 text-center w-10">No</th>
+                  <th className="py-3 px-3 border-r border-emerald-200/80 min-w-[170px]">Company / Instansi</th>
+                  <th className="py-3 px-2.5 border-r border-emerald-200/80 min-w-[90px]">Sales PIC</th>
+                  <th className="py-3 px-2.5 border-r border-emerald-200/80 text-center min-w-[130px]">Pipeline Stage</th>
+                  <th className="py-3 px-2 text-center w-16">Closing %</th>
+                  <th className="py-3 px-2.5 border-r border-emerald-200/80 text-right min-w-[110px]">Potential Rev</th>
+                  <th className="py-3 px-2.5 border-r border-emerald-200/80 text-right font-bold min-w-[110px]">Nilai Deal Akhir</th>
+                  <th className="py-3 px-2.5 border-r border-emerald-200/80 text-center min-w-[120px]">Status DP & Nominal</th>
+                  <th className="py-3 px-2.5 border-r border-emerald-200/80 text-center min-w-[115px]">Jatuh Tempo</th>
+                  <th className="py-3 px-2.5 border-r border-emerald-200/80 min-w-[130px]">Alasan Hold / Loss</th>
+                  <th className="py-3 px-2.5 text-center min-w-[90px]">Aksi</th>
+                </tr>
+              )}
             </thead>
 
             {/* Table Body */}
@@ -818,15 +861,15 @@ export default function ForecastDashboard() {
                 <tr>
                   <td colSpan={20} className="py-12 text-center text-slate-400">
                     <RefreshCw className="animate-spin inline-block mb-2 text-[#0f4d39]" size={24} />
-                    <p className="font-medium text-sm">Memuat data forecast...</p>
+                    <p className="font-medium text-sm">Memuat data 3-stage sales pipeline...</p>
                   </td>
                 </tr>
               ) : items.length === 0 ? (
                 <tr>
                   <td colSpan={20} className="py-12 text-center text-slate-400">
                     <Building2 className="inline-block mb-2 text-slate-300" size={32} />
-                    <p className="font-medium text-sm text-slate-600">Belum ada data forecast untuk periode ini.</p>
-                    <p className="text-xs text-slate-400 mt-1">Klik tombol &quot;Tambah Forecast&quot; di kanan atas untuk menginput data.</p>
+                    <p className="font-medium text-sm text-slate-600">Belum ada data sales pipeline untuk periode ini.</p>
+                    <p className="text-xs text-slate-400 mt-1">Klik tombol &quot;Tambah Lead / Forecast&quot; di kanan atas untuk menginput data.</p>
                   </td>
                 </tr>
               ) : (
@@ -847,123 +890,211 @@ export default function ForecastDashboard() {
                           : ""
                       }`}
                     >
-                      <td className="py-3 px-3 border-r border-slate-100 text-center font-medium text-slate-400">
+                      <td className="py-3 px-2.5 border-r border-slate-100 text-center font-medium text-slate-400">
                         {index + 1}
                       </td>
-                      <td className="py-3 px-3 border-r border-slate-100 font-semibold text-slate-900">
-                        <div className="flex flex-col gap-1">
-                          <span>{item.company}</span>
-                          {urgency && (
-                            <span
-                              className={`w-fit font-bold text-[10px] px-2 py-0.5 rounded-full ${
-                                urgency.level === "URGENT"
-                                  ? "bg-rose-50 text-rose-700 border border-rose-200/80"
-                                  : "bg-amber-50 text-amber-800 border border-amber-200/80"
-                              }`}
-                            >
-                              {urgency.label}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-3 px-3 border-r border-slate-100 whitespace-nowrap text-slate-600">
-                        {formatDateStr(item.reservationDate)}
-                      </td>
-                      {selectedUnit === "CAMP_VILLAGE" ? (
+
+                      {/* CONSOLIDATED / ALL VIEW ROWS */}
+                      {stageView === "ALL" && (
                         <>
-                          <td className="py-3 px-3 border-r border-slate-100 whitespace-nowrap text-slate-600">
-                            {formatDateStr(item.checkIn)}
+                          <td className="py-3 px-3 border-r border-slate-100 font-semibold text-slate-900">
+                            <div className="flex flex-col gap-1">
+                              <span>{item.company}</span>
+                              {urgency && (
+                                <span
+                                  className={`w-fit font-bold text-[10px] px-2 py-0.5 rounded-full ${
+                                    urgency.level === "URGENT"
+                                      ? "bg-rose-50 text-rose-700 border border-rose-200/80"
+                                      : "bg-amber-50 text-amber-800 border border-amber-200/80"
+                                  }`}
+                                >
+                                  {urgency.label}
+                                </span>
+                              )}
+                            </div>
                           </td>
-                          <td className="py-3 px-3 border-r border-slate-100 whitespace-nowrap text-slate-600">
-                            {formatDateStr(item.checkOut)}
+                          <td className="py-3 px-2.5 border-r border-slate-100 whitespace-nowrap text-slate-600">
+                            {formatDateStr(item.dateReceived || item.reservationDate)}
+                          </td>
+                          <td className="py-3 px-2.5 border-r border-slate-100 whitespace-nowrap text-slate-600">
+                            {formatDateStr(item.proposedEventDate || item.eventDate || item.checkIn)}
+                          </td>
+                          <td className="py-3 px-2.5 border-r border-slate-100 text-slate-600">
+                            {item.eventType || "-"}
+                          </td>
+                          <td className="py-3 px-2 text-center font-semibold text-slate-900">
+                            {item.pax || 0}
+                          </td>
+                          <td className="py-3 px-2.5 border-r border-slate-100 text-right whitespace-nowrap font-mono text-slate-600">
+                            {formatCurrency(item.rate)}
+                          </td>
+
+                          {/* Confirm */}
+                          <td className="py-3 px-2.5 border-r border-slate-100 text-right whitespace-nowrap">
+                            {isConfirm ? (
+                              <span className="inline-block bg-emerald-50 text-emerald-800 font-mono font-bold px-2 py-0.5 rounded-md border border-emerald-200/60">
+                                {formatCurrency(item.total)}
+                              </span>
+                            ) : (
+                              <span className="text-slate-300 font-mono text-center block">-</span>
+                            )}
+                          </td>
+
+                          {/* Tentative */}
+                          <td className="py-3 px-2.5 border-r border-slate-100 text-right whitespace-nowrap">
+                            {isTentative ? (
+                              <span className="inline-block bg-amber-50 text-amber-800 font-mono font-bold px-2 py-0.5 rounded-md border border-amber-200/60">
+                                {formatCurrency(item.total)}
+                              </span>
+                            ) : (
+                              <span className="text-slate-300 font-mono text-center block">-</span>
+                            )}
+                          </td>
+
+                          {/* Cancel */}
+                          <td className="py-3 px-2.5 border-r border-slate-100 text-right whitespace-nowrap">
+                            {isCancel ? (
+                              <span className="inline-block bg-rose-50 text-rose-800 font-mono font-bold px-2 py-0.5 rounded-md border border-rose-200/60">
+                                {formatCurrency(item.total)}
+                              </span>
+                            ) : (
+                              <span className="text-slate-300 font-mono text-center block">-</span>
+                            )}
+                          </td>
+
+                          {/* Pipeline Stage */}
+                          <td className="py-3 px-2.5 border-r border-slate-100 text-center whitespace-nowrap">
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-800 border border-indigo-200">
+                              <span>{item.leadStatus || "New Lead"}</span>
+                              <span className="text-[9px] font-mono text-indigo-600">({item.closingProbability || 10}%)</span>
+                            </span>
+                          </td>
+
+                          {/* DP Status */}
+                          <td className="py-3 px-2.5 border-r border-slate-100 text-center whitespace-nowrap">
+                            {renderDpBadge(item.dpStatus, item.dpAmount)}
+                          </td>
+
+                          <td className="py-3 px-2.5 border-r border-slate-100 font-medium text-slate-700">
+                            {item.salesPerson || item.pic || "-"}
                           </td>
                         </>
-                      ) : (
-                        <td className="py-3 px-3 border-r border-slate-100 whitespace-nowrap text-slate-600">
-                          {formatDateStr(item.eventDate)}
-                        </td>
                       )}
-                      <td className="py-3 px-3 border-r border-slate-100 text-slate-600">
-                        {item.eventType || "-"}
-                      </td>
-                      {selectedUnit === "PARK" && (
-                        <td className="py-3 px-3 border-r border-slate-100 font-medium text-slate-700">
-                          {item.venue || "-"}
-                        </td>
-                      )}
-                      <td className="py-3 px-3 border-r border-slate-100 text-center font-semibold text-slate-900">
-                        {item.pax || 0}
-                      </td>
-                      {selectedUnit === "CAMP_VILLAGE" && (
-                        <td className="py-3 px-3 border-r border-slate-100 text-center text-slate-600">
-                          {item.room || "-"}
-                        </td>
-                      )}
-                      <td className="py-3 px-3 border-r border-slate-100 text-right whitespace-nowrap font-mono text-slate-600">
-                        {formatCurrency(item.rate)}
-                      </td>
 
-                      {/* Status Column Breakdown */}
-                      {/* Confirm Column */}
-                      <td className="py-3 px-3 border-r border-slate-100 text-right whitespace-nowrap">
-                        {isConfirm ? (
-                          <span className="inline-block bg-emerald-50 text-emerald-800 font-mono font-bold px-2 py-0.5 rounded-md border border-emerald-200/60">
+                      {/* STAGE 1 VIEW ROWS */}
+                      {stageView === "STAGE1" && (
+                        <>
+                          <td className="py-3 px-2.5 border-r border-slate-100 whitespace-nowrap text-slate-600">
+                            {formatDateStr(item.dateReceived || item.reservationDate)}
+                          </td>
+                          <td className="py-3 px-3 border-r border-slate-100 font-semibold text-slate-900">
+                            {item.company}
+                          </td>
+                          <td className="py-3 px-2.5 border-r border-slate-100 text-slate-700">
+                            {item.contactPerson || "-"}
+                          </td>
+                          <td className="py-3 px-2.5 border-r border-slate-100 text-slate-600 font-mono">
+                            {item.phoneEmail || item.picPhone || "-"}
+                          </td>
+                          <td className="py-3 px-2.5 border-r border-slate-100 text-slate-600">
+                            <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md font-medium text-[11px]">
+                              {item.leadSource || item.source || "-"}
+                            </span>
+                          </td>
+                          <td className="py-3 px-2.5 border-r border-slate-100 text-slate-600">
+                            {item.segment || "-"}
+                          </td>
+                          <td className="py-3 px-2.5 border-r border-slate-100 text-slate-600">
+                            {item.eventType || "-"}
+                          </td>
+                          <td className="py-3 px-2.5 border-r border-slate-100 whitespace-nowrap text-slate-600">
+                            {formatDateStr(item.proposedEventDate || item.eventDate || item.checkIn)}
+                          </td>
+                          <td className="py-3 px-2 text-center font-bold text-slate-800">
+                            {item.pax || 0}
+                          </td>
+                          <td className="py-3 px-2.5 border-r border-slate-100 text-right font-mono text-slate-600">
+                            {formatCurrency(item.rate)}
+                          </td>
+                          <td className="py-3 px-2.5 border-r border-slate-100 text-right font-mono font-bold text-emerald-800">
                             {formatCurrency(item.total)}
-                          </span>
-                        ) : (
-                          <span className="text-slate-300 font-mono text-center block">-</span>
-                        )}
-                      </td>
-
-                      {/* Tentative Column */}
-                      <td className="py-3 px-3 border-r border-slate-100 text-right whitespace-nowrap">
-                        {isTentative ? (
-                          <span className="inline-block bg-amber-50 text-amber-800 font-mono font-bold px-2 py-0.5 rounded-md border border-amber-200/60">
-                            {formatCurrency(item.total)}
-                          </span>
-                        ) : (
-                          <span className="text-slate-300 font-mono text-center block">-</span>
-                        )}
-                      </td>
-
-                      {/* Cancel Column */}
-                      <td className="py-3 px-3 border-r border-slate-100 text-right whitespace-nowrap">
-                        {isCancel ? (
-                          <span className="inline-block bg-rose-50 text-rose-800 font-mono font-bold px-2 py-0.5 rounded-md border border-rose-200/60">
-                            {formatCurrency(item.total)}
-                          </span>
-                        ) : (
-                          <span className="text-slate-300 font-mono text-center block">-</span>
-                        )}
-                      </td>
-
-                      {/* Status DP & Nominal */}
-                      <td className="py-3 px-3 border-r border-slate-100 text-center whitespace-nowrap">
-                        {renderDpBadge(item.dpStatus, item.dpAmount)}
-                      </td>
-
-                      {/* Jatuh Tempo Pelunasan */}
-                      <td className="py-3 px-3 border-r border-slate-100 text-center whitespace-nowrap">
-                        {renderDueDateCell(item.dueDate)}
-                      </td>
-
-                      <td className="py-3 px-3 border-r border-slate-100 font-medium text-slate-700">
-                        {item.pic || "-"}
-                      </td>
-                      <td className="py-3 px-3 border-r border-slate-100 text-slate-500 max-w-[200px] truncate" title={item.remarks}>
-                        {item.remarks || "-"}
-                      </td>
-                      {selectedUnit === "PARK" && (
-                        <td className="py-3 px-3 border-r border-slate-100 text-slate-600">
-                          {item.segment || "-"}
-                        </td>
+                          </td>
+                          <td className="py-3 px-2.5 border-r border-slate-100 font-medium text-slate-700">
+                            {item.salesPerson || item.pic || "-"}
+                          </td>
+                        </>
                       )}
-                      <td className="py-3 px-3 border-r border-slate-100 text-slate-600">
-                        {item.source || "-"}
-                      </td>
-                      <td className="py-3 px-3 text-center whitespace-nowrap">
+
+                      {/* STAGE 2 VIEW ROWS */}
+                      {stageView === "STAGE2" && (
+                        <>
+                          <td className="py-3 px-3 border-r border-slate-100 font-semibold text-slate-900">
+                            {item.company}
+                          </td>
+                          <td className="py-3 px-2.5 border-r border-slate-100 font-medium text-slate-700">
+                            {item.salesPerson || item.pic || "-"}
+                          </td>
+                          <td className="py-3 px-2.5 border-r border-slate-100 whitespace-nowrap text-slate-600">
+                            {formatDateStr(item.firstResponseDate)}
+                          </td>
+                          <td className="py-3 px-2.5 border-r border-slate-100 whitespace-nowrap text-slate-600 font-semibold text-indigo-900">
+                            {formatDateStr(item.lastFollowUpDate)}
+                          </td>
+                          <td className="py-3 px-3 border-r border-slate-100 text-slate-600 max-w-[220px] truncate" title={item.latestClientResponse}>
+                            {item.latestClientResponse || "-"}
+                          </td>
+                          <td className="py-3 px-3 border-r border-slate-100 text-slate-800 font-medium max-w-[180px] truncate" title={item.nextAction}>
+                            {item.nextAction || "-"}
+                          </td>
+                          <td className="py-3 px-2.5 border-r border-slate-100 text-center whitespace-nowrap">
+                            {renderDueDateCell(item.nextActionDueDate)}
+                          </td>
+                          <td className="py-3 px-2.5 border-r border-slate-100 text-center whitespace-nowrap">
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-800 border border-indigo-200">
+                              <span>{item.leadStatus || "New Lead"}</span>
+                            </span>
+                          </td>
+                        </>
+                      )}
+
+                      {/* STAGE 3 VIEW ROWS */}
+                      {stageView === "STAGE3" && (
+                        <>
+                          <td className="py-3 px-3 border-r border-slate-100 font-semibold text-slate-900">
+                            {item.company}
+                          </td>
+                          <td className="py-3 px-2.5 border-r border-slate-100 font-medium text-slate-700">
+                            {item.salesPerson || item.pic || "-"}
+                          </td>
+                          <td className="py-3 px-2.5 border-r border-slate-100 text-center whitespace-nowrap">
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                              <span>{item.leadStatus || "New Lead"}</span>
+                            </span>
+                          </td>
+                          <td className="py-3 px-2 text-center font-bold text-emerald-700">
+                            {item.closingProbability || 10}%
+                          </td>
+                          <td className="py-3 px-2.5 border-r border-slate-100 text-right font-mono text-slate-600">
+                            {formatCurrency(item.total)}
+                          </td>
+                          <td className="py-3 px-2.5 border-r border-slate-100 text-right font-mono font-bold text-emerald-800">
+                            {formatCurrency(item.finalDealValue || (item.status === "CONFIRM" ? item.total : 0))}
+                          </td>
+                          <td className="py-3 px-2.5 border-r border-slate-100 text-center whitespace-nowrap">
+                            {renderDpBadge(item.dpStatus, item.dpAmount)}
+                          </td>
+                          <td className="py-3 px-2.5 border-r border-slate-100 text-center whitespace-nowrap">
+                            {renderDueDateCell(item.dueDate)}
+                          </td>
+                          <td className="py-3 px-2.5 border-r border-slate-100 text-slate-500 text-[11px] max-w-[150px] truncate" title={item.reasonForLossHold}>
+                            {item.reasonForLossHold || "-"}
+                          </td>
+                        </>
+                      )}
+
+                      {/* Actions Column */}
+                      <td className="py-3 px-2.5 text-center whitespace-nowrap">
                         <div className="flex items-center justify-center gap-1">
-                          {/* Send WA Follow-up button */}
                           <button
                             onClick={() => {
                               setWaModalItem(item);
@@ -1002,31 +1133,24 @@ export default function ForecastDashboard() {
             {/* Table Footer Totals */}
             {!loading && items.length > 0 && (
               <tfoot>
-                <tr className="bg-slate-50/90 text-slate-800 font-bold text-xs border-t-2 border-slate-200/80">
-                  <td colSpan={selectedUnit === "CAMP_VILLAGE" ? 6 : 6} className="py-3.5 px-3 text-right border-r border-slate-200/60 uppercase tracking-wider text-slate-500 font-bold">
-                    Total Forecast:
+                <tr className="bg-slate-50/90 text-slate-800 font-bold text-xs border-t-2 border-slate-200">
+                  <td colSpan={3} className="py-3.5 px-3 text-right uppercase tracking-wider text-slate-500 font-bold">
+                    Total Pipeline Forecast:
                   </td>
-                  <td className="py-3.5 px-3 text-center border-r border-slate-200/60 text-slate-900 font-bold">
+                  <td className="py-3.5 px-3 text-center text-slate-900 font-bold">
                     {stats.totalPax} Pax
                   </td>
-                  {selectedUnit === "CAMP_VILLAGE" && (
-                    <td className="py-3.5 px-3 text-center border-r border-slate-200/60 text-indigo-700 font-bold">
-                      {stats.totalRoomCount} Unit
-                    </td>
-                  )}
-                  <td className="py-3.5 px-3 border-r border-slate-200/60"></td>
-                  
-                  <td className="py-3.5 px-3 text-right border-r border-slate-200/60 bg-emerald-50/80 text-emerald-900 font-mono font-bold">
+                  <td colSpan={stageView === "ALL" ? 3 : 2}></td>
+                  <td className="py-3.5 px-3 text-right bg-emerald-50/80 text-emerald-900 font-mono font-bold">
                     {formatCurrency(stats.confirmTotal)}
                   </td>
-                  <td className="py-3.5 px-3 text-right border-r border-slate-200/60 bg-amber-50/80 text-amber-900 font-mono font-bold">
+                  <td className="py-3.5 px-3 text-right bg-amber-50/80 text-amber-900 font-mono font-bold">
                     {formatCurrency(stats.tentativeTotal)}
                   </td>
-                  <td className="py-3.5 px-3 text-right border-r border-slate-200/60 bg-rose-50/80 text-rose-900 font-mono font-bold">
+                  <td className="py-3.5 px-3 text-right bg-rose-50/80 text-rose-900 font-mono font-bold">
                     {formatCurrency(stats.cancelTotal)}
                   </td>
-                  
-                  <td colSpan={selectedUnit === "PARK" ? 7 : 6} className="py-3.5 px-3"></td>
+                  <td colSpan={6} className="py-3.5 px-3"></td>
                 </tr>
               </tfoot>
             )}
@@ -1042,7 +1166,7 @@ export default function ForecastDashboard() {
           setEditingItem(null);
         }}
         onSuccess={() => fetchData()}
-        unit={selectedUnit}
+        unit={selectedUnit === "ALL" ? "CAMP_VILLAGE" : selectedUnit}
         initialData={editingItem}
       />
 

@@ -5,25 +5,42 @@ import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
-export type ForecastUnitType = "CAMP_VILLAGE" | "PARK";
+export type ForecastUnitType = "CAMP_VILLAGE" | "PARK" | "ALL";
 export type ForecastStatusType = "CONFIRM" | "TENTATIVE" | "CANCEL";
 export type ForecastDpStatusType = "BELUM_DP" | "DP_30" | "DP_50" | "DP_CUSTOM" | "LUNAS";
 
+export const LEAD_STATUS_PROBABILITIES: Record<string, number> = {
+  "New Lead": 10,
+  "Contacted": 15,
+  "Qualified": 25,
+  "Proposal Sent": 40,
+  "Negotiation": 60,
+  "Verbal Agreement": 80,
+  "Confirmed / Deal": 100,
+  "On Hold": 10,
+  "Lost / Cancelled": 0,
+};
+
 export async function getForecastItems(params: {
-  unit: ForecastUnitType;
+  unit?: ForecastUnitType;
   month?: number; // 1-12
   year?: number;  // e.g. 2026
   search?: string;
   status?: ForecastStatusType | "ALL";
   dpStatus?: ForecastDpStatusType | "ALL";
+  leadStatus?: string;
 }) {
   const session = await getServerSession(authOptions);
   if (!session || !session.user) throw new Error("Unauthorized");
 
-  const { unit, month, year, search, status, dpStatus } = params;
+  const { unit, month, year, search, status, dpStatus, leadStatus } = params;
 
-  // Build date filter based on month & year
-  const where: any = { unit };
+  // Build query
+  const where: any = {};
+
+  if (unit && unit !== "ALL") {
+    where.unit = unit;
+  }
 
   if (status && status !== "ALL") {
     where.status = status;
@@ -33,34 +50,38 @@ export async function getForecastItems(params: {
     where.dpStatus = dpStatus;
   }
 
+  if (leadStatus && leadStatus !== "ALL") {
+    where.leadStatus = leadStatus;
+  }
+
   if (search && search.trim()) {
-    where.company = {
-      contains: search.trim(),
-    };
+    where.OR = [
+      { company: { contains: search.trim() } },
+      { contactPerson: { contains: search.trim() } },
+      { salesPerson: { contains: search.trim() } },
+      { pic: { contains: search.trim() } },
+    ];
   }
 
   if (month && year) {
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0, 23, 59, 59, 999);
 
-    if (unit === "CAMP_VILLAGE") {
-      where.OR = [
-        { checkIn: { gte: startDate, lte: endDate } },
-        { checkOut: { gte: startDate, lte: endDate } },
-        { checkIn: null, checkOut: null },
-      ];
-    } else {
-      where.OR = [
-        { eventDate: { gte: startDate, lte: endDate } },
-        { eventDate: null },
-      ];
-    }
+    where.OR = [
+      { proposedEventDate: { gte: startDate, lte: endDate } },
+      { checkIn: { gte: startDate, lte: endDate } },
+      { eventDate: { gte: startDate, lte: endDate } },
+      { reservationDate: { gte: startDate, lte: endDate } },
+      { dateReceived: { gte: startDate, lte: endDate } },
+      { proposedEventDate: null, checkIn: null, eventDate: null },
+    ];
   }
 
   const items = await prisma.forecastItem.findMany({
     where,
     orderBy: [
-      unit === "CAMP_VILLAGE" ? { checkIn: "asc" } : { eventDate: "asc" },
+      { dateReceived: "desc" },
+      { proposedEventDate: "asc" },
       { createdAt: "desc" },
     ],
   });
@@ -77,11 +98,16 @@ export async function getSalesPics() {
   });
 
   const forecastPics = await prisma.forecastItem.findMany({
-    select: { pic: true, picPhone: true },
-    where: { pic: { not: null } },
+    select: { pic: true, picPhone: true, salesPerson: true },
   });
 
   const map = new Map<string, { name: string; phone: string }>();
+
+  // Default sales team
+  const defaultTeam = ["Sri", "Rizki Kiki", "Rizkita", "Riki"];
+  defaultTeam.forEach((name) => {
+    map.set(name.toLowerCase(), { name, phone: "" });
+  });
 
   users.forEach((u) => {
     if (u.name) {
@@ -90,10 +116,11 @@ export async function getSalesPics() {
   });
 
   forecastPics.forEach((f) => {
-    if (f.pic) {
-      const existing = map.get(f.pic.toLowerCase());
-      map.set(f.pic.toLowerCase(), {
-        name: f.pic,
+    const pName = f.salesPerson || f.pic;
+    if (pName) {
+      const existing = map.get(pName.toLowerCase());
+      map.set(pName.toLowerCase(), {
+        name: pName,
         phone: f.picPhone || existing?.phone || "",
       });
     }
@@ -103,18 +130,27 @@ export async function getSalesPics() {
 }
 
 export async function createForecastItem(data: {
-  unit: ForecastUnitType;
+  unit?: ForecastUnitType;
   company: string;
-  reservationDate?: string | null;
-  checkIn?: string | null;
-  checkOut?: string | null;
-  eventDate?: string | null;
+  // Stage 1
+  dateReceived?: string | null;
+  contactPerson?: string | null;
+  phoneEmail?: string | null;
+  leadSource?: string | null;
+  segment?: string | null;
   eventType?: string | null;
-  venue?: string | null;
+  proposedEventDate?: string | null;
   pax?: number;
   room?: string | null;
   rate?: number;
   total?: number;
+  salesPerson?: string | null;
+  // Legacy / extra
+  reservationDate?: string | null;
+  checkIn?: string | null;
+  checkOut?: string | null;
+  eventDate?: string | null;
+  venue?: string | null;
   dpStatus?: ForecastDpStatusType;
   dpAmount?: number;
   dueDate?: string | null;
@@ -122,8 +158,19 @@ export async function createForecastItem(data: {
   picPhone?: string | null;
   status?: ForecastStatusType;
   remarks?: string | null;
-  segment?: string | null;
   source?: string | null;
+  // Stage 2
+  firstResponseDate?: string | null;
+  lastFollowUpDate?: string | null;
+  latestClientResponse?: string | null;
+  nextAction?: string | null;
+  nextActionDueDate?: string | null;
+  leadStatus?: string | null;
+  // Stage 3
+  closingProbability?: number;
+  expectedClosingMonth?: string | null;
+  reasonForLossHold?: string | null;
+  finalDealValue?: number;
 }) {
   const session = await getServerSession(authOptions);
   if (!session || !session.user) throw new Error("Unauthorized");
@@ -132,29 +179,61 @@ export async function createForecastItem(data: {
   const pax = Number(data.pax || 0);
   const total = data.total !== undefined && data.total !== null ? Number(data.total) : rate * pax;
 
+  // Auto probability based on leadStatus
+  const lStatus = data.leadStatus || "New Lead";
+  const prob = data.closingProbability !== undefined && data.closingProbability !== null
+    ? Number(data.closingProbability)
+    : LEAD_STATUS_PROBABILITIES[lStatus] ?? 10;
+
+  // Sync main status (CONFIRM, TENTATIVE, CANCEL) based on leadStatus
+  let mainStatus: ForecastStatusType = data.status || "TENTATIVE";
+  if (lStatus === "Confirmed / Deal") {
+    mainStatus = "CONFIRM";
+  } else if (lStatus === "Lost / Cancelled") {
+    mainStatus = "CANCEL";
+  } else {
+    mainStatus = "TENTATIVE";
+  }
+
   const item = await prisma.forecastItem.create({
     data: {
-      unit: data.unit,
+      unit: (data.unit === "PARK" ? "PARK" : "CAMP_VILLAGE") as any,
       company: data.company,
-      reservationDate: data.reservationDate ? new Date(data.reservationDate) : null,
-      checkIn: data.checkIn ? new Date(data.checkIn) : null,
-      checkOut: data.checkOut ? new Date(data.checkOut) : null,
-      eventDate: data.eventDate ? new Date(data.eventDate) : null,
+      dateReceived: data.dateReceived ? new Date(data.dateReceived) : new Date(),
+      contactPerson: data.contactPerson || null,
+      phoneEmail: data.phoneEmail || null,
+      leadSource: data.leadSource || data.source || null,
+      segment: data.segment || null,
       eventType: data.eventType || null,
-      venue: data.venue || null,
+      proposedEventDate: data.proposedEventDate ? new Date(data.proposedEventDate) : data.eventDate ? new Date(data.eventDate) : null,
       pax,
       room: data.room || null,
       rate,
       total,
+      salesPerson: data.salesPerson || data.pic || null,
+      reservationDate: data.reservationDate ? new Date(data.reservationDate) : null,
+      checkIn: data.checkIn ? new Date(data.checkIn) : null,
+      checkOut: data.checkOut ? new Date(data.checkOut) : null,
+      eventDate: data.eventDate ? new Date(data.eventDate) : data.proposedEventDate ? new Date(data.proposedEventDate) : null,
+      venue: data.venue || null,
       dpStatus: data.dpStatus || "BELUM_DP",
       dpAmount: Number(data.dpAmount || 0),
       dueDate: data.dueDate ? new Date(data.dueDate) : null,
-      pic: data.pic || null,
+      pic: data.pic || data.salesPerson || null,
       picPhone: data.picPhone || null,
-      status: data.status || "TENTATIVE",
+      status: mainStatus,
       remarks: data.remarks || null,
-      segment: data.segment || null,
-      source: data.source || null,
+      source: data.source || data.leadSource || null,
+      firstResponseDate: data.firstResponseDate ? new Date(data.firstResponseDate) : null,
+      lastFollowUpDate: data.lastFollowUpDate ? new Date(data.lastFollowUpDate) : null,
+      latestClientResponse: data.latestClientResponse || null,
+      nextAction: data.nextAction || null,
+      nextActionDueDate: data.nextActionDueDate ? new Date(data.nextActionDueDate) : null,
+      leadStatus: lStatus,
+      closingProbability: prob,
+      expectedClosingMonth: data.expectedClosingMonth ? new Date(data.expectedClosingMonth) : null,
+      reasonForLossHold: data.reasonForLossHold || null,
+      finalDealValue: data.finalDealValue !== undefined ? Number(data.finalDealValue) : lStatus === "Confirmed / Deal" ? total : 0,
     },
   });
 
@@ -164,59 +243,70 @@ export async function createForecastItem(data: {
 
 export async function updateForecastItem(
   id: string,
-  data: {
-    unit?: ForecastUnitType;
-    company?: string;
-    reservationDate?: string | null;
-    checkIn?: string | null;
-    checkOut?: string | null;
-    eventDate?: string | null;
-    eventType?: string | null;
-    venue?: string | null;
-    pax?: number;
-    room?: string | null;
-    rate?: number;
-    total?: number;
-    dpStatus?: ForecastDpStatusType;
-    dpAmount?: number;
-    dueDate?: string | null;
-    pic?: string | null;
-    picPhone?: string | null;
-    status?: ForecastStatusType;
-    remarks?: string | null;
-    segment?: string | null;
-    source?: string | null;
-  }
+  data: Partial<Parameters<typeof createForecastItem>[0]> & { unit?: ForecastUnitType }
 ) {
   const session = await getServerSession(authOptions);
   if (!session || !session.user) throw new Error("Unauthorized");
 
-  const updateData: any = { ...data };
+  const updateData: any = {};
 
-  if (data.reservationDate !== undefined) {
-    updateData.reservationDate = data.reservationDate ? new Date(data.reservationDate) : null;
-  }
-  if (data.checkIn !== undefined) {
-    updateData.checkIn = data.checkIn ? new Date(data.checkIn) : null;
-  }
-  if (data.checkOut !== undefined) {
-    updateData.checkOut = data.checkOut ? new Date(data.checkOut) : null;
-  }
-  if (data.eventDate !== undefined) {
-    updateData.eventDate = data.eventDate ? new Date(data.eventDate) : null;
-  }
-  if (data.dueDate !== undefined) {
-    updateData.dueDate = data.dueDate ? new Date(data.dueDate) : null;
-  }
-  if (data.dpAmount !== undefined) {
-    updateData.dpAmount = Number(data.dpAmount || 0);
-  }
+  if (data.company !== undefined) updateData.company = data.company;
+  if (data.contactPerson !== undefined) updateData.contactPerson = data.contactPerson;
+  if (data.phoneEmail !== undefined) updateData.phoneEmail = data.phoneEmail;
+  if (data.leadSource !== undefined) updateData.leadSource = data.leadSource;
+  if (data.segment !== undefined) updateData.segment = data.segment;
+  if (data.eventType !== undefined) updateData.eventType = data.eventType;
+  if (data.room !== undefined) updateData.room = data.room;
+  if (data.venue !== undefined) updateData.venue = data.venue;
+  if (data.salesPerson !== undefined) updateData.salesPerson = data.salesPerson;
+  if (data.pic !== undefined) updateData.pic = data.pic;
+  if (data.picPhone !== undefined) updateData.picPhone = data.picPhone;
+  if (data.remarks !== undefined) updateData.remarks = data.remarks;
+  if (data.source !== undefined) updateData.source = data.source;
+  if (data.latestClientResponse !== undefined) updateData.latestClientResponse = data.latestClientResponse;
+  if (data.nextAction !== undefined) updateData.nextAction = data.nextAction;
+  if (data.reasonForLossHold !== undefined) updateData.reasonForLossHold = data.reasonForLossHold;
+  if (data.dpStatus !== undefined) updateData.dpStatus = data.dpStatus;
+
+  if (data.dateReceived !== undefined) updateData.dateReceived = data.dateReceived ? new Date(data.dateReceived) : null;
+  if (data.proposedEventDate !== undefined) updateData.proposedEventDate = data.proposedEventDate ? new Date(data.proposedEventDate) : null;
+  if (data.reservationDate !== undefined) updateData.reservationDate = data.reservationDate ? new Date(data.reservationDate) : null;
+  if (data.checkIn !== undefined) updateData.checkIn = data.checkIn ? new Date(data.checkIn) : null;
+  if (data.checkOut !== undefined) updateData.checkOut = data.checkOut ? new Date(data.checkOut) : null;
+  if (data.eventDate !== undefined) updateData.eventDate = data.eventDate ? new Date(data.eventDate) : null;
+  if (data.dueDate !== undefined) updateData.dueDate = data.dueDate ? new Date(data.dueDate) : null;
+  if (data.firstResponseDate !== undefined) updateData.firstResponseDate = data.firstResponseDate ? new Date(data.firstResponseDate) : null;
+  if (data.lastFollowUpDate !== undefined) updateData.lastFollowUpDate = data.lastFollowUpDate ? new Date(data.lastFollowUpDate) : null;
+  if (data.nextActionDueDate !== undefined) updateData.nextActionDueDate = data.nextActionDueDate ? new Date(data.nextActionDueDate) : null;
+  if (data.expectedClosingMonth !== undefined) updateData.expectedClosingMonth = data.expectedClosingMonth ? new Date(data.expectedClosingMonth) : null;
+
+  if (data.dpAmount !== undefined) updateData.dpAmount = Number(data.dpAmount || 0);
+  if (data.pax !== undefined) updateData.pax = Number(data.pax || 0);
+  if (data.rate !== undefined) updateData.rate = Number(data.rate || 0);
 
   if (data.rate !== undefined || data.pax !== undefined || data.total !== undefined) {
     const rate = Number(data.rate ?? 0);
     const pax = Number(data.pax ?? 0);
     updateData.total = data.total !== undefined && data.total !== null ? Number(data.total) : rate * pax;
   }
+
+  if (data.leadStatus !== undefined) {
+    const lStatus = data.leadStatus;
+    updateData.leadStatus = lStatus;
+    if (data.closingProbability === undefined) {
+      updateData.closingProbability = lStatus ? (LEAD_STATUS_PROBABILITIES[lStatus] ?? 10) : 10;
+    }
+    if (lStatus === "Confirmed / Deal") {
+      updateData.status = "CONFIRM";
+    } else if (lStatus === "Lost / Cancelled") {
+      updateData.status = "CANCEL";
+    } else {
+      updateData.status = "TENTATIVE";
+    }
+  }
+
+  if (data.closingProbability !== undefined) updateData.closingProbability = Number(data.closingProbability);
+  if (data.finalDealValue !== undefined) updateData.finalDealValue = Number(data.finalDealValue);
 
   const item = await prisma.forecastItem.update({
     where: { id },
@@ -299,7 +389,7 @@ export async function getForecastReminders(unit?: ForecastUnitType) {
     status: "TENTATIVE",
   };
 
-  if (unit) {
+  if (unit && unit !== "ALL") {
     where.unit = unit;
   }
 
@@ -395,7 +485,7 @@ export async function autoProcessForecastReminders(unit?: ForecastUnitType) {
     ],
   };
 
-  if (unit) where.unit = unit;
+  if (unit && unit !== "ALL") where.unit = unit;
 
   const items = await prisma.forecastItem.findMany({ where });
 
@@ -459,10 +549,12 @@ export async function saveForecastTarget(data: {
   const session = await getServerSession(authOptions);
   if (!session || !session.user) throw new Error("Unauthorized");
 
+  const targetUnit = (data.unit === "ALL" ? "CAMP_VILLAGE" : data.unit) as any;
+
   const target = await prisma.forecastTarget.upsert({
     where: {
       unit_year_month: {
-        unit: data.unit,
+        unit: targetUnit,
         year: data.year,
         month: data.month,
       },
@@ -471,7 +563,7 @@ export async function saveForecastTarget(data: {
       target: Number(data.target) || 0,
     },
     create: {
-      unit: data.unit,
+      unit: targetUnit,
       year: data.year,
       month: data.month,
       target: Number(data.target) || 0,
@@ -494,16 +586,27 @@ export async function getForecastYearlyTrend(params: {
   const startDate = new Date(year, 0, 1);
   const endDate = new Date(year, 11, 31, 23, 59, 59, 999);
 
-  const where: any = { unit };
-  if (unit === "CAMP_VILLAGE") {
-    where.checkIn = { gte: startDate, lte: endDate };
-  } else {
-    where.eventDate = { gte: startDate, lte: endDate };
+  const where: any = {};
+  if (unit && unit !== "ALL") {
+    where.unit = unit;
+  }
+
+  where.OR = [
+    { dateReceived: { gte: startDate, lte: endDate } },
+    { proposedEventDate: { gte: startDate, lte: endDate } },
+    { checkIn: { gte: startDate, lte: endDate } },
+    { eventDate: { gte: startDate, lte: endDate } },
+    { reservationDate: { gte: startDate, lte: endDate } },
+  ];
+
+  const targetWhere: any = { year };
+  if (unit && unit !== "ALL") {
+    targetWhere.unit = unit;
   }
 
   const [items, targets] = await Promise.all([
     prisma.forecastItem.findMany({ where }),
-    prisma.forecastTarget.findMany({ where: { unit, year } }),
+    prisma.forecastTarget.findMany({ where: targetWhere }),
   ]);
 
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agt", "Sep", "Okt", "Nov", "Des"];

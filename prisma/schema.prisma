@@ -661,38 +661,65 @@ enum ForecastDpStatus {
 }
 
 model ForecastItem {
-  id              String           @id @default(cuid())
-  unit            ForecastUnit     @default(CAMP_VILLAGE)
-  company         String
-  reservationDate DateTime?
-  checkIn         DateTime?        // For Camp & Village
-  checkOut        DateTime?        // For Camp & Village
-  eventDate       DateTime?        // For Park / Kawasan Wisata
-  eventType       String?          // School camp, Fullboard, Tiket Regular + Lunch, etc.
-  venue           String?          // TLM, Dapur Hawu, Omah (for Park)
-  pax             Int              @default(0)
-  room            String?          // e.g. "18", "4", "all" (for Camp & Village)
-  rate            Float            @default(0)
-  total           Float            @default(0)
-  dpStatus        ForecastDpStatus @default(BELUM_DP)
-  dpAmount        Float            @default(0)
-  dueDate         DateTime?        // Batas Akhir Pelunasan
-  pic             String?          // Sales PIC name
-  picPhone        String?          // Sales PIC WhatsApp phone number
-  status          ForecastStatus   @default(TENTATIVE)
-  remarks         String?          @db.Text
-  segment         String?
-  source          String?
-  lastReminderSentAt DateTime?
-  reminderCount   Int              @default(0)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  id                    String           @id @default(cuid())
+  unit                  ForecastUnit     @default(CAMP_VILLAGE)
+  
+  // STAGE 1: MASTER LEADS & FORECAST
+  dateReceived          DateTime?        // Tanggal pertama kali permintaan / prospek diterima
+  company               String           // Client / Company
+  contactPerson         String?          // Contact Person
+  phoneEmail            String?          // Phone / Email
+  leadSource            String?          // Instagram, Tiktok, Website, Whatsapp TLM, Sales Call, Table Top, Database Existing, Walk-in, Referral, Sales Prospecting, Travel Agent, Other
+  segment               String?          // Corporate, Government, School, Travel Agent, Social Event, Individual / Family, Community, Other
+  eventType             String?          // Corporate Gathering, Meeting, Team Building, School Trip, Wedding, Birthday, Social Gathering, Room Booking, Camping, Day Visit / Attractions, F&B Group Booking, Other
+  proposedEventDate     DateTime?        // Proposed Event Date
+  pax                   Int              @default(0) // Estimated Guests / Units
+  room                  String?          // Room / Units detail
+  rate                  Float            @default(0) // Estimated Price per Pax
+  total                 Float            @default(0) // Estimated Deal Value
+  salesPerson           String?          // Sales Person (Sri, Rizki Kiki, Rizkita, Riki, Other)
+
+  // Legacy fields preserved for backward compatibility
+  reservationDate       DateTime?
+  checkIn               DateTime?
+  checkOut              DateTime?
+  eventDate             DateTime?
+  venue                 String?
+  dpStatus              ForecastDpStatus @default(BELUM_DP)
+  dpAmount              Float            @default(0)
+  dueDate               DateTime?
+  pic                   String?
+  picPhone              String?
+  status                ForecastStatus   @default(TENTATIVE)
+  remarks               String?          @db.Text
+  source                String?
+
+  // STAGE 2: FOLLOW-UP LOG
+  firstResponseDate     DateTime?        // Tanggal ketika tim pertama kali merespons lead
+  lastFollowUpDate      DateTime?        // Tanggal komunikasi terakhir dengan klien
+  latestClientResponse  String?          @db.Text // Ringkasan singkat respons / posisi terakhir klien
+  nextAction            String?          @db.Text // Tindakan konkret berikutnya
+  nextActionDueDate     DateTime?        // Batas tanggal penyelesaian tindakan berikutnya
+  leadStatus            String?          @default("New Lead") // New Lead, Contacted, Qualified, Proposal Sent, Negotiation, Verbal Agreement, Confirmed / Deal, On Hold, Lost / Cancelled
+
+  // STAGE 3: PIPELINE
+  closingProbability    Int              @default(10) // 10%, 15%, 25%, 40%, 60%, 80%, 100%, 10%, 0%
+  expectedClosingMonth  DateTime?        // Bulan ketika keputusan/konfirmasi transaksi diperkirakan terjadi
+  reasonForLossHold     String?          // Alasan lead tertunda atau tidak berhasil
+  finalDealValue        Float?           @default(0) // Nilai transaksi akhir yang telah disepakati
+
+  lastReminderSentAt    DateTime?
+  reminderCount         Int              @default(0)
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
 
   @@index([unit])
   @@index([status])
+  @@index([leadStatus])
   @@index([dpStatus])
   @@index([checkIn])
   @@index([eventDate])
+  @@index([proposedEventDate])
   @@map("forecast_items")
 }
 

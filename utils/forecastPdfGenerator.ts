@@ -111,7 +111,11 @@ export async function generateForecastPdfReport(options: GeneratePdfOptions) {
   doc.setFontSize(11);
   doc.setTextColor(secondaryColor);
   const unitText =
-    unit === "CAMP_VILLAGE" ? "The Lodge Camp & Village" : "Kawasan Wisata The Lodge Park";
+    unit === "ALL"
+      ? "Consolidated (Camp, Village & Park)"
+      : unit === "CAMP_VILLAGE"
+      ? "The Lodge Camp & Village"
+      : "Kawasan Wisata The Lodge Park";
   doc.text(`Unit Operational: ${unitText}`, margin + 40, startY + 12);
 
   doc.setFont("helvetica", "normal");
@@ -255,7 +259,8 @@ export async function generateForecastPdfReport(options: GeneratePdfOptions) {
           "Jatuh Tempo",
           "PIC",
         ]
-      : [
+      : unit === "PARK"
+      ? [
           "No",
           "Company / Instansi",
           "Res. Date",
@@ -265,6 +270,21 @@ export async function generateForecastPdfReport(options: GeneratePdfOptions) {
           "Pax",
           "Rate (Rp)",
           "Total Revenue (Rp)",
+          "Status",
+          "Status DP",
+          "Nominal DP",
+          "Jatuh Tempo",
+          "PIC",
+        ]
+      : [
+          "No",
+          "Company / Instansi",
+          "Terima Lead",
+          "Tgl Event",
+          "Event Type",
+          "Pax",
+          "Total Revenue (Rp)",
+          "Stage Lead",
           "Status",
           "Status DP",
           "Nominal DP",
@@ -299,9 +319,9 @@ export async function generateForecastPdfReport(options: GeneratePdfOptions) {
         dpStatusText,
         item.dpAmount > 0 ? formatCurrency(item.dpAmount) : "-",
         formatDateStr(item.dueDate),
-        item.pic || "-",
+        item.salesPerson || item.pic || "-",
       ];
-    } else {
+    } else if (unit === "PARK") {
       return [
         index + 1,
         item.company || "-",
@@ -316,7 +336,23 @@ export async function generateForecastPdfReport(options: GeneratePdfOptions) {
         dpStatusText,
         item.dpAmount > 0 ? formatCurrency(item.dpAmount) : "-",
         formatDateStr(item.dueDate),
-        item.pic || "-",
+        item.salesPerson || item.pic || "-",
+      ];
+    } else {
+      return [
+        index + 1,
+        item.company || "-",
+        formatDateStr(item.dateReceived || item.reservationDate),
+        formatDateStr(item.proposedEventDate || item.eventDate || item.checkIn),
+        item.eventType || "-",
+        item.pax || 0,
+        formatCurrency(item.total),
+        item.leadStatus || "New Lead",
+        item.status || "TENTATIVE",
+        dpStatusText,
+        item.dpAmount > 0 ? formatCurrency(item.dpAmount) : "-",
+        formatDateStr(item.dueDate),
+        item.salesPerson || item.pic || "-",
       ];
     }
   });

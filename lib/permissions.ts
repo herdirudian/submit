@@ -58,3 +58,4 @@ export function isFeatureAllowed(
 
   return permList.includes(featureId);
 }
+
