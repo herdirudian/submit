@@ -649,33 +649,44 @@ enum ForecastStatus {
   CANCEL
 }
 
+enum ForecastDpStatus {
+  BELUM_DP
+  DP_30
+  DP_50
+  LUNAS
+}
+
 model ForecastItem {
-  id              String         @id @default(cuid())
-  unit            ForecastUnit   @default(CAMP_VILLAGE)
+  id              String           @id @default(cuid())
+  unit            ForecastUnit     @default(CAMP_VILLAGE)
   company         String
   reservationDate DateTime?
-  checkIn         DateTime?      // For Camp & Village
-  checkOut        DateTime?      // For Camp & Village
-  eventDate       DateTime?      // For Park / Kawasan Wisata
-  eventType       String?        // School camp, Fullboard, Tiket Regular + Lunch, etc.
-  venue           String?        // TLM, Dapur Hawu, Omah (for Park)
-  pax             Int            @default(0)
-  room            String?        // e.g. "18", "4", "all" (for Camp & Village)
-  rate            Float          @default(0)
-  total           Float          @default(0)
-  pic             String?        // Sales PIC name
-  picPhone        String?        // Sales PIC WhatsApp phone number
-  status          ForecastStatus @default(TENTATIVE)
-  remarks         String?        @db.Text
+  checkIn         DateTime?        // For Camp & Village
+  checkOut        DateTime?        // For Camp & Village
+  eventDate       DateTime?        // For Park / Kawasan Wisata
+  eventType       String?          // School camp, Fullboard, Tiket Regular + Lunch, etc.
+  venue           String?          // TLM, Dapur Hawu, Omah (for Park)
+  pax             Int              @default(0)
+  room            String?          // e.g. "18", "4", "all" (for Camp & Village)
+  rate            Float            @default(0)
+  total           Float            @default(0)
+  dpStatus        ForecastDpStatus @default(BELUM_DP)
+  dpAmount        Float            @default(0)
+  dueDate         DateTime?        // Batas Akhir Pelunasan
+  pic             String?          // Sales PIC name
+  picPhone        String?          // Sales PIC WhatsApp phone number
+  status          ForecastStatus   @default(TENTATIVE)
+  remarks         String?          @db.Text
   segment         String?
   source          String?
   lastReminderSentAt DateTime?
-  reminderCount   Int            @default(0)
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  reminderCount   Int              @default(0)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
   @@index([unit])
   @@index([status])
+  @@index([dpStatus])
   @@index([checkIn])
   @@index([eventDate])
   @@map("forecast_items")

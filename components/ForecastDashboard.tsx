@@ -34,6 +34,7 @@ import {
   autoProcessForecastReminders,
   ForecastUnitType,
   ForecastStatusType,
+  ForecastDpStatusType,
 } from "@/actions/forecast";
 import ForecastModal from "@/components/ForecastModal";
 import ForecastWaModal from "@/components/ForecastWaModal";
@@ -61,6 +62,7 @@ export default function ForecastDashboard() {
   const [selectedYear, setSelectedYear] = useState<number>(currentDate.getFullYear());
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<ForecastStatusType | "ALL">("ALL");
+  const [dpStatusFilter, setDpStatusFilter] = useState<ForecastDpStatusType | "ALL">("ALL");
   const [showAnalytics, setShowAnalytics] = useState(false);
 
   const [items, setItems] = useState<any[]>([]);
@@ -107,6 +109,7 @@ export default function ForecastDashboard() {
           year: selectedYear,
           search: searchQuery,
           status: statusFilter,
+          dpStatus: dpStatusFilter,
         }),
         getForecastStats({
           unit: selectedUnit,
@@ -124,7 +127,7 @@ export default function ForecastDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [selectedUnit, selectedMonth, selectedYear, searchQuery, statusFilter]);
+  }, [selectedUnit, selectedMonth, selectedYear, searchQuery, statusFilter, dpStatusFilter]);
 
   useEffect(() => {
     fetchData();
@@ -157,6 +160,77 @@ export default function ForecastDashboard() {
       month: "short",
       year: "numeric",
     });
+  };
+
+  // DP Status Badge renderer
+  const renderDpBadge = (dpStatus: string, dpAmount: number) => {
+    if (dpStatus === "LUNAS") {
+      return (
+        <span className="inline-flex items-center gap-1 font-bold text-[11px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+          <span>Lunas</span>
+        </span>
+      );
+    }
+    if (dpStatus === "DP_30" || dpStatus === "DP_50") {
+      const pct = dpStatus === "DP_30" ? "DP 30%" : "DP 50%";
+      return (
+        <div className="flex flex-col items-center gap-0.5">
+          <span className="inline-flex items-center gap-1 font-bold text-[11px] px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+            <span>{pct}</span>
+          </span>
+          {dpAmount > 0 && (
+            <span className="text-[10px] font-mono text-slate-500 font-medium">
+              {formatCurrency(dpAmount)}
+            </span>
+          )}
+        </div>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1 font-medium text-[11px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200/80">
+        <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+        <span>Belum DP</span>
+      </span>
+    );
+  };
+
+  // Due Date alert renderer
+  const renderDueDateCell = (dueDate: string | Date | null) => {
+    if (!dueDate) return <span className="text-slate-300 font-mono text-center block">-</span>;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dueD = new Date(dueDate);
+    dueD.setHours(0, 0, 0, 0);
+
+    const diffDays = Math.ceil((dueD.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    const formatted = formatDateStr(dueDate);
+
+    if (diffDays < 0) {
+      return (
+        <div className="flex flex-col items-center">
+          <span className="font-semibold text-rose-700">{formatted}</span>
+          <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">
+            Terlewat {Math.abs(diffDays)} Hari
+          </span>
+        </div>
+      );
+    }
+
+    if (diffDays <= 3) {
+      return (
+        <div className="flex flex-col items-center">
+          <span className="font-semibold text-amber-700">{formatted}</span>
+          <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+            H-{diffDays} Due Date
+          </span>
+        </div>
+      );
+    }
+
+    return <span className="font-medium text-slate-700">{formatted}</span>;
   };
 
   // Days left helper for tentative items
@@ -197,6 +271,9 @@ export default function ForecastDashboard() {
         "Confirm (Rp)",
         "Tentative (Rp)",
         "Cancel (Rp)",
+        "Status DP",
+        "Nominal DP",
+        "Jatuh Tempo Pelunasan",
         "PIC",
         "Remarks",
         "Source",
@@ -213,6 +290,9 @@ export default function ForecastDashboard() {
         "Confirm (Rp)",
         "Tentative (Rp)",
         "Cancel (Rp)",
+        "Status DP",
+        "Nominal DP",
+        "Jatuh Tempo Pelunasan",
         "PIC",
         "Remarks",
         "Segment",
@@ -224,6 +304,7 @@ export default function ForecastDashboard() {
       const confirmVal = item.status === "CONFIRM" ? item.total : 0;
       const tentativeVal = item.status === "TENTATIVE" ? item.total : 0;
       const cancelVal = item.status === "CANCEL" ? item.total : 0;
+      const dpStatusText = item.dpStatus === "LUNAS" ? "Lunas" : item.dpStatus === "DP_30" ? "DP 30%" : item.dpStatus === "DP_50" ? "DP 50%" : "Belum DP";
 
       if (selectedUnit === "CAMP_VILLAGE") {
         return [
@@ -238,6 +319,9 @@ export default function ForecastDashboard() {
           confirmVal,
           tentativeVal,
           cancelVal,
+          `"${dpStatusText}"`,
+          item.dpAmount || 0,
+          formatDateStr(item.dueDate),
           `"${item.pic || ""}"`,
           `"${item.remarks || ""}"`,
           `"${item.source || ""}"`,
@@ -254,6 +338,9 @@ export default function ForecastDashboard() {
           confirmVal,
           tentativeVal,
           cancelVal,
+          `"${dpStatusText}"`,
+          item.dpAmount || 0,
+          formatDateStr(item.dueDate),
           `"${item.pic || ""}"`,
           `"${item.remarks || ""}"`,
           `"${item.segment || ""}"`,
@@ -595,13 +682,29 @@ export default function ForecastDashboard() {
               <option value="CANCEL">Cancel</option>
             </select>
           </div>
+
+          {/* DP Status Filter */}
+          <div className="flex items-center gap-2 bg-slate-50/80 px-3 py-2 rounded-xl border border-slate-200/80 text-xs">
+            <Filter size={15} className="text-slate-400" />
+            <select
+              value={dpStatusFilter}
+              onChange={(e) => setDpStatusFilter(e.target.value as any)}
+              className="bg-transparent text-xs font-semibold text-slate-800 focus:outline-none cursor-pointer"
+            >
+              <option value="ALL">Semua Status DP</option>
+              <option value="BELUM_DP">Belum DP</option>
+              <option value="DP_30">DP 30%</option>
+              <option value="DP_50">DP 50%</option>
+              <option value="LUNAS">Lunas</option>
+            </select>
+          </div>
         </div>
       </div>
 
       {/* Refined Modern Data Table */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-xs text-left border-collapse min-w-[1200px]">
+          <table className="w-full text-xs text-left border-collapse min-w-[1350px]">
             {/* Table Header */}
             <thead className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 text-[11px] uppercase tracking-wider">
               <tr>
@@ -646,6 +749,14 @@ export default function ForecastDashboard() {
                   </div>
                 </th>
 
+                {/* Tracking DP & Due Date Headers */}
+                <th className="py-3.5 px-3 border-r border-slate-200/60 text-center min-w-[130px]">
+                  Status DP & Nominal
+                </th>
+                <th className="py-3.5 px-3 border-r border-slate-200/60 text-center min-w-[125px]">
+                  Jatuh Tempo Pelunasan
+                </th>
+
                 <th className="py-3.5 px-3 border-r border-slate-200/60 min-w-[90px]">PIC</th>
                 <th className="py-3.5 px-3 border-r border-slate-200/60 min-w-[140px]">Remarks</th>
                 {selectedUnit === "PARK" && (
@@ -660,14 +771,14 @@ export default function ForecastDashboard() {
             <tbody className="divide-y divide-slate-100 text-slate-700">
               {loading ? (
                 <tr>
-                  <td colSpan={18} className="py-12 text-center text-slate-400">
+                  <td colSpan={20} className="py-12 text-center text-slate-400">
                     <RefreshCw className="animate-spin inline-block mb-2 text-[#0f4d39]" size={24} />
                     <p className="font-medium text-sm">Memuat data forecast...</p>
                   </td>
                 </tr>
               ) : items.length === 0 ? (
                 <tr>
-                  <td colSpan={18} className="py-12 text-center text-slate-400">
+                  <td colSpan={20} className="py-12 text-center text-slate-400">
                     <Building2 className="inline-block mb-2 text-slate-300" size={32} />
                     <p className="font-medium text-sm text-slate-600">Belum ada data forecast untuk periode ini.</p>
                     <p className="text-xs text-slate-400 mt-1">Klik tombol &quot;Tambah Forecast&quot; di kanan atas untuk menginput data.</p>
@@ -747,7 +858,7 @@ export default function ForecastDashboard() {
                         {formatCurrency(item.rate)}
                       </td>
 
-                      {/* Status Column Breakdown with Crisp Typography & Pill Badges */}
+                      {/* Status Column Breakdown */}
                       {/* Confirm Column */}
                       <td className="py-3 px-3 border-r border-slate-100 text-right whitespace-nowrap">
                         {isConfirm ? (
@@ -779,6 +890,16 @@ export default function ForecastDashboard() {
                         ) : (
                           <span className="text-slate-300 font-mono text-center block">-</span>
                         )}
+                      </td>
+
+                      {/* Status DP & Nominal */}
+                      <td className="py-3 px-3 border-r border-slate-100 text-center whitespace-nowrap">
+                        {renderDpBadge(item.dpStatus, item.dpAmount)}
+                      </td>
+
+                      {/* Jatuh Tempo Pelunasan */}
+                      <td className="py-3 px-3 border-r border-slate-100 text-center whitespace-nowrap">
+                        {renderDueDateCell(item.dueDate)}
                       </td>
 
                       <td className="py-3 px-3 border-r border-slate-100 font-medium text-slate-700">
@@ -860,7 +981,7 @@ export default function ForecastDashboard() {
                     {formatCurrency(stats.cancelTotal)}
                   </td>
                   
-                  <td colSpan={selectedUnit === "PARK" ? 5 : 4} className="py-3.5 px-3"></td>
+                  <td colSpan={selectedUnit === "PARK" ? 7 : 6} className="py-3.5 px-3"></td>
                 </tr>
               </tfoot>
             )}

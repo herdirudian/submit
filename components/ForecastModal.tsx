@@ -8,6 +8,7 @@ import {
   getSalesPics,
   ForecastUnitType,
   ForecastStatusType,
+  ForecastDpStatusType,
 } from "@/actions/forecast";
 
 interface ForecastModalProps {
@@ -43,6 +44,9 @@ export default function ForecastModal({
     room: "",
     rate: 0,
     total: 0,
+    dpStatus: "BELUM_DP" as ForecastDpStatusType,
+    dpAmount: 0,
+    dueDate: "",
     pic: "",
     picPhone: "",
     status: "TENTATIVE" as ForecastStatusType,
@@ -85,6 +89,9 @@ export default function ForecastModal({
         room: initialData.room || "",
         rate: initRate,
         total: initTotal,
+        dpStatus: initialData.dpStatus || "BELUM_DP",
+        dpAmount: initialData.dpAmount || 0,
+        dueDate: formatDateForInput(initialData.dueDate),
         pic: initialData.pic || "",
         picPhone: initialData.picPhone || "",
         status: initialData.status || "TENTATIVE",
@@ -106,6 +113,9 @@ export default function ForecastModal({
         room: "",
         rate: 0,
         total: 0,
+        dpStatus: "BELUM_DP",
+        dpAmount: 0,
+        dueDate: "",
         pic: "",
         picPhone: "",
         status: "TENTATIVE",
@@ -183,6 +193,22 @@ export default function ForecastModal({
     }
   };
 
+  const handleDpStatusChange = (status: ForecastDpStatusType) => {
+    let suggestedDp = 0;
+    if (status === "DP_30") {
+      suggestedDp = Math.round(formData.total * 0.3);
+    } else if (status === "DP_50") {
+      suggestedDp = Math.round(formData.total * 0.5);
+    } else if (status === "LUNAS") {
+      suggestedDp = formData.total;
+    }
+    setFormData((prev) => ({
+      ...prev,
+      dpStatus: status,
+      dpAmount: suggestedDp,
+    }));
+  };
+
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -214,6 +240,9 @@ export default function ForecastModal({
         room: unit === "CAMP_VILLAGE" ? formData.room || null : null,
         rate: finalRate,
         total: finalTotal,
+        dpStatus: formData.dpStatus,
+        dpAmount: Number(formData.dpAmount) || 0,
+        dueDate: formData.dueDate || null,
         pic: formData.pic || null,
         picPhone: formData.picPhone || null,
         status: formData.status,
@@ -487,6 +516,51 @@ export default function ForecastModal({
                   rateType === "PER_PAX" ? "bg-slate-50 text-slate-700" : "bg-white"
                 }`}
               />
+            </div>
+
+            {/* Tracking Pembayaran DP & Tanggal Pelunasan */}
+            <div className="md:col-span-2 bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/80 grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Status Pembayaran DP
+                </label>
+                <select
+                  value={formData.dpStatus}
+                  onChange={(e) => handleDpStatusChange(e.target.value as ForecastDpStatusType)}
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0f4d39]/20 focus:border-[#0f4d39]"
+                >
+                  <option value="BELUM_DP">Belum DP</option>
+                  <option value="DP_30">DP 30%</option>
+                  <option value="DP_50">DP 50%</option>
+                  <option value="LUNAS">Lunas</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Nominal DP (Rp)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  value={formData.dpAmount}
+                  onChange={(e) => setFormData({ ...formData, dpAmount: parseFloat(e.target.value) || 0 })}
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0f4d39]/20 focus:border-[#0f4d39]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Jatuh Tempo Pelunasan
+                </label>
+                <input
+                  type="date"
+                  value={formData.dueDate}
+                  onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0f4d39]/20 focus:border-[#0f4d39]"
+                />
+              </div>
             </div>
 
             {/* PIC Sales Dropdown + Text Input */}

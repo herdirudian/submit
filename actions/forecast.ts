@@ -7,6 +7,7 @@ import { authOptions } from "@/lib/auth";
 
 export type ForecastUnitType = "CAMP_VILLAGE" | "PARK";
 export type ForecastStatusType = "CONFIRM" | "TENTATIVE" | "CANCEL";
+export type ForecastDpStatusType = "BELUM_DP" | "DP_30" | "DP_50" | "LUNAS";
 
 export async function getForecastItems(params: {
   unit: ForecastUnitType;
@@ -14,17 +15,22 @@ export async function getForecastItems(params: {
   year?: number;  // e.g. 2026
   search?: string;
   status?: ForecastStatusType | "ALL";
+  dpStatus?: ForecastDpStatusType | "ALL";
 }) {
   const session = await getServerSession(authOptions);
   if (!session || !session.user) throw new Error("Unauthorized");
 
-  const { unit, month, year, search, status } = params;
+  const { unit, month, year, search, status, dpStatus } = params;
 
   // Build date filter based on month & year
   const where: any = { unit };
 
   if (status && status !== "ALL") {
     where.status = status;
+  }
+
+  if (dpStatus && dpStatus !== "ALL") {
+    where.dpStatus = dpStatus;
   }
 
   if (search && search.trim()) {
@@ -109,6 +115,9 @@ export async function createForecastItem(data: {
   room?: string | null;
   rate?: number;
   total?: number;
+  dpStatus?: ForecastDpStatusType;
+  dpAmount?: number;
+  dueDate?: string | null;
   pic?: string | null;
   picPhone?: string | null;
   status?: ForecastStatusType;
@@ -137,6 +146,9 @@ export async function createForecastItem(data: {
       room: data.room || null,
       rate,
       total,
+      dpStatus: data.dpStatus || "BELUM_DP",
+      dpAmount: Number(data.dpAmount || 0),
+      dueDate: data.dueDate ? new Date(data.dueDate) : null,
       pic: data.pic || null,
       picPhone: data.picPhone || null,
       status: data.status || "TENTATIVE",
@@ -165,6 +177,9 @@ export async function updateForecastItem(
     room?: string | null;
     rate?: number;
     total?: number;
+    dpStatus?: ForecastDpStatusType;
+    dpAmount?: number;
+    dueDate?: string | null;
     pic?: string | null;
     picPhone?: string | null;
     status?: ForecastStatusType;
@@ -189,6 +204,12 @@ export async function updateForecastItem(
   }
   if (data.eventDate !== undefined) {
     updateData.eventDate = data.eventDate ? new Date(data.eventDate) : null;
+  }
+  if (data.dueDate !== undefined) {
+    updateData.dueDate = data.dueDate ? new Date(data.dueDate) : null;
+  }
+  if (data.dpAmount !== undefined) {
+    updateData.dpAmount = Number(data.dpAmount || 0);
   }
 
   if (data.rate !== undefined || data.pax !== undefined || data.total !== undefined) {
