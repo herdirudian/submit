@@ -428,91 +428,86 @@ export default function ForecastDashboard() {
         </div>
       )}
 
-      {/* Modern Refined KPI Cards (Linear / Stripe Aesthetic) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      {/* Modern Refined KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         {/* Total Grand Revenue */}
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200/70 shadow-2xs hover:shadow-md hover:border-slate-300 transition-all duration-200 group relative overflow-hidden flex flex-col justify-between">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-[#0f4d39]" />
-          <div className="flex items-center justify-between mb-3">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 border-t-4 border-t-[#0f4d39] shadow-2xs hover:shadow-md transition-all duration-200 group flex flex-col justify-between min-h-[125px]">
+          <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Revenue</span>
             <div className="p-2 bg-slate-50 text-[#0f4d39] group-hover:bg-emerald-50 transition-colors rounded-xl border border-slate-100">
               <TrendingUp size={18} />
             </div>
           </div>
           <div>
-            <h3 className="text-2xl font-bold text-slate-900 font-mono tracking-tight">
+            <h3 className="text-xl xl:text-2xl font-bold text-slate-900 font-mono tracking-tight leading-tight">
               {formatCurrency(stats.grandTotal)}
             </h3>
-            <p className="text-[11px] text-slate-500 mt-1 font-medium">
+            <p className="text-xs text-slate-500 mt-1 font-medium whitespace-nowrap">
               {stats.totalEntries} Booking ({stats.totalPax} Pax)
             </p>
           </div>
         </div>
 
         {/* Confirm */}
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200/70 shadow-2xs hover:shadow-md hover:border-slate-300 transition-all duration-200 group relative overflow-hidden flex flex-col justify-between">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500" />
-          <div className="flex items-center justify-between mb-3">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 border-t-4 border-t-emerald-500 shadow-2xs hover:shadow-md transition-all duration-200 group flex flex-col justify-between min-h-[125px]">
+          <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">Confirm</span>
             <div className="p-2 bg-emerald-50/80 text-emerald-600 rounded-xl border border-emerald-100">
               <CheckCircle2 size={18} />
             </div>
           </div>
           <div>
-            <h3 className="text-2xl font-bold text-slate-900 font-mono tracking-tight">
+            <h3 className="text-xl xl:text-2xl font-bold text-slate-900 font-mono tracking-tight leading-tight">
               {formatCurrency(stats.confirmTotal)}
             </h3>
             <div className="flex items-center gap-1.5 mt-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              <span className="text-[11px] text-emerald-700 font-medium">Disetujui</span>
+              <span className="text-xs text-emerald-700 font-medium">Disetujui</span>
             </div>
           </div>
         </div>
 
         {/* Tentative */}
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200/70 shadow-2xs hover:shadow-md hover:border-slate-300 transition-all duration-200 group relative overflow-hidden flex flex-col justify-between">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-amber-500" />
-          <div className="flex items-center justify-between mb-3">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 border-t-4 border-t-amber-500 shadow-2xs hover:shadow-md transition-all duration-200 group flex flex-col justify-between min-h-[125px]">
+          <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider">Tentative</span>
             <div className="p-2 bg-amber-50/80 text-amber-600 rounded-xl border border-amber-100">
               <Clock size={18} />
             </div>
           </div>
           <div>
-            <h3 className="text-2xl font-bold text-slate-900 font-mono tracking-tight">
+            <h3 className="text-xl xl:text-2xl font-bold text-slate-900 font-mono tracking-tight leading-tight">
               {formatCurrency(stats.tentativeTotal)}
             </h3>
             <div className="flex items-center gap-1.5 mt-1">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-              <span className="text-[11px] text-amber-700 font-medium">Dalam Proses</span>
+              <span className="text-xs text-amber-700 font-medium">Dalam Proses</span>
             </div>
           </div>
         </div>
 
         {/* Cancel */}
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200/70 shadow-2xs hover:shadow-md hover:border-slate-300 transition-all duration-200 group relative overflow-hidden flex flex-col justify-between">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-rose-500" />
-          <div className="flex items-center justify-between mb-3">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 border-t-4 border-t-rose-500 shadow-2xs hover:shadow-md transition-all duration-200 group flex flex-col justify-between min-h-[125px]">
+          <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] font-bold text-rose-700 uppercase tracking-wider">Cancel</span>
             <div className="p-2 bg-rose-50/80 text-rose-600 rounded-xl border border-rose-100">
               <XCircle size={18} />
             </div>
           </div>
           <div>
-            <h3 className="text-2xl font-bold text-slate-900 font-mono tracking-tight">
+            <h3 className="text-xl xl:text-2xl font-bold text-slate-900 font-mono tracking-tight leading-tight">
               {formatCurrency(stats.cancelTotal)}
             </h3>
             <div className="flex items-center gap-1.5 mt-1">
               <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-              <span className="text-[11px] text-rose-700 font-medium">Dibatalkan</span>
+              <span className="text-xs text-rose-700 font-medium">Dibatalkan</span>
             </div>
           </div>
         </div>
 
         {/* Pax / Rooms Count */}
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200/70 shadow-2xs hover:shadow-md hover:border-slate-300 transition-all duration-200 group relative overflow-hidden flex flex-col justify-between">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-indigo-500" />
-          <div className="flex items-center justify-between mb-3">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 border-t-4 border-t-indigo-500 shadow-2xs hover:shadow-md transition-all duration-200 group flex flex-col justify-between min-h-[125px]">
+          <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
               {selectedUnit === "CAMP_VILLAGE" ? "Total Rooms" : "Total Pax"}
             </span>
@@ -521,10 +516,10 @@ export default function ForecastDashboard() {
             </div>
           </div>
           <div>
-            <h3 className="text-2xl font-bold text-slate-900 tracking-tight">
+            <h3 className="text-xl xl:text-2xl font-bold text-slate-900 tracking-tight leading-tight">
               {selectedUnit === "CAMP_VILLAGE" ? `${stats.totalRoomCount} Unit` : `${stats.totalPax} Pax`}
             </h3>
-            <p className="text-[11px] text-slate-500 mt-1 font-medium">
+            <p className="text-xs text-slate-500 mt-1 font-medium whitespace-nowrap">
               {selectedUnit === "CAMP_VILLAGE" ? `${stats.totalPax} Pax Pengunjung` : "Pengunjung Event"}
             </p>
           </div>

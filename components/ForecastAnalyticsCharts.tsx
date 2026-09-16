@@ -191,8 +191,7 @@ export default function ForecastAnalyticsCharts({
       {/* Cards Grid: Target vs Realisasi & Closing Rate */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {/* Card 1: Target vs Realisasi (Monthly) */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/70 shadow-2xs hover:shadow-md transition-all duration-200 flex flex-col justify-between relative overflow-hidden">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-[#0f4d39]" />
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 border-t-4 border-t-[#0f4d39] shadow-2xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2.5">
@@ -289,8 +288,7 @@ export default function ForecastAnalyticsCharts({
         </div>
 
         {/* Card 2: Conversion / Closing Rate (Monthly) */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/70 shadow-2xs hover:shadow-md transition-all duration-200 flex flex-col justify-between relative overflow-hidden">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-indigo-500" />
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 border-t-4 border-t-indigo-500 shadow-2xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2.5">
@@ -362,8 +360,7 @@ export default function ForecastAnalyticsCharts({
         </div>
 
         {/* Card 3: Yearly Performance Summary */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/70 shadow-2xs hover:shadow-md transition-all duration-200 flex flex-col justify-between relative overflow-hidden">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-amber-500" />
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 border-t-4 border-t-amber-500 shadow-2xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2.5">
