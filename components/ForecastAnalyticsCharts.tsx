@@ -13,6 +13,7 @@ import {
   Cell,
   PieChart,
   Pie,
+  BarChart,
 } from "recharts";
 import {
   TrendingUp,
@@ -24,6 +25,8 @@ import {
   X,
   Save,
   Award,
+  Users,
+  Trophy,
 } from "lucide-react";
 import {
   getForecastYearlyTrend,
@@ -153,6 +156,7 @@ export default function ForecastAnalyticsCharts({
 
   const monthlyTargetProgress = monthlySummary?.targetProgress || 0;
   const monthlyClosingRate = monthlySummary?.closingRate || 0;
+  const salesPerformance = monthlySummary?.salesPerformance || [];
 
   // Custom Recharts Tooltip
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -501,6 +505,134 @@ export default function ForecastAnalyticsCharts({
                 />
               </ComposedChart>
             </ResponsiveContainer>
+          </div>
+        )}
+      </div>
+
+      {/* Sales PIC Performance & Leaderboard Section */}
+      <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div>
+            <h3 className="text-base font-bold text-slate-900 font-judul flex items-center gap-2">
+              <Trophy size={18} className="text-amber-500" />
+              <span>Performa & Leaderboard Sales PIC ({currentMonthName} {year})</span>
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5 font-subjudul">
+              Peringkat Sales PIC berdasarkan total omset deal Confirm, jumlah pax, dan closing rate conversion.
+            </p>
+          </div>
+        </div>
+
+        {salesPerformance.length === 0 ? (
+          <div className="py-8 text-center text-slate-400 text-sm italic">
+            Belum ada data Sales PIC untuk bulan {currentMonthName} {year}.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* Sales Bar Chart (5 cols) */}
+            <div className="lg:col-span-5 bg-slate-50/60 p-4 rounded-xl border border-slate-200/60">
+              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-1.5">
+                <BarChart3 size={14} className="text-[#0f4d39]" />
+                <span>Perbandingan Omset Sales PIC</span>
+              </h4>
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={salesPerformance}
+                    layout="vertical"
+                    margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
+                    <XAxis
+                      type="number"
+                      tickFormatter={formatShortCurrency}
+                      tick={{ fill: "#64748b", fontSize: 10 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      dataKey="name"
+                      type="category"
+                      tick={{ fill: "#334155", fontSize: 11, fontWeight: 600 }}
+                      width={80}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <Tooltip
+                      formatter={(value: any, name: any) => [
+                        formatFullCurrency(Number(value)),
+                        name === "confirmRevenue" ? "Confirm Revenue" : "Tentative Revenue",
+                      ]}
+                      contentStyle={{
+                        backgroundColor: "#0f172a",
+                        borderRadius: "8px",
+                        border: "none",
+                        color: "#fff",
+                        fontSize: "12px",
+                      }}
+                    />
+                    <Bar dataKey="confirmRevenue" name="Confirm Revenue" fill="#10b981" radius={[0, 4, 4, 0]} barSize={12} />
+                    <Bar dataKey="tentativeRevenue" name="Tentative Revenue" fill="#f59e0b" radius={[0, 4, 4, 0]} barSize={12} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Leaderboard Table (7 cols) */}
+            <div className="lg:col-span-7 overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-200 text-slate-400 font-bold uppercase tracking-wider bg-slate-50/80">
+                    <th className="py-2.5 px-3 w-12 text-center">Rank</th>
+                    <th className="py-2.5 px-3">Sales PIC</th>
+                    <th className="py-2.5 px-3 text-right">Omset Confirm</th>
+                    <th className="py-2.5 px-3 text-right">Tentative</th>
+                    <th className="py-2.5 px-3 text-center">Total Pax</th>
+                    <th className="py-2.5 px-3 text-center">Deals</th>
+                    <th className="py-2.5 px-3 text-center">Closing Rate</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {salesPerformance.map((item: any, idx: number) => {
+                    const rankEmoji =
+                      idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `${idx + 1}`;
+                    return (
+                      <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-3 px-3 text-center font-bold text-sm">
+                          {rankEmoji}
+                        </td>
+                        <td className="py-3 px-3 font-bold text-slate-800 flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-emerald-100 text-[#0f4d39] font-bold flex items-center justify-center text-xs">
+                            {item.name ? item.name.substring(0, 2).toUpperCase() : "NA"}
+                          </div>
+                          <span>{item.name || "Unknown"}</span>
+                        </td>
+                        <td className="py-3 px-3 text-right font-mono font-bold text-emerald-700">
+                          {formatFullCurrency(item.confirmRevenue)}
+                        </td>
+                        <td className="py-3 px-3 text-right font-mono text-slate-500">
+                          {formatShortCurrency(item.tentativeRevenue)}
+                        </td>
+                        <td className="py-3 px-3 text-center font-semibold text-slate-700">
+                          {item.totalPax.toLocaleString("id-ID")}
+                        </td>
+                        <td className="py-3 px-3 text-center">
+                          <span className="font-bold text-emerald-700">{item.confirmCount}</span>
+                          <span className="text-slate-400">/{item.totalCount}</span>
+                        </td>
+                        <td className="py-3 px-3 text-center">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <span className="font-mono font-bold text-indigo-600">
+                              {item.closingRate}%
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>

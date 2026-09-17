@@ -766,9 +766,84 @@ export async function getForecastAnalyticsSummary(params: {
     ? Math.round((monthData.confirmRevenue / monthData.targetRevenue) * 100)
     : 0;
 
+  // Aggregate Sales PIC Performance for the selected month
+  const startDate = new Date(params.year, params.month - 1, 1);
+  const endDate = new Date(params.year, params.month, 0, 23, 59, 59, 999);
+
+  const where: any = {};
+  if (params.unit && params.unit !== "ALL") {
+    where.unit = params.unit;
+  }
+  where.OR = [
+    { proposedEventDate: { gte: startDate, lte: endDate } },
+    { checkIn: { gte: startDate, lte: endDate } },
+    { eventDate: { gte: startDate, lte: endDate } },
+    { reservationDate: { gte: startDate, lte: endDate } },
+    { dateReceived: { gte: startDate, lte: endDate } },
+  ];
+
+  const monthItems = await prisma.forecastItem.findMany({ where });
+
+  const salesMap = new Map<string, {
+    name: string;
+    confirmRevenue: number;
+    tentativeRevenue: number;
+    cancelRevenue: number;
+    totalRevenue: number;
+    confirmCount: number;
+    tentativeCount: number;
+    cancelCount: number;
+    totalCount: number;
+    totalPax: number;
+    closingRate: number;
+  }>();
+
+  monthItems.forEach((item) => {
+    const rawName = item.salesPerson || item.pic || "Unassigned";
+    const name = rawName.trim();
+
+    const existing = salesMap.get(name) || {
+      name,
+      confirmRevenue: 0,
+      tentativeRevenue: 0,
+      cancelRevenue: 0,
+      totalRevenue: 0,
+      confirmCount: 0,
+      tentativeCount: 0,
+      cancelCount: 0,
+      totalCount: 0,
+      totalPax: 0,
+      closingRate: 0,
+    };
+
+    existing.totalPax += item.pax || 0;
+    existing.totalCount++;
+
+    if (item.status === "CONFIRM") {
+      existing.confirmRevenue += item.total || 0;
+      existing.confirmCount++;
+    } else if (item.status === "TENTATIVE") {
+      existing.tentativeRevenue += item.total || 0;
+      existing.tentativeCount++;
+    } else if (item.status === "CANCEL") {
+      existing.cancelRevenue += item.total || 0;
+      existing.cancelCount++;
+    }
+
+    existing.totalRevenue = existing.confirmRevenue + existing.tentativeRevenue;
+    existing.closingRate = existing.totalCount > 0 ? Math.round((existing.confirmCount / existing.totalCount) * 100) : 0;
+
+    salesMap.set(name, existing);
+  });
+
+  const salesPerformance = Array.from(salesMap.values()).sort(
+    (a, b) => b.confirmRevenue - a.confirmRevenue || b.totalRevenue - a.totalRevenue
+  );
+
   return JSON.parse(JSON.stringify({
     ...monthData,
     targetProgress,
+    salesPerformance,
   }));
 }
 
