@@ -89,29 +89,31 @@ export async function getForecastItems(params: {
 
 export async function getSalesPics() {
   const defaultTeam = ["Sri", "Rizki Kiki", "Rizkita", "Riki"];
-  const fallbackList = defaultTeam.map((name) => ({ name, phone: "" }));
+  const fallbackList = defaultTeam.map((name) => ({ name, phone: "", email: "" }));
 
   try {
     const session = await getServerSession(authOptions);
     if (!session || !session.user) return fallbackList;
 
     const users = await prisma.user.findMany({
-      select: { id: true, name: true },
+      select: { id: true, name: true, email: true },
     });
 
     const forecastPics = await prisma.forecastItem.findMany({
       select: { pic: true, picPhone: true, salesPerson: true },
     });
 
-    const map = new Map<string, { name: string; phone: string }>();
-
-    defaultTeam.forEach((name) => {
-      map.set(name.toLowerCase(), { name, phone: "" });
-    });
+    const map = new Map<string, { name: string; phone: string; email: string }>();
 
     users.forEach((u) => {
       if (u.name) {
-        map.set(u.name.toLowerCase(), { name: u.name, phone: "" });
+        map.set(u.name.toLowerCase(), { name: u.name, phone: "", email: u.email || "" });
+      }
+    });
+
+    defaultTeam.forEach((name) => {
+      if (!map.has(name.toLowerCase())) {
+        map.set(name.toLowerCase(), { name, phone: "", email: "" });
       }
     });
 
@@ -122,6 +124,7 @@ export async function getSalesPics() {
         map.set(pName.toLowerCase(), {
           name: pName,
           phone: f.picPhone || existing?.phone || "",
+          email: existing?.email || "",
         });
       }
     });

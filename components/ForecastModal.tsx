@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Loader2, Save, Calculator, DollarSign, UserCheck, Calendar, FileText, CheckCircle2, AlertCircle } from "lucide-react";
+import { X, Loader2, Save, Calculator, DollarSign, UserCheck, Calendar, FileText, CheckCircle2, AlertCircle, Lock } from "lucide-react";
 import {
   createForecastItem,
   updateForecastItem,
@@ -99,7 +99,7 @@ export default function ForecastModal({
   const [error, setError] = useState("");
 
   const [rateType, setRateType] = useState<"PER_PAX" | "TOTAL_DIRECT">("PER_PAX");
-  const [salesPics, setSalesPics] = useState<{ name: string; phone: string }[]>([]);
+  const [salesPics, setSalesPics] = useState<{ name: string; phone: string; email: string }[]>([]);
 
   const [formData, setFormData] = useState({
     // Stage 1
@@ -574,13 +574,9 @@ export default function ForecastModal({
                       <option value="">-- Pilih PIC Sales --</option>
                       {salesPics.map((p, idx) => (
                         <option key={idx} value={p.name}>
-                          {p.name} {p.phone ? `(${p.phone})` : ""}
+                          {p.name} {p.email ? `(${p.email})` : p.phone ? `(${p.phone})` : ""}
                         </option>
                       ))}
-                      <option value="Sri">Sri</option>
-                      <option value="Rizki Kiki">Rizki Kiki</option>
-                      <option value="Rizkita">Rizkita</option>
-                      <option value="Riki">Riki</option>
                     </select>
                   ) : (
                     <input
@@ -590,6 +586,18 @@ export default function ForecastModal({
                       onChange={(e) => setFormData({ ...formData, salesPerson: e.target.value })}
                       className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0f4d39]/20 focus:border-[#0f4d39]"
                     />
+                  )}
+
+                  {/* Locked Sales Account Email Badge */}
+                  {formData.salesPerson && (
+                    <div className="mt-1.5 flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50/80 border border-emerald-200/80 rounded-lg text-[11px] text-emerald-900 font-medium">
+                      <Lock size={12} className="text-emerald-700 shrink-0" />
+                      <span>Email Account Sales Terkunci:</span>
+                      <strong className="font-mono text-emerald-800">
+                        {salesPics.find((p) => p.name.toLowerCase() === formData.salesPerson.toLowerCase())?.email ||
+                          `${formData.salesPerson.toLowerCase().replace(/\s+/g, "")}@thelodgegroup.id`}
+                      </strong>
+                    </div>
                   )}
                 </div>
 
