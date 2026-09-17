@@ -51,8 +51,9 @@ export async function sendEmail({
     const info = await transporter.sendMail(mailOptions);
     console.log("Email sent successfully to %s: %s", to, info.messageId);
     return { success: true, messageId: info.messageId };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error sending email:", error);
-    return { success: false, error };
+    const errorMsg = error instanceof Error ? error.message : typeof error === 'object' ? JSON.stringify(error) : String(error);
+    return { success: false, error: errorMsg };
   }
 }

@@ -22,31 +22,39 @@ export interface ForecastEmailReminderParams {
  */
 export async function getSalesTeamEmails(salesPersonName?: string | null, picName?: string | null): Promise<string[]> {
   try {
-    const salesUsers = await prisma.user.findMany({
-      where: {
-        OR: [
-          { role: "SALES" },
-          { role: "ADMIN" }
-        ]
-      },
-      select: { name: true, email: true }
+    const allUsers = await prisma.user.findMany({
+      select: { name: true, email: true, role: true }
     });
 
     const emailsSet = new Set<string>();
-
     const searchName = (salesPersonName || picName || "").toLowerCase().trim();
+
+    // 1. Direct check if searchName is already a valid email
+    if (searchName && searchName.includes("@")) {
+      emailsSet.add(searchName);
+    }
+
+    // 2. Direct name match across all users
     if (searchName) {
-      // Find direct match first
-      for (const u of salesUsers) {
+      for (const u of allUsers) {
         if (u.name && u.email && u.name.toLowerCase().includes(searchName)) {
           emailsSet.add(u.email);
         }
       }
     }
 
-    // If no specific match, add all sales team emails
+    // 3. If no specific match, add all sales / admin users emails
     if (emailsSet.size === 0) {
-      for (const u of salesUsers) {
+      for (const u of allUsers) {
+        if (u.email && (u.role === "SALES" || u.role === "ADMIN" || u.role === "CUSTOM")) {
+          emailsSet.add(u.email);
+        }
+      }
+    }
+
+    // 4. Fallback if still empty, include all registered user emails
+    if (emailsSet.size === 0) {
+      for (const u of allUsers) {
         if (u.email) emailsSet.add(u.email);
       }
     }
@@ -159,7 +167,7 @@ export function generateForecastReminderEmailHtml(params: ForecastEmailReminderP
       <!-- CTA Button -->
       <div style="text-align: center; margin: 28px 0 10px 0;">
         <a href="${baseUrl}/forecast" 
-           style="background-color: #0f4d39; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 10px; font-weight: 700; font-size: 14px; display: inline-block; shadow: 0 4px 6px -1px rgba(15, 77, 57, 0.3);">
+           style="background-color: #0f4d39; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 10px; font-weight: 700; font-size: 14px; display: inline-block;">
           Buka Dashboard Forecast
         </a>
       </div>
@@ -178,7 +186,9 @@ export function generateForecastReminderEmailHtml(params: ForecastEmailReminderP
 /**
  * Sends Email reminder for a ForecastItem to Sales team emails
  */
-export async function sendSalesForecastEmailReminder(params: ForecastEmailReminderParams): Promise<{ success: boolean; sentTo: string[]; error?: any }> {
+export async function sendSalesForecastEmailReminder(
+  params: ForecastEmailReminderParams
+): Promise<{ success: boolean; sentTo: string[]; error?: string }> {
   try {
     let targetEmails: string[] = [];
 
@@ -190,7 +200,11 @@ export async function sendSalesForecastEmailReminder(params: ForecastEmailRemind
 
     if (targetEmails.length === 0) {
       console.warn(`[FORECAST-EMAIL-REMINDER] No sales team email found for ${params.company}`);
-      return { success: false, sentTo: [], error: "Email sales team tidak ditemukan" };
+      return {
+        success: false,
+        sentTo: [],
+        error: "Email sales team / akun PIC tidak ditemukan di sistem.",
+      };
     }
 
     const html = generateForecastReminderEmailHtml(params);
@@ -198,6 +212,8 @@ export async function sendSalesForecastEmailReminder(params: ForecastEmailRemind
     const subject = `[REMINDER FORECAST] Follow-up ${params.company} (${params.pax} Pax) - ${unitName}`;
 
     const sentTo: string[] = [];
+    let lastError: string | null = null;
+
     for (const email of targetEmails) {
       const res = await sendEmail({
         to: email,
@@ -207,16 +223,29 @@ export async function sendSalesForecastEmailReminder(params: ForecastEmailRemind
       });
       if (res.success) {
         sentTo.push(email);
+      } else {
+        lastError = res.error || "Gagal terhubung ke SMTP Server";
       }
     }
 
+    if (sentTo.length === 0) {
+      return {
+        success: false,
+        sentTo: [],
+        error: lastError || "Gagal mengirim email. Periksa SMTP Server (SMTP_HOST/SMTP_USER).",
+      };
+    }
+
     return {
-      success: sentTo.length > 0,
+      success: true,
       sentTo,
     };
   } catch (err: any) {
     console.error("[FORECAST-EMAIL-REMINDER-ERROR]:", err);
-    return { success: false, sentTo: [], error: err.message };
+    return {
+      success: false,
+      sentTo: [],
+      error: err.message || "Terjadi kesalahan internal saat mengirim email",
+    };
   }
 }
-
