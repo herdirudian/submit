@@ -72,6 +72,17 @@ export default function ForecastDashboard() {
   const [dpStatusFilter, setDpStatusFilter] = useState<ForecastDpStatusType | "ALL">("ALL");
   const [showAnalytics, setShowAnalytics] = useState(false);
 
+  // Column-level Filters State
+  const [showColFilters, setShowColFilters] = useState(true);
+  const [colCompany, setColCompany] = useState("");
+  const [colEventType, setColEventType] = useState("ALL");
+  const [colPipelineStage, setColPipelineStage] = useState("ALL");
+  const [colDpStatus, setColDpStatus] = useState("ALL");
+  const [colPicSales, setColPicSales] = useState("ALL");
+  const [colStatus, setColStatus] = useState("ALL");
+  const [colLeadSource, setColLeadSource] = useState("ALL");
+  const [colSegment, setColSegment] = useState("ALL");
+
   const [items, setItems] = useState<any[]>([]);
   const [reminders, setReminders] = useState<any[]>([]);
   const [stats, setStats] = useState<{
@@ -264,6 +275,68 @@ export default function ForecastDashboard() {
     }
     return null;
   };
+  // Column filter options derived from current items
+  const uniqueEventTypes = Array.from(new Set(items.map((i) => i.eventType).filter(Boolean))).sort();
+  const uniqueSalesPics = Array.from(new Set(items.map((i) => i.salesPerson || i.pic).filter(Boolean))).sort();
+  const uniquePipelineStages = Array.from(new Set(items.map((i) => i.leadStatus || "New Lead").filter(Boolean))).sort();
+  const uniqueLeadSources = Array.from(new Set(items.map((i) => i.leadSource || i.source).filter(Boolean))).sort();
+  const uniqueSegments = Array.from(new Set(items.map((i) => i.segment).filter(Boolean))).sort();
+
+  const activeColFilterCount = [
+    colCompany.trim() !== "",
+    colEventType !== "ALL",
+    colPipelineStage !== "ALL",
+    colDpStatus !== "ALL",
+    colPicSales !== "ALL",
+    colStatus !== "ALL",
+    colLeadSource !== "ALL",
+    colSegment !== "ALL",
+  ].filter(Boolean).length;
+
+  const resetColFilters = () => {
+    setColCompany("");
+    setColEventType("ALL");
+    setColPipelineStage("ALL");
+    setColDpStatus("ALL");
+    setColPicSales("ALL");
+    setColStatus("ALL");
+    setColLeadSource("ALL");
+    setColSegment("ALL");
+  };
+
+  // Filtered dataset based on column filters
+  const filteredItems = items.filter((item) => {
+    if (colCompany.trim() && !item.company?.toLowerCase().includes(colCompany.trim().toLowerCase())) {
+      return false;
+    }
+    if (colEventType !== "ALL" && item.eventType !== colEventType) {
+      return false;
+    }
+    if (colPipelineStage !== "ALL" && (item.leadStatus || "New Lead") !== colPipelineStage) {
+      return false;
+    }
+    if (colDpStatus !== "ALL" && item.dpStatus !== colDpStatus) {
+      return false;
+    }
+    if (colPicSales !== "ALL" && (item.salesPerson || item.pic) !== colPicSales) {
+      return false;
+    }
+    if (colStatus !== "ALL" && item.status !== colStatus) {
+      return false;
+    }
+    if (colLeadSource !== "ALL" && (item.leadSource || item.source) !== colLeadSource) {
+      return false;
+    }
+    if (colSegment !== "ALL" && item.segment !== colSegment) {
+      return false;
+    }
+    return true;
+  });
+
+  const filteredTotalPax = filteredItems.reduce((acc, i) => acc + (i.pax || 0), 0);
+  const filteredConfirmTotal = filteredItems.filter((i) => i.status === "CONFIRM").reduce((acc, i) => acc + (i.total || 0), 0);
+  const filteredTentativeTotal = filteredItems.filter((i) => i.status === "TENTATIVE").reduce((acc, i) => acc + (i.total || 0), 0);
+  const filteredCancelTotal = filteredItems.filter((i) => i.status === "CANCEL").reduce((acc, i) => acc + (i.total || 0), 0);
 
   const exportToCSV = () => {
     const headers = [
@@ -296,7 +369,7 @@ export default function ForecastDashboard() {
       "Remarks",
     ];
 
-    const rows = items.map((item) => {
+    const rows = filteredItems.map((item) => {
       const dpStatusText = item.dpStatus === "LUNAS" ? "Lunas" : item.dpStatus === "DP_30" ? "DP 30%" : item.dpStatus === "DP_50" ? "DP 50%" : item.dpStatus === "DP_CUSTOM" ? "Sudah DP (Custom)" : "Belum DP";
 
       return [
@@ -356,7 +429,7 @@ export default function ForecastDashboard() {
         unit: selectedUnit,
         month: selectedMonth,
         year: selectedYear,
-        items,
+        items: filteredItems,
         stats,
         targetAmount: summary?.targetRevenue || 0,
       });
@@ -776,6 +849,38 @@ export default function ForecastDashboard() {
               <option value="LUNAS">Lunas</option>
             </select>
           </div>
+
+          {/* Column Filter Toggle Button */}
+          <button
+            onClick={() => setShowColFilters(!showColFilters)}
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all ${
+              activeColFilterCount > 0
+                ? "bg-[#0f4d39] text-white border-[#0f4d39] shadow-xs"
+                : showColFilters
+                ? "bg-slate-100 text-slate-800 border-slate-300"
+                : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+            }`}
+            title="Tampilkan / sembunyikan baris filter di setiap kolom tabel"
+          >
+            <Filter size={14} />
+            <span>Filter Kolom</span>
+            {activeColFilterCount > 0 && (
+              <span className="px-1.5 py-0.5 bg-emerald-400 text-[#0f4d39] font-extrabold rounded-full text-[10px]">
+                {activeColFilterCount}
+              </span>
+            )}
+          </button>
+
+          {/* Reset All Column Filters */}
+          {activeColFilterCount > 0 && (
+            <button
+              onClick={resetColFilters}
+              className="flex items-center gap-1 px-3 py-2 bg-rose-50 text-rose-700 hover:bg-rose-100/80 border border-rose-200 rounded-xl text-xs font-semibold transition-all shadow-xs"
+            >
+              <XCircle size={14} />
+              <span>Reset Filter ({activeColFilterCount})</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -804,6 +909,127 @@ export default function ForecastDashboard() {
                 </tr>
               )}
 
+              {/* SUB-HEADER FILTER ROW FOR CONSOLIDATED ALL VIEW */}
+              {stageView === "ALL" && showColFilters && (
+                <tr className="bg-slate-100/90 border-b border-slate-200">
+                  <td className="py-1.5 px-1 text-center font-normal text-slate-400">
+                    <Filter size={12} className="inline-block text-slate-400" />
+                  </td>
+                  <td className="py-1.5 px-1.5">
+                    <input
+                      type="text"
+                      placeholder="Filter Company..."
+                      value={colCompany}
+                      onChange={(e) => setColCompany(e.target.value)}
+                      className="w-full text-[11px] px-2 py-1 border border-slate-200 rounded-lg bg-white text-slate-800 font-normal focus:outline-none focus:ring-1 focus:ring-[#0f4d39]"
+                    />
+                  </td>
+                  <td className="py-1.5 px-1 text-center text-slate-300">-</td>
+                  <td className="py-1.5 px-1 text-center text-slate-300">-</td>
+                  <td className="py-1.5 px-1.5">
+                    <select
+                      value={colEventType}
+                      onChange={(e) => setColEventType(e.target.value)}
+                      className="w-full text-[11px] px-1.5 py-1 border border-slate-200 rounded-lg bg-white text-slate-800 font-normal focus:outline-none focus:ring-1 focus:ring-[#0f4d39] cursor-pointer"
+                    >
+                      <option value="ALL">Semua Acara</option>
+                      {uniqueEventTypes.map((t) => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="py-1.5 px-1 text-center text-slate-300">-</td>
+                  <td className="py-1.5 px-1 text-center text-slate-300">-</td>
+                  <td className="py-1.5 px-1.5 bg-emerald-50/40 text-center">
+                    <button
+                      onClick={() => setColStatus(colStatus === "CONFIRM" ? "ALL" : "CONFIRM")}
+                      className={`w-full text-[10px] font-bold px-1.5 py-1 rounded-md border transition-all ${
+                        colStatus === "CONFIRM"
+                          ? "bg-emerald-600 text-white border-emerald-700"
+                          : "bg-white text-emerald-800 border-emerald-200 hover:bg-emerald-100/50"
+                      }`}
+                    >
+                      {colStatus === "CONFIRM" ? "✓ Confirm" : "Confirm"}
+                    </button>
+                  </td>
+                  <td className="py-1.5 px-1.5 bg-amber-50/40 text-center">
+                    <button
+                      onClick={() => setColStatus(colStatus === "TENTATIVE" ? "ALL" : "TENTATIVE")}
+                      className={`w-full text-[10px] font-bold px-1.5 py-1 rounded-md border transition-all ${
+                        colStatus === "TENTATIVE"
+                          ? "bg-amber-600 text-white border-amber-700"
+                          : "bg-white text-amber-800 border-amber-200 hover:bg-amber-100/50"
+                      }`}
+                    >
+                      {colStatus === "TENTATIVE" ? "✓ Tentative" : "Tentative"}
+                    </button>
+                  </td>
+                  <td className="py-1.5 px-1.5 bg-rose-50/40 text-center">
+                    <button
+                      onClick={() => setColStatus(colStatus === "CANCEL" ? "ALL" : "CANCEL")}
+                      className={`w-full text-[10px] font-bold px-1.5 py-1 rounded-md border transition-all ${
+                        colStatus === "CANCEL"
+                          ? "bg-rose-600 text-white border-rose-700"
+                          : "bg-white text-rose-800 border-rose-200 hover:bg-rose-100/50"
+                      }`}
+                    >
+                      {colStatus === "CANCEL" ? "✓ Cancel" : "Cancel"}
+                    </button>
+                  </td>
+                  <td className="py-1.5 px-1.5">
+                    <select
+                      value={colPipelineStage}
+                      onChange={(e) => setColPipelineStage(e.target.value)}
+                      className="w-full text-[11px] px-1.5 py-1 border border-slate-200 rounded-lg bg-white text-slate-800 font-normal focus:outline-none focus:ring-1 focus:ring-[#0f4d39] cursor-pointer"
+                    >
+                      <option value="ALL">Semua Stage</option>
+                      {uniquePipelineStages.map((st) => (
+                        <option key={st} value={st}>{st}</option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="py-1.5 px-1.5">
+                    <select
+                      value={colDpStatus}
+                      onChange={(e) => setColDpStatus(e.target.value as any)}
+                      className="w-full text-[11px] px-1.5 py-1 border border-slate-200 rounded-lg bg-white text-slate-800 font-normal focus:outline-none focus:ring-1 focus:ring-[#0f4d39] cursor-pointer"
+                    >
+                      <option value="ALL">Semua DP</option>
+                      <option value="BELUM_DP">Belum DP</option>
+                      <option value="DP_30">DP 30%</option>
+                      <option value="DP_50">DP 50%</option>
+                      <option value="DP_CUSTOM">Sudah DP</option>
+                      <option value="LUNAS">Lunas</option>
+                    </select>
+                  </td>
+                  <td className="py-1.5 px-1.5">
+                    <select
+                      value={colPicSales}
+                      onChange={(e) => setColPicSales(e.target.value)}
+                      className="w-full text-[11px] px-1.5 py-1 border border-slate-200 rounded-lg bg-white text-slate-800 font-normal focus:outline-none focus:ring-1 focus:ring-[#0f4d39] cursor-pointer"
+                    >
+                      <option value="ALL">Semua PIC</option>
+                      {uniqueSalesPics.map((p) => (
+                        <option key={p} value={p}>{p}</option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="py-1.5 px-1 text-center">
+                    {activeColFilterCount > 0 ? (
+                      <button
+                        onClick={resetColFilters}
+                        className="text-[10px] font-bold text-rose-600 hover:text-rose-800 underline transition-colors whitespace-nowrap"
+                        title="Reset filter kolom"
+                      >
+                        Reset
+                      </button>
+                    ) : (
+                      <span className="text-slate-300">-</span>
+                    )}
+                  </td>
+                </tr>
+              )}
+
               {stageView === "STAGE1" && (
                 <tr className="bg-amber-50/80 text-amber-900">
                   <th className="py-3 px-2.5 border-r border-amber-200/80 text-center w-10">No</th>
@@ -823,6 +1049,84 @@ export default function ForecastDashboard() {
                 </tr>
               )}
 
+              {/* SUB-HEADER FILTER ROW FOR STAGE 1 */}
+              {stageView === "STAGE1" && showColFilters && (
+                <tr className="bg-amber-100/60 border-b border-amber-200">
+                  <td className="py-1.5 px-1 text-center font-normal text-amber-400">
+                    <Filter size={12} className="inline-block text-amber-600" />
+                  </td>
+                  <td className="py-1.5 px-1 text-center text-amber-300">-</td>
+                  <td className="py-1.5 px-1.5">
+                    <input
+                      type="text"
+                      placeholder="Filter Company..."
+                      value={colCompany}
+                      onChange={(e) => setColCompany(e.target.value)}
+                      className="w-full text-[11px] px-2 py-1 border border-amber-200 rounded-lg bg-white text-slate-800 font-normal focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    />
+                  </td>
+                  <td className="py-1.5 px-1 text-center text-amber-300">-</td>
+                  <td className="py-1.5 px-1 text-center text-amber-300">-</td>
+                  <td className="py-1.5 px-1.5">
+                    <select
+                      value={colLeadSource}
+                      onChange={(e) => setColLeadSource(e.target.value)}
+                      className="w-full text-[11px] px-1.5 py-1 border border-amber-200 rounded-lg bg-white text-slate-800 font-normal focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer"
+                    >
+                      <option value="ALL">Semua Sumber</option>
+                      {uniqueLeadSources.map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="py-1.5 px-1.5">
+                    <select
+                      value={colSegment}
+                      onChange={(e) => setColSegment(e.target.value)}
+                      className="w-full text-[11px] px-1.5 py-1 border border-amber-200 rounded-lg bg-white text-slate-800 font-normal focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer"
+                    >
+                      <option value="ALL">Semua Segment</option>
+                      {uniqueSegments.map((sg) => (
+                        <option key={sg} value={sg}>{sg}</option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="py-1.5 px-1.5">
+                    <select
+                      value={colEventType}
+                      onChange={(e) => setColEventType(e.target.value)}
+                      className="w-full text-[11px] px-1.5 py-1 border border-amber-200 rounded-lg bg-white text-slate-800 font-normal focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer"
+                    >
+                      <option value="ALL">Semua Acara</option>
+                      {uniqueEventTypes.map((t) => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="py-1.5 px-1 text-center text-amber-300">-</td>
+                  <td className="py-1.5 px-1 text-center text-amber-300">-</td>
+                  <td className="py-1.5 px-1 text-center text-amber-300">-</td>
+                  <td className="py-1.5 px-1 text-center text-amber-300">-</td>
+                  <td className="py-1.5 px-1.5">
+                    <select
+                      value={colPicSales}
+                      onChange={(e) => setColPicSales(e.target.value)}
+                      className="w-full text-[11px] px-1.5 py-1 border border-amber-200 rounded-lg bg-white text-slate-800 font-normal focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer"
+                    >
+                      <option value="ALL">Semua PIC</option>
+                      {uniqueSalesPics.map((p) => (
+                        <option key={p} value={p}>{p}</option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="py-1.5 px-1 text-center">
+                    {activeColFilterCount > 0 && (
+                      <button onClick={resetColFilters} className="text-[10px] font-bold text-rose-600 hover:text-rose-800 underline">Reset</button>
+                    )}
+                  </td>
+                </tr>
+              )}
+
               {stageView === "STAGE2" && (
                 <tr className="bg-indigo-50/80 text-indigo-900">
                   <th className="py-3 px-2.5 border-r border-indigo-200/80 text-center w-10">No</th>
@@ -835,6 +1139,58 @@ export default function ForecastDashboard() {
                   <th className="py-3 px-2.5 border-r border-indigo-200/80 min-w-[95px]">Due Next Action</th>
                   <th className="py-3 px-2.5 border-r border-indigo-200/80 text-center min-w-[130px]">Pipeline Stage</th>
                   <th className="py-3 px-2.5 text-center min-w-[90px]">Aksi</th>
+                </tr>
+              )}
+
+              {/* SUB-HEADER FILTER ROW FOR STAGE 2 */}
+              {stageView === "STAGE2" && showColFilters && (
+                <tr className="bg-indigo-100/60 border-b border-indigo-200">
+                  <td className="py-1.5 px-1 text-center font-normal text-indigo-400">
+                    <Filter size={12} className="inline-block text-indigo-600" />
+                  </td>
+                  <td className="py-1.5 px-1.5">
+                    <input
+                      type="text"
+                      placeholder="Filter Company..."
+                      value={colCompany}
+                      onChange={(e) => setColCompany(e.target.value)}
+                      className="w-full text-[11px] px-2 py-1 border border-indigo-200 rounded-lg bg-white text-slate-800 font-normal focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    />
+                  </td>
+                  <td className="py-1.5 px-1.5">
+                    <select
+                      value={colPicSales}
+                      onChange={(e) => setColPicSales(e.target.value)}
+                      className="w-full text-[11px] px-1.5 py-1 border border-indigo-200 rounded-lg bg-white text-slate-800 font-normal focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+                    >
+                      <option value="ALL">Semua PIC</option>
+                      {uniqueSalesPics.map((p) => (
+                        <option key={p} value={p}>{p}</option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="py-1.5 px-1 text-center text-indigo-300">-</td>
+                  <td className="py-1.5 px-1 text-center text-indigo-300">-</td>
+                  <td className="py-1.5 px-1 text-center text-indigo-300">-</td>
+                  <td className="py-1.5 px-1 text-center text-indigo-300">-</td>
+                  <td className="py-1.5 px-1 text-center text-indigo-300">-</td>
+                  <td className="py-1.5 px-1.5">
+                    <select
+                      value={colPipelineStage}
+                      onChange={(e) => setColPipelineStage(e.target.value)}
+                      className="w-full text-[11px] px-1.5 py-1 border border-indigo-200 rounded-lg bg-white text-slate-800 font-normal focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+                    >
+                      <option value="ALL">Semua Stage</option>
+                      {uniquePipelineStages.map((st) => (
+                        <option key={st} value={st}>{st}</option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="py-1.5 px-1 text-center">
+                    {activeColFilterCount > 0 && (
+                      <button onClick={resetColFilters} className="text-[10px] font-bold text-rose-600 hover:text-rose-800 underline">Reset</button>
+                    )}
+                  </td>
                 </tr>
               )}
 
@@ -853,6 +1209,72 @@ export default function ForecastDashboard() {
                   <th className="py-3 px-2.5 text-center min-w-[90px]">Aksi</th>
                 </tr>
               )}
+
+              {/* SUB-HEADER FILTER ROW FOR STAGE 3 */}
+              {stageView === "STAGE3" && showColFilters && (
+                <tr className="bg-emerald-100/60 border-b border-emerald-200">
+                  <td className="py-1.5 px-1 text-center font-normal text-emerald-400">
+                    <Filter size={12} className="inline-block text-emerald-600" />
+                  </td>
+                  <td className="py-1.5 px-1.5">
+                    <input
+                      type="text"
+                      placeholder="Filter Company..."
+                      value={colCompany}
+                      onChange={(e) => setColCompany(e.target.value)}
+                      className="w-full text-[11px] px-2 py-1 border border-emerald-200 rounded-lg bg-white text-slate-800 font-normal focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    />
+                  </td>
+                  <td className="py-1.5 px-1.5">
+                    <select
+                      value={colPicSales}
+                      onChange={(e) => setColPicSales(e.target.value)}
+                      className="w-full text-[11px] px-1.5 py-1 border border-emerald-200 rounded-lg bg-white text-slate-800 font-normal focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer"
+                    >
+                      <option value="ALL">Semua PIC</option>
+                      {uniqueSalesPics.map((p) => (
+                        <option key={p} value={p}>{p}</option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="py-1.5 px-1.5">
+                    <select
+                      value={colPipelineStage}
+                      onChange={(e) => setColPipelineStage(e.target.value)}
+                      className="w-full text-[11px] px-1.5 py-1 border border-emerald-200 rounded-lg bg-white text-slate-800 font-normal focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer"
+                    >
+                      <option value="ALL">Semua Stage</option>
+                      {uniquePipelineStages.map((st) => (
+                        <option key={st} value={st}>{st}</option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="py-1.5 px-1 text-center text-emerald-300">-</td>
+                  <td className="py-1.5 px-1 text-center text-emerald-300">-</td>
+                  <td className="py-1.5 px-1 text-center text-emerald-300">-</td>
+                  <td className="py-1.5 px-1.5">
+                    <select
+                      value={colDpStatus}
+                      onChange={(e) => setColDpStatus(e.target.value as any)}
+                      className="w-full text-[11px] px-1.5 py-1 border border-emerald-200 rounded-lg bg-white text-slate-800 font-normal focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer"
+                    >
+                      <option value="ALL">Semua DP</option>
+                      <option value="BELUM_DP">Belum DP</option>
+                      <option value="DP_30">DP 30%</option>
+                      <option value="DP_50">DP 50%</option>
+                      <option value="DP_CUSTOM">Sudah DP</option>
+                      <option value="LUNAS">Lunas</option>
+                    </select>
+                  </td>
+                  <td className="py-1.5 px-1 text-center text-emerald-300">-</td>
+                  <td className="py-1.5 px-1 text-center text-emerald-300">-</td>
+                  <td className="py-1.5 px-1 text-center">
+                    {activeColFilterCount > 0 && (
+                      <button onClick={resetColFilters} className="text-[10px] font-bold text-rose-600 hover:text-rose-800 underline">Reset</button>
+                    )}
+                  </td>
+                </tr>
+              )}
             </thead>
 
             {/* Table Body */}
@@ -864,16 +1286,24 @@ export default function ForecastDashboard() {
                     <p className="font-medium text-sm">Memuat data 3-stage sales pipeline...</p>
                   </td>
                 </tr>
-              ) : items.length === 0 ? (
+              ) : filteredItems.length === 0 ? (
                 <tr>
                   <td colSpan={20} className="py-12 text-center text-slate-400">
-                    <Building2 className="inline-block mb-2 text-slate-300" size={32} />
-                    <p className="font-medium text-sm text-slate-600">Belum ada data sales pipeline untuk periode ini.</p>
-                    <p className="text-xs text-slate-400 mt-1">Klik tombol &quot;Tambah Lead / Forecast&quot; di kanan atas untuk menginput data.</p>
+                    <Filter className="inline-block mb-2 text-slate-300" size={32} />
+                    <p className="font-medium text-sm text-slate-600">Tidak ada data yang sesuai dengan filter kolom yang dipilih.</p>
+                    {activeColFilterCount > 0 && (
+                      <button
+                        onClick={resetColFilters}
+                        className="mt-2 inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-[#0f4d39] rounded-xl text-xs font-bold border border-emerald-200 transition-all shadow-xs"
+                      >
+                        <RefreshCw size={13} />
+                        <span>Reset Semua Filter Kolom</span>
+                      </button>
+                    )}
                   </td>
                 </tr>
               ) : (
-                items.map((item, index) => {
+                filteredItems.map((item, index) => {
                   const isConfirm = item.status === "CONFIRM";
                   const isTentative = item.status === "TENTATIVE";
                   const isCancel = item.status === "CANCEL";
@@ -1135,20 +1565,20 @@ export default function ForecastDashboard() {
               <tfoot>
                 <tr className="bg-slate-50/90 text-slate-800 font-bold text-xs border-t-2 border-slate-200">
                   <td colSpan={3} className="py-3.5 px-3 text-right uppercase tracking-wider text-slate-500 font-bold">
-                    Total Pipeline Forecast:
+                    Total Pipeline Forecast {activeColFilterCount > 0 ? "(Terfilter)" : ""}:
                   </td>
                   <td className="py-3.5 px-3 text-center text-slate-900 font-bold">
-                    {stats.totalPax} Pax
+                    {filteredTotalPax} Pax
                   </td>
                   <td colSpan={stageView === "ALL" ? 3 : 2}></td>
                   <td className="py-3.5 px-3 text-right bg-emerald-50/80 text-emerald-900 font-mono font-bold">
-                    {formatCurrency(stats.confirmTotal)}
+                    {formatCurrency(filteredConfirmTotal)}
                   </td>
                   <td className="py-3.5 px-3 text-right bg-amber-50/80 text-amber-900 font-mono font-bold">
-                    {formatCurrency(stats.tentativeTotal)}
+                    {formatCurrency(filteredTentativeTotal)}
                   </td>
                   <td className="py-3.5 px-3 text-right bg-rose-50/80 text-rose-900 font-mono font-bold">
-                    {formatCurrency(stats.cancelTotal)}
+                    {formatCurrency(filteredCancelTotal)}
                   </td>
                   <td colSpan={6} className="py-3.5 px-3"></td>
                 </tr>

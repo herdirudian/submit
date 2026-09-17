@@ -13,3 +13,4 @@ export const LEAD_STATUS_PROBABILITIES: Record<string, number> = {
   "On Hold": 10,
   "Lost / Cancelled": 0,
 };
+
