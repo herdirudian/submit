@@ -499,6 +499,61 @@ export async function getForecastReminders(unit?: ForecastUnitType) {
   }
 }
 
+export async function sendForecastEmailReminderAction(data: {
+  forecastId: string;
+  recipientEmail?: string;
+}) {
+  const session = await getServerSession(authOptions);
+  if (!session || !session.user) throw new Error("Unauthorized");
+
+  const item = await prisma.forecastItem.findUnique({
+    where: { id: data.forecastId },
+  });
+
+  if (!item) throw new Error("Forecast item tidak ditemukan");
+
+  const targetDate = item.unit === "CAMP_VILLAGE" ? item.checkIn : item.eventDate;
+  const dateStr = targetDate
+    ? new Date(targetDate).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })
+    : "-";
+
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const diffDays = targetDate
+    ? Math.ceil((new Date(targetDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+    : 0;
+
+  const { sendSalesForecastEmailReminder } = await import("@/lib/forecastEmail");
+
+  const emailRes = await sendSalesForecastEmailReminder({
+    forecastId: item.id,
+    company: item.company,
+    unit: item.unit,
+    targetDateStr: dateStr,
+    daysLeft: diffDays,
+    pax: item.pax,
+    total: item.total,
+    salesPerson: item.salesPerson,
+    pic: item.pic,
+    contactPerson: item.contactPerson,
+    phoneEmail: item.phoneEmail,
+    remarks: item.remarks,
+    recipientEmail: data.recipientEmail,
+  });
+
+  if (emailRes.success) {
+    await prisma.forecastItem.update({
+      where: { id: item.id },
+      data: {
+        lastReminderSentAt: new Date(),
+        reminderCount: { increment: 1 },
+      },
+    });
+  }
+
+  return emailRes;
+}
+
 export async function sendForecastWaReminderAction(data: {
   forecastId: string;
   phone: string;
@@ -571,40 +626,65 @@ export async function autoProcessForecastReminders(unit?: ForecastUnitType) {
       return diffDays >= 0 && diffDays <= 7; // H-7 or H-3 window
     });
 
+    const { sendSalesForecastEmailReminder } = await import("@/lib/forecastEmail");
     const { sendWaText } = await import("@/lib/whatsapp");
     let sentCount = 0;
 
     for (const item of eligibleItems) {
-      // Target Internal Sales PIC Phone Number
-      const rawPhone = item.picPhone || item.source || item.remarks || "";
-      const cleanPhoneMatch = rawPhone.match(/(?:08|628|\+628)\d{8,12}/);
-      if (!cleanPhoneMatch) continue;
-
-      let phone = cleanPhoneMatch[0].replace(/\D/g, "");
-      if (phone.startsWith("0")) phone = "62" + phone.substring(1);
-
       const targetDate = item.unit === "CAMP_VILLAGE" ? item.checkIn : item.eventDate;
       const dateStr = targetDate
         ? new Date(targetDate).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })
         : "";
 
-      const unitName = item.unit === "CAMP_VILLAGE" ? "The Lodge Camp & Village" : "The Lodge Park";
-      const message = `Halo Kak ${item.pic || "Sales"},\n\n*Peringatan Reservasi Tentative (Internal Sales)* 📌\n\nReservasi grup *${item.company}* (${item.pax} Pax) untuk tanggal *${dateStr}* di *${unitName}* statusnya masih *TENTATIVE*.\n\nMohon segera difollow-up kelanjutan atau pelunasannya ya Kak. Terima kasih! 🙏✨`;
+      const diffDays = targetDate
+        ? Math.ceil((new Date(targetDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+        : 0;
 
-      try {
-        const waRes = await sendWaText(phone, message);
-        if (waRes.success) {
-          sentCount++;
-          await prisma.forecastItem.update({
-            where: { id: item.id },
-            data: {
-              lastReminderSentAt: new Date(),
-              reminderCount: { increment: 1 },
-            },
-          });
+      // 1. Send Email Reminder to Sales Team
+      const emailRes = await sendSalesForecastEmailReminder({
+        forecastId: item.id,
+        company: item.company,
+        unit: item.unit,
+        targetDateStr: dateStr,
+        daysLeft: diffDays,
+        pax: item.pax,
+        total: item.total,
+        salesPerson: item.salesPerson,
+        pic: item.pic,
+        contactPerson: item.contactPerson,
+        phoneEmail: item.phoneEmail,
+        remarks: item.remarks,
+      });
+
+      // 2. Send WA Reminder (if phone exists)
+      const rawPhone = item.picPhone || item.source || item.remarks || "";
+      const cleanPhoneMatch = rawPhone.match(/(?:08|628|\+628)\d{8,12}/);
+      let waSuccess = false;
+
+      if (cleanPhoneMatch) {
+        let phone = cleanPhoneMatch[0].replace(/\D/g, "");
+        if (phone.startsWith("0")) phone = "62" + phone.substring(1);
+
+        const unitName = item.unit === "CAMP_VILLAGE" ? "The Lodge Camp & Village" : "The Lodge Park";
+        const message = `Halo Kak ${item.salesPerson || item.pic || "Sales"},\n\n*Peringatan Reservasi Tentative (Internal Sales)* 📌\n\nReservasi grup *${item.company}* (${item.pax} Pax) untuk tanggal *${dateStr}* di *${unitName}* statusnya masih *TENTATIVE*.\n\nMohon segera difollow-up kelanjutan atau pelunasannya ya Kak. Terima kasih! 🙏✨`;
+
+        try {
+          const waRes = await sendWaText(phone, message);
+          waSuccess = waRes.success;
+        } catch (e) {
+          console.error("[AUTO-REMINDER-WA-ERROR]:", e);
         }
-      } catch (e) {
-        console.error("[AUTO-REMINDER-ERROR]:", e);
+      }
+
+      if (emailRes.success || waSuccess) {
+        sentCount++;
+        await prisma.forecastItem.update({
+          where: { id: item.id },
+          data: {
+            lastReminderSentAt: new Date(),
+            reminderCount: { increment: 1 },
+          },
+        });
       }
     }
 

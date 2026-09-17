@@ -29,6 +29,7 @@ import {
   Loader2,
   Layers,
   Layers3,
+  Mail,
 } from "lucide-react";
 import {
   getForecastItems,
@@ -36,6 +37,7 @@ import {
   deleteForecastItem,
   getForecastReminders,
   autoProcessForecastReminders,
+  sendForecastEmailReminderAction,
   getForecastAnalyticsSummary,
   ForecastUnitType,
   ForecastStatusType,
@@ -106,6 +108,23 @@ export default function ForecastDashboard() {
   const [loading, setLoading] = useState(true);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [sendingEmailId, setSendingEmailId] = useState<string | null>(null);
+
+  const handleSendEmailReminder = async (forecastId: string) => {
+    try {
+      setSendingEmailId(forecastId);
+      const res = await sendForecastEmailReminderAction({ forecastId });
+      if (res.success) {
+        alert(`Email reminder berhasil dikirim ke: ${res.sentTo.join(", ")}`);
+      } else {
+        alert(`Gagal mengirim email: ${res.error || "Unknown error"}`);
+      }
+    } catch (err: any) {
+      alert(`Terjadi kesalahan: ${err.message}`);
+    } finally {
+      setSendingEmailId(null);
+    }
+  };
   const [editingItem, setEditingItem] = useState<any | null>(null);
 
   // WA Modal State
@@ -652,6 +671,19 @@ export default function ForecastDashboard() {
                       >
                         <MessageSquare size={12} />
                         <span>Kirim WA</span>
+                      </button>
+                      <button
+                        onClick={() => handleSendEmailReminder(r.id)}
+                        disabled={sendingEmailId === r.id}
+                        className="flex items-center gap-1 bg-amber-600 hover:bg-amber-700 text-white font-medium text-[11px] px-2.5 py-1 rounded-lg shadow-2xs transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+                        title="Kirim Email Reminder ke Sales PIC"
+                      >
+                        {sendingEmailId === r.id ? (
+                          <Loader2 size={12} className="animate-spin" />
+                        ) : (
+                          <Mail size={12} />
+                        )}
+                        <span>Email Sales</span>
                       </button>
                     </div>
                   ))}

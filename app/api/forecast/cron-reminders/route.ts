@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { sendWaText } from "@/lib/whatsapp";
+import { sendSalesForecastEmailReminder } from "@/lib/forecastEmail";
 
 const CRON_SECRET = process.env.CRON_SECRET || "lodge_forecast_cron_2026";
 
@@ -24,9 +25,6 @@ async function handleCronReminders(req: NextRequest) {
 
     const now = new Date();
     now.setHours(0, 0, 0, 0);
-
-    const maxDate = new Date(now);
-    maxDate.setDate(maxDate.getDate() + 14);
 
     // 20 hours ago cutoff to prevent duplicate auto-reminders on same day
     const twentyHoursAgo = new Date(Date.now() - 20 * 60 * 60 * 1000);
@@ -64,32 +62,24 @@ async function handleCronReminders(req: NextRequest) {
       })
       .filter(Boolean);
 
-    let sentCount = 0;
+    // Fetch all sales & admin users for in-app notifications
+    const salesUsers = await prisma.user.findMany({
+      where: {
+        OR: [
+          { role: "SALES" },
+          { role: "ADMIN" }
+        ]
+      },
+      select: { id: true, name: true, email: true }
+    });
+
+    let sentEmailCount = 0;
+    let sentWaCount = 0;
     let failedCount = 0;
     const results: any[] = [];
 
     for (const item of eligibleItems) {
       if (!item) continue;
-
-      // Extract phone number from source or remarks if available
-      const rawPhone = item.source || item.remarks || "";
-      const cleanPhoneMatch = rawPhone.match(/(?:08|628|\+628)\d{8,12}/);
-      const targetPhone = cleanPhoneMatch ? cleanPhoneMatch[0].replace(/\D/g, "") : null;
-
-      if (!targetPhone) {
-        results.push({
-          id: item.id,
-          company: item.company,
-          status: "SKIPPED_NO_PHONE",
-          reason: "Tidak ada nomor WA pada field source/remarks",
-        });
-        continue;
-      }
-
-      let phoneFormatted = targetPhone;
-      if (phoneFormatted.startsWith("0")) {
-        phoneFormatted = "62" + phoneFormatted.substring(1);
-      }
 
       const dateStr = item.targetDate.toLocaleDateString("id-ID", {
         day: "numeric",
@@ -98,46 +88,89 @@ async function handleCronReminders(req: NextRequest) {
       });
 
       const unitName = item.unit === "CAMP_VILLAGE" ? "The Lodge Camp & Village" : "The Lodge Park";
-      const message = `Halo Kak ${item.pic || item.company},\n\nPesan Otomatis dari *${unitName}* 👋\n\nKami mengonfirmasi reservasi grup *${item.company}* (${item.pax} Pax) untuk tanggal *${dateStr}* yang saat ini statusnya masih *Tentative* (H-${item.daysLeft}).\n\nMohon konfirmasi atau informasi kelanjutan reservasinya ya Kak. Terima kasih banyak! 🙏✨`;
 
-      try {
-        const waRes = await sendWaText(phoneFormatted, message);
+      // 1. Send Email Reminder to Sales Team Email
+      const emailResult = await sendSalesForecastEmailReminder({
+        forecastId: item.id,
+        company: item.company,
+        unit: item.unit,
+        targetDateStr: dateStr,
+        daysLeft: item.daysLeft,
+        pax: item.pax,
+        total: item.total,
+        salesPerson: item.salesPerson,
+        pic: item.pic,
+        contactPerson: item.contactPerson,
+        phoneEmail: item.phoneEmail,
+        remarks: item.remarks,
+      });
 
-        if (waRes.success) {
-          sentCount++;
-          await prisma.forecastItem.update({
-            where: { id: item.id },
-            data: {
-              lastReminderSentAt: new Date(),
-              reminderCount: { increment: 1 },
-            },
-          });
+      if (emailResult.success) {
+        sentEmailCount++;
+      }
 
-          results.push({
-            id: item.id,
-            company: item.company,
-            phone: phoneFormatted,
-            status: "SUCCESS_SENT",
-          });
-        } else {
-          failedCount++;
-          results.push({
-            id: item.id,
-            company: item.company,
-            phone: phoneFormatted,
-            status: "FAILED_WA_API",
-            error: waRes.error,
-          });
+      // 2. Send WA Reminder (if phone exists)
+      let waStatus = "SKIPPED_NO_PHONE";
+      const rawPhone = item.picPhone || item.source || item.remarks || "";
+      const cleanPhoneMatch = rawPhone.match(/(?:08|628|\+628)\d{8,12}/);
+      if (cleanPhoneMatch) {
+        let phoneFormatted = cleanPhoneMatch[0].replace(/\D/g, "");
+        if (phoneFormatted.startsWith("0")) phoneFormatted = "62" + phoneFormatted.substring(1);
+
+        const waMessage = `Halo Kak ${item.salesPerson || item.pic || "Sales"},\n\n*Peringatan Forecast Tentative (Sales Reminder)* 📌\n\nReservasi grup *${item.company}* (${item.pax} Pax) untuk tanggal *${dateStr}* di *${unitName}* statusnya masih *TENTATIVE* (H-${item.daysLeft}).\n\nMohon segera difollow-up kelanjutan atau pelunasannya ya Kak. Terima kasih! 🙏✨`;
+
+        try {
+          const waRes = await sendWaText(phoneFormatted, waMessage);
+          if (waRes.success) {
+            sentWaCount++;
+            waStatus = "SUCCESS_SENT";
+          } else {
+            waStatus = "FAILED_WA_API";
+          }
+        } catch (e: any) {
+          waStatus = "ERROR_WA_EXCEPTION";
         }
-      } catch (err: any) {
-        failedCount++;
-        results.push({
-          id: item.id,
-          company: item.company,
-          status: "ERROR_EXCEPTION",
-          error: err.message,
+      }
+
+      // 3. Create In-App Notification for Sales Team Users
+      try {
+        const notifTitle = `📌 Reminder Tentative H-${item.daysLeft}: ${item.company}`;
+        const notifMsg = `Reservasi ${item.company} (${item.pax} Pax, ${dateStr}) di ${unitName} masih TENTATIVE. Segera follow up!`;
+
+        await Promise.all(
+          salesUsers.map((u) =>
+            prisma.notification.create({
+              data: {
+                userId: u.id,
+                title: notifTitle,
+                message: notifMsg,
+                link: "/forecast",
+              },
+            })
+          )
+        );
+      } catch (notifErr) {
+        console.error("Error creating in-app notification:", notifErr);
+      }
+
+      // Update forecast item reminder timestamp & count
+      if (emailResult.success || waStatus === "SUCCESS_SENT") {
+        await prisma.forecastItem.update({
+          where: { id: item.id },
+          data: {
+            lastReminderSentAt: new Date(),
+            reminderCount: { increment: 1 },
+          },
         });
       }
+
+      results.push({
+        id: item.id,
+        company: item.company,
+        emailStatus: emailResult.success ? "SUCCESS" : "FAILED",
+        sentEmails: emailResult.sentTo,
+        waStatus,
+      });
     }
 
     return NextResponse.json({
@@ -145,9 +178,9 @@ async function handleCronReminders(req: NextRequest) {
       timestamp: new Date().toISOString(),
       summary: {
         totalEligible: eligibleItems.length,
-        sentCount,
+        sentEmailCount,
+        sentWaCount,
         failedCount,
-        skippedCount: eligibleItems.length - (sentCount + failedCount),
       },
       results,
     });
@@ -159,4 +192,3 @@ async function handleCronReminders(req: NextRequest) {
     );
   }
 }
-
