@@ -29,8 +29,15 @@ export async function sendEmail({
   attachments?: { filename: string; path: string }[];
 }) {
   try {
-    const finalFromEmail = (fromEmail ?? "").trim() || process.env.FROM_EMAIL || process.env.SMTP_USER || "";
-    const finalFromName = (fromName ?? "").trim() || process.env.FROM_NAME || "";
+    let rawFromEmail = (fromEmail ?? "").trim() || process.env.FROM_EMAIL || process.env.SMTP_USER || "";
+
+    // Auto-correct common domain typo (thelodgeroup.id -> thelodgegroup.id)
+    if (rawFromEmail.toLowerCase().includes("thelodgeroup.id")) {
+      rawFromEmail = rawFromEmail.replace(/thelodgeroup\.id/gi, "thelodgegroup.id");
+    }
+
+    const finalFromEmail = rawFromEmail;
+    const finalFromName = (fromName ?? "").trim() || process.env.FROM_NAME || "The Lodge Group";
     
     const from = finalFromEmail
       ? finalFromName
