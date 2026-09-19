@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Loader2, Save, Calculator, DollarSign, UserCheck, Calendar, FileText, CheckCircle2, AlertCircle, Lock } from "lucide-react";
+import { X, Loader2, Save, Calculator, DollarSign, UserCheck, Phone } from "lucide-react";
 import {
   createForecastItem,
   updateForecastItem,
@@ -10,133 +10,49 @@ import {
   ForecastStatusType,
   ForecastDpStatusType,
 } from "@/actions/forecast";
-import { LEAD_STATUS_PROBABILITIES } from "@/lib/forecastConstants";
 
 interface ForecastModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  unit?: ForecastUnitType;
+  unit: ForecastUnitType;
   initialData?: any | null;
 }
-
-const LEAD_SOURCES = [
-  "Instagram",
-  "Tiktok",
-  "Website",
-  "Whatsapp TLM",
-  "Sales Call",
-  "Table Top",
-  "Database Existing",
-  "Walk-in",
-  "Referral",
-  "Sales Prospecting",
-  "Travel Agent",
-  "Other",
-];
-
-const SEGMENTS = [
-  "Corporate",
-  "Government",
-  "School",
-  "Travel Agent",
-  "Social Event",
-  "Individual / Family",
-  "Community",
-  "Other",
-];
-
-const EVENT_TYPES = [
-  "Corporate Gathering",
-  "Meeting",
-  "Team Building",
-  "School Trip",
-  "Wedding",
-  "Birthday",
-  "Social Gathering",
-  "Room Booking",
-  "Camping",
-  "Day Visit / Attractions",
-  "F&B Group Booking",
-  "Other",
-];
-
-const LEAD_STATUSES = [
-  "New Lead",
-  "Contacted",
-  "Qualified",
-  "Proposal Sent",
-  "Negotiation",
-  "Verbal Agreement",
-  "Confirmed / Deal",
-  "On Hold",
-  "Lost / Cancelled",
-];
-
-const REASONS_LOSS_HOLD = [
-  "Awaiting Client Decision",
-  "Awaiting Internal Approval",
-  "Budget Not Available",
-  "Price Not Suitable",
-  "Date Not Available",
-  "Package Not Suitable",
-  "Client Chose Competitor",
-  "No Response from Client",
-  "Event Postponed",
-  "Event Cancelled",
-  "Other",
-];
 
 export default function ForecastModal({
   isOpen,
   onClose,
   onSuccess,
-  unit = "CAMP_VILLAGE",
+  unit,
   initialData,
 }: ForecastModalProps) {
-  const [activeTab, setActiveTab] = useState<"STAGE1" | "STAGE2" | "STAGE3">("STAGE1");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const [rateType, setRateType] = useState<"PER_PAX" | "TOTAL_DIRECT">("PER_PAX");
-  const [salesPics, setSalesPics] = useState<{ name: string; phone: string; email: string }[]>([]);
+  const [salesPics, setSalesPics] = useState<{ name: string; phone: string; email?: string }[]>([]);
 
   const [formData, setFormData] = useState({
-    // Stage 1
-    dateReceived: "",
     company: "",
-    contactPerson: "",
-    phoneEmail: "",
-    leadSource: "Whatsapp TLM",
-    segment: "Corporate",
-    eventType: "Corporate Gathering",
-    proposedEventDate: "",
+    reservationDate: "",
+    checkIn: "",
+    checkOut: "",
+    eventDate: "",
+    eventType: "",
+    venue: "",
     pax: 0,
     room: "",
     rate: 0,
     total: 0,
-    salesPerson: "",
-    
-    // Stage 2
-    firstResponseDate: "",
-    lastFollowUpDate: "",
-    latestClientResponse: "",
-    nextAction: "",
-    nextActionDueDate: "",
-    leadStatus: "New Lead",
-
-    // Stage 3
-    closingProbability: 10,
-    expectedClosingMonth: "",
-    reasonForLossHold: "",
-    finalDealValue: 0,
-
-    // Legacy / Extra DP
     dpStatus: "BELUM_DP" as ForecastDpStatusType,
     dpAmount: 0,
     dueDate: "",
+    pic: "",
+    picPhone: "",
     status: "TENTATIVE" as ForecastStatusType,
     remarks: "",
+    segment: "",
+    source: "",
   });
 
   const formatDateForInput = (d: any) => {
@@ -159,144 +75,64 @@ export default function ForecastModal({
       const initTotal = initialData.total || 0;
 
       const isPerPax = initPax > 0 && initRate > 0 && Math.abs(initRate * initPax - initTotal) < 100;
-      setRateType(isPerPax ? "PER_PAX" : "TOTAL_DIRECT");
 
+      setRateType(isPerPax ? "PER_PAX" : "TOTAL_DIRECT");
       setFormData({
-        // Stage 1
-        dateReceived: formatDateForInput(initialData.dateReceived) || formatDateForInput(initialData.reservationDate) || new Date().toISOString().split("T")[0],
         company: initialData.company || "",
-        contactPerson: initialData.contactPerson || "",
-        phoneEmail: initialData.phoneEmail || initialData.picPhone || "",
-        leadSource: initialData.leadSource || initialData.source || "Whatsapp TLM",
-        segment: initialData.segment || "Corporate",
-        eventType: initialData.eventType || "Corporate Gathering",
-        proposedEventDate: formatDateForInput(initialData.proposedEventDate) || formatDateForInput(initialData.eventDate) || formatDateForInput(initialData.checkIn),
+        reservationDate: formatDateForInput(initialData.reservationDate),
+        checkIn: formatDateForInput(initialData.checkIn),
+        checkOut: formatDateForInput(initialData.checkOut),
+        eventDate: formatDateForInput(initialData.eventDate),
+        eventType: initialData.eventType || "",
+        venue: initialData.venue || "",
         pax: initPax,
-        room: initialData.room || initialData.venue || "",
+        room: initialData.room || "",
         rate: initRate,
         total: initTotal,
-        salesPerson: initialData.salesPerson || initialData.pic || "",
-
-        // Stage 2
-        firstResponseDate: formatDateForInput(initialData.firstResponseDate),
-        lastFollowUpDate: formatDateForInput(initialData.lastFollowUpDate),
-        latestClientResponse: initialData.latestClientResponse || "",
-        nextAction: initialData.nextAction || "",
-        nextActionDueDate: formatDateForInput(initialData.nextActionDueDate),
-        leadStatus: initialData.leadStatus || "New Lead",
-
-        // Stage 3
-        closingProbability: initialData.closingProbability !== undefined ? initialData.closingProbability : (LEAD_STATUS_PROBABILITIES[initialData.leadStatus || "New Lead"] ?? 10),
-        expectedClosingMonth: formatDateForInput(initialData.expectedClosingMonth),
-        reasonForLossHold: initialData.reasonForLossHold || "",
-        finalDealValue: initialData.finalDealValue !== undefined ? initialData.finalDealValue : initTotal,
-
-        // Legacy / DP
         dpStatus: initialData.dpStatus || "BELUM_DP",
         dpAmount: initialData.dpAmount || 0,
         dueDate: formatDateForInput(initialData.dueDate),
+        pic: initialData.pic || "",
+        picPhone: initialData.picPhone || "",
         status: initialData.status || "TENTATIVE",
         remarks: initialData.remarks || "",
+        segment: initialData.segment || "",
+        source: initialData.source || "",
       });
     } else {
       setRateType("PER_PAX");
-      const today = new Date().toISOString().split("T")[0];
       setFormData({
-        dateReceived: today,
         company: "",
-        contactPerson: "",
-        phoneEmail: "",
-        leadSource: "Whatsapp TLM",
-        segment: "Corporate",
-        eventType: "Corporate Gathering",
-        proposedEventDate: "",
+        reservationDate: "",
+        checkIn: "",
+        checkOut: "",
+        eventDate: "",
+        eventType: "",
+        venue: "",
         pax: 0,
         room: "",
         rate: 0,
         total: 0,
-        salesPerson: "",
-        firstResponseDate: "",
-        lastFollowUpDate: "",
-        latestClientResponse: "",
-        nextAction: "",
-        nextActionDueDate: "",
-        leadStatus: "New Lead",
-        closingProbability: 10,
-        expectedClosingMonth: "",
-        reasonForLossHold: "",
-        finalDealValue: 0,
         dpStatus: "BELUM_DP",
         dpAmount: 0,
         dueDate: "",
+        pic: "",
+        picPhone: "",
         status: "TENTATIVE",
         remarks: "",
+        segment: "",
+        source: "",
       });
     }
     setError("");
-    setActiveTab("STAGE1");
   }, [initialData, isOpen]);
-
-  const handleLeadStatusChange = (statusStr: string) => {
-    const prob = LEAD_STATUS_PROBABILITIES[statusStr] ?? 10;
-    let mainStatus: ForecastStatusType = "TENTATIVE";
-    let dealValue = formData.finalDealValue;
-
-    if (statusStr === "Confirmed / Deal") {
-      mainStatus = "CONFIRM";
-      dealValue = formData.total > 0 ? formData.total : dealValue;
-    } else if (statusStr === "Lost / Cancelled") {
-      mainStatus = "CANCEL";
-      dealValue = 0;
-    }
-
-    setFormData((prev) => ({
-      ...prev,
-      leadStatus: statusStr,
-      closingProbability: prob,
-      status: mainStatus,
-      finalDealValue: dealValue,
-    }));
-  };
-
-  const handleMainStatusChange = (newStatus: ForecastStatusType) => {
-    setFormData((prev) => {
-      let newLeadStatus = prev.leadStatus;
-      let newProb = prev.closingProbability;
-      let dealValue = prev.finalDealValue;
-
-      if (newStatus === "CONFIRM") {
-        newLeadStatus = "Confirmed / Deal";
-        newProb = 100;
-        dealValue = prev.total > 0 ? prev.total : dealValue;
-      } else if (newStatus === "CANCEL") {
-        newLeadStatus = "Lost / Cancelled";
-        newProb = 0;
-        dealValue = 0;
-      } else if (newStatus === "TENTATIVE") {
-        if (prev.leadStatus === "Confirmed / Deal" || prev.leadStatus === "Lost / Cancelled") {
-          newLeadStatus = "Negotiation";
-          newProb = LEAD_STATUS_PROBABILITIES["Negotiation"] ?? 50;
-        }
-      }
-
-      return {
-        ...prev,
-        status: newStatus,
-        leadStatus: newLeadStatus,
-        closingProbability: newProb,
-        finalDealValue: dealValue,
-      };
-    });
-  };
 
   const handleRateChange = (val: number) => {
     if (rateType === "PER_PAX") {
-      const tot = val * (formData.pax || 0);
       setFormData((prev) => ({
         ...prev,
         rate: val,
-        total: tot,
-        finalDealValue: prev.leadStatus === "Confirmed / Deal" ? tot : prev.finalDealValue,
+        total: val * (prev.pax || 0),
       }));
     } else {
       setFormData((prev) => ({ ...prev, rate: val }));
@@ -305,12 +141,10 @@ export default function ForecastModal({
 
   const handlePaxChange = (val: number) => {
     if (rateType === "PER_PAX") {
-      const tot = (formData.rate || 0) * val;
       setFormData((prev) => ({
         ...prev,
         pax: val,
-        total: tot,
-        finalDealValue: prev.leadStatus === "Confirmed / Deal" ? tot : prev.finalDealValue,
+        total: (prev.rate || 0) * val,
       }));
     } else {
       setFormData((prev) => ({ ...prev, pax: val }));
@@ -324,7 +158,6 @@ export default function ForecastModal({
         ...prev,
         total: val,
         rate: calculatedRate,
-        finalDealValue: prev.leadStatus === "Confirmed / Deal" ? val : prev.finalDealValue,
       }));
     } else {
       setFormData((prev) => ({ ...prev, total: val }));
@@ -334,10 +167,9 @@ export default function ForecastModal({
   const handleRateTypeSwitch = (type: "PER_PAX" | "TOTAL_DIRECT") => {
     setRateType(type);
     if (type === "PER_PAX") {
-      const tot = (formData.rate || 0) * (formData.pax || 0);
       setFormData((prev) => ({
         ...prev,
-        total: tot,
+        total: (prev.rate || 0) * (prev.pax || 0),
       }));
     } else {
       const calculatedRate = formData.pax > 0 ? Math.round(formData.total / formData.pax) : formData.total;
@@ -353,11 +185,11 @@ export default function ForecastModal({
     if (found) {
       setFormData((prev) => ({
         ...prev,
-        salesPerson: found.name,
-        phoneEmail: prev.phoneEmail || found.phone,
+        pic: found.name,
+        picPhone: found.phone || prev.picPhone,
       }));
     } else {
-      setFormData((prev) => ({ ...prev, salesPerson: picName }));
+      setFormData((prev) => ({ ...prev, pic: picName }));
     }
   };
 
@@ -385,7 +217,6 @@ export default function ForecastModal({
     e.preventDefault();
     if (!formData.company.trim()) {
       setError("Nama Instansi / Company wajib diisi");
-      setActiveTab("STAGE1");
       return;
     }
 
@@ -401,55 +232,31 @@ export default function ForecastModal({
       const payload = {
         unit,
         company: formData.company,
-        dateReceived: formData.dateReceived || null,
-        contactPerson: formData.contactPerson || null,
-        phoneEmail: formData.phoneEmail || null,
-        leadSource: formData.leadSource || null,
-        segment: formData.segment || null,
+        reservationDate: formData.reservationDate || null,
+        checkIn: unit === "CAMP_VILLAGE" ? formData.checkIn || null : null,
+        checkOut: unit === "CAMP_VILLAGE" ? formData.checkOut || null : null,
+        eventDate: unit === "PARK" ? formData.eventDate || null : null,
         eventType: formData.eventType || null,
-        proposedEventDate: formData.proposedEventDate || null,
+        venue: unit === "PARK" ? formData.venue || null : null,
         pax: Number(formData.pax) || 0,
-        room: formData.room || null,
+        room: unit === "CAMP_VILLAGE" ? formData.room || null : null,
         rate: finalRate,
         total: finalTotal,
-        salesPerson: formData.salesPerson || null,
-
-        // Legacy dates mapping for backward compatibility
-        reservationDate: formData.dateReceived || null,
-        eventDate: formData.proposedEventDate || null,
-        checkIn: formData.proposedEventDate || null,
-        pic: formData.salesPerson || null,
-        picPhone: formData.phoneEmail || null,
-
-        // Stage 2
-        firstResponseDate: formData.firstResponseDate || null,
-        lastFollowUpDate: formData.lastFollowUpDate || null,
-        latestClientResponse: formData.latestClientResponse || null,
-        nextAction: formData.nextAction || null,
-        nextActionDueDate: formData.nextActionDueDate || null,
-        leadStatus: formData.leadStatus,
-
-        // Stage 3
-        closingProbability: Number(formData.closingProbability) || 0,
-        expectedClosingMonth: formData.expectedClosingMonth || null,
-        reasonForLossHold: formData.reasonForLossHold || null,
-        finalDealValue: Number(formData.finalDealValue) || 0,
-
-        // DP tracking
         dpStatus: formData.dpStatus,
         dpAmount: Number(formData.dpAmount) || 0,
         dueDate: formData.dueDate || null,
+        pic: formData.pic || null,
+        picPhone: formData.picPhone || null,
         status: formData.status,
         remarks: formData.remarks || null,
+        segment: unit === "PARK" ? formData.segment || null : null,
+        source: formData.source || null,
       };
 
-      const res = initialData?.id
-        ? await updateForecastItem(initialData.id, payload)
-        : await createForecastItem(payload);
-
-      if (!res || !res.success) {
-        setError(res?.error || "Gagal menyimpan data forecast");
-        return;
+      if (initialData?.id) {
+        await updateForecastItem(initialData.id, payload);
+      } else {
+        await createForecastItem(payload);
       }
 
       onSuccess();
@@ -462,621 +269,420 @@ export default function ForecastModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden my-6 border border-slate-100 flex flex-col max-h-[90vh]">
-        {/* Header */}
-        <div className="px-6 py-4 bg-[#0f4d39] text-white flex items-center justify-between shrink-0">
+    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden my-8 border border-slate-100">
+        <div className="px-6 py-4 bg-primary-700 text-white flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-bold font-judul flex items-center gap-2">
-              <FileText size={20} className="text-amber-400" />
-              <span>{initialData ? "Edit Sales Lead & Pipeline" : "Input Sales Lead Baru"}</span>
+            <h2 className="text-lg font-bold font-judul">
+              {initialData ? "Edit Forecast Item" : "Tambah Forecast Item"}
             </h2>
-            <p className="text-xs text-emerald-100 font-subjudul">
-              Sistem Pipeline Sales 3-Stage Consolidated (Camp, Village & Park)
+            <p className="text-xs text-primary-100 font-subjudul">
+              {unit === "CAMP_VILLAGE"
+                ? "The Lodge Camp & Village"
+                : "The Lodge Park (Kawasan Wisata)"}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 hover:bg-emerald-800 rounded-lg transition-colors text-emerald-100 hover:text-white"
+            className="p-1 hover:bg-primary-800 rounded-lg transition-colors text-primary-100 hover:text-white"
           >
             <X size={20} />
           </button>
         </div>
 
-        {/* Stage Tabs Navigation */}
-        <div className="flex border-b border-slate-200 bg-slate-50 px-4 pt-2 gap-1 shrink-0">
-          <button
-            type="button"
-            onClick={() => setActiveTab("STAGE1")}
-            className={`flex-1 py-2.5 px-3 text-xs font-bold rounded-t-xl transition-all border-t-2 flex items-center justify-center gap-2 ${
-              activeTab === "STAGE1"
-                ? "bg-white text-[#0f4d39] border-[#0f4d39] shadow-sm"
-                : "text-slate-500 border-transparent hover:text-slate-800 hover:bg-slate-100"
-            }`}
-          >
-            <span className="w-5 h-5 rounded-full bg-[#0f4d39]/10 text-[#0f4d39] flex items-center justify-center text-[10px]">1</span>
-            <span>Stage 1: Lead Data</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("STAGE2")}
-            className={`flex-1 py-2.5 px-3 text-xs font-bold rounded-t-xl transition-all border-t-2 flex items-center justify-center gap-2 ${
-              activeTab === "STAGE2"
-                ? "bg-white text-indigo-700 border-indigo-600 shadow-sm"
-                : "text-slate-500 border-transparent hover:text-slate-800 hover:bg-slate-100"
-            }`}
-          >
-            <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-[10px]">2</span>
-            <span>Stage 2: Follow-Up Log</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("STAGE3")}
-            className={`flex-1 py-2.5 px-3 text-xs font-bold rounded-t-xl transition-all border-t-2 flex items-center justify-center gap-2 ${
-              activeTab === "STAGE3"
-                ? "bg-white text-emerald-700 border-emerald-600 shadow-sm"
-                : "text-slate-500 border-transparent hover:text-slate-800 hover:bg-slate-100"
-            }`}
-          >
-            <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px]">3</span>
-            <span>Stage 3: Closing & DP</span>
-          </button>
-        </div>
-
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4 grow">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs font-semibold rounded-xl flex items-center gap-2">
-              <AlertCircle size={16} className="shrink-0" />
-              <span>{error}</span>
+            <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl">
+              {error}
             </div>
           )}
 
-          {/* STAGE 1: MASTER LEADS */}
-          {activeTab === "STAGE1" && (
-            <div className="space-y-4 animate-fadeIn">
-              <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-3 text-xs text-amber-800 flex items-center gap-2">
-                <span className="font-bold">Info:</span>
-                <span>Input data awal prospect client yang masuk ke Sales.</span>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Company */}
+            <div className="md:col-span-2">
+              <label className="block text-xs font-semibold text-slate-600 mb-1">
+                Company / Nama Instansi <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="Contoh: PT Telkom / Sekolah Bina Insani"
+                value={formData.company}
+                onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Tanggal Terima Lead */}
+            {/* Status */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">
+                Status Booking
+              </label>
+              <select
+                value={formData.status}
+                onChange={(e) =>
+                  setFormData({ ...formData, status: e.target.value as ForecastStatusType })
+                }
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              >
+                <option value="TENTATIVE">Tentative (Kuning)</option>
+                <option value="CONFIRM">Confirm (Hijau)</option>
+                <option value="CANCEL">Cancel (Merah)</option>
+              </select>
+            </div>
+
+            {/* Reservation Date */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">
+                Tanggal Reservasi
+              </label>
+              <input
+                type="date"
+                value={formData.reservationDate}
+                onChange={(e) => setFormData({ ...formData, reservationDate: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+
+            {/* Camp & Village specific: Check In & Check Out */}
+            {unit === "CAMP_VILLAGE" && (
+              <>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Tanggal Terima Lead <span className="text-red-500">*</span>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">
+                    Check In
                   </label>
                   <input
                     type="date"
-                    required
-                    value={formData.dateReceived}
-                    onChange={(e) => setFormData({ ...formData, dateReceived: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0f4d39]/20 focus:border-[#0f4d39]"
+                    value={formData.checkIn}
+                    onChange={(e) => setFormData({ ...formData, checkIn: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   />
                 </div>
-
-                {/* Sales Person / PIC */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
-                    <span>PIC Sales</span>
-                    {salesPics.length > 0 && (
-                      <span className="text-[10px] text-emerald-700 font-medium">Auto Suggest</span>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">
+                    Check Out
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.checkOut}
+                    onChange={(e) => setFormData({ ...formData, checkOut: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Park specific: Event Date */}
+            {unit === "PARK" && (
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">
+                  Tanggal Event / Pelaksanaan
+                </label>
+                <input
+                  type="date"
+                  value={formData.eventDate}
+                  onChange={(e) => setFormData({ ...formData, eventDate: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                />
+              </div>
+            )}
+
+            {/* Event Type */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">
+                Type of Event
+              </label>
+              <input
+                type="text"
+                placeholder="Contoh: Gathering / Outbound / Meeting / Wedding"
+                value={formData.eventType}
+                onChange={(e) => setFormData({ ...formData, eventType: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+
+            {/* Park specific: Venue */}
+            {unit === "PARK" && (
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">
+                  Venue / Area
+                </label>
+                <input
+                  type="text"
+                  placeholder="Contoh: TLM, Dapur Hawu, Omah, Pine Forest"
+                  value={formData.venue}
+                  onChange={(e) => setFormData({ ...formData, venue: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                />
+              </div>
+            )}
+
+            {/* Camp & Village specific: Room */}
+            {unit === "CAMP_VILLAGE" && (
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">
+                  Jumlah Room / Tenda
+                </label>
+                <input
+                  type="text"
+                  placeholder="Contoh: 5, Villa Pine, dsb"
+                  value={formData.room}
+                  onChange={(e) => setFormData({ ...formData, room: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                />
+              </div>
+            )}
+
+            {/* Rate Calculation Type Toggle */}
+            <div className="md:col-span-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+              <label className="block text-xs font-bold text-slate-700 mb-2">
+                Metode Perhitungan Revenue
+              </label>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleRateTypeSwitch("PER_PAX")}
+                  className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold border transition-all ${
+                    rateType === "PER_PAX"
+                      ? "bg-primary-700 text-white border-primary-700 shadow-sm"
+                      : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
+                  }`}
+                >
+                  <Calculator size={14} />
+                  <span>Hitung Per Pax (Rate x Pax)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleRateTypeSwitch("TOTAL_DIRECT")}
+                  className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold border transition-all ${
+                    rateType === "TOTAL_DIRECT"
+                      ? "bg-primary-700 text-white border-primary-700 shadow-sm"
+                      : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
+                  }`}
+                >
+                  <DollarSign size={14} />
+                  <span>Total Langsung (Tanpa Perkalian Pax)</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Pax */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">
+                Jumlah Pax (Orang)
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={formData.pax}
+                onChange={(e) => handlePaxChange(parseInt(e.target.value) || 0)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+
+            {/* Rate / Price per Pax */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">
+                {rateType === "PER_PAX"
+                  ? "Rate / Price per Pax (Rp)"
+                  : "Rate per Pax (Estimasi / Auto)"}
+              </label>
+              <input
+                type="number"
+                min="0"
+                placeholder="0"
+                value={formData.rate}
+                readOnly={rateType === "TOTAL_DIRECT" && formData.pax > 0}
+                onChange={(e) => handleRateChange(parseFloat(e.target.value) || 0)}
+                className={`w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                  rateType === "TOTAL_DIRECT" && formData.pax > 0 ? "bg-slate-100 text-slate-500" : ""
+                }`}
+              />
+            </div>
+
+            {/* Total Revenue Input */}
+            <div className="md:col-span-2">
+              <label className="block text-xs font-semibold text-slate-600 mb-1 flex justify-between">
+                <span>TOTAL Revenue / Total Harga (Rp)</span>
+                <span className="text-[10px] text-slate-400 font-normal">
+                  {rateType === "PER_PAX" ? "Otomatis Perkalian (Rate x Pax)" : "Input Langsung"}
+                </span>
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={formData.total}
+                readOnly={rateType === "PER_PAX"}
+                onChange={(e) => handleTotalChange(parseFloat(e.target.value) || 0)}
+                className={`w-full px-3 py-2 border border-slate-200 rounded-xl text-base font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                  rateType === "PER_PAX" ? "bg-slate-50 text-slate-700" : "bg-white"
+                }`}
+              />
+            </div>
+
+            {/* Tracking Pembayaran DP & Tanggal Pelunasan */}
+            <div className="md:col-span-2 bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/80 grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Status Pembayaran DP
+                </label>
+                <select
+                  value={formData.dpStatus}
+                  onChange={(e) => handleDpStatusChange(e.target.value as ForecastDpStatusType)}
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0f4d39]/20 focus:border-[#0f4d39]"
+                >
+                  <option value="BELUM_DP">Belum DP</option>
+                  <option value="DP_30">DP 30%</option>
+                  <option value="DP_50">DP 50%</option>
+                  <option value="DP_CUSTOM">Sudah DP (Nominal Custom)</option>
+                  <option value="LUNAS">Lunas</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Nominal DP (Rp)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  value={formData.dpAmount}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value) || 0;
+                    setFormData((prev) => ({
+                      ...prev,
+                      dpAmount: val,
+                      dpStatus: prev.dpStatus === "BELUM_DP" && val > 0 ? "DP_CUSTOM" : prev.dpStatus,
+                    }));
+                  }}
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0f4d39]/20 focus:border-[#0f4d39]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Jatuh Tempo Pelunasan
+                </label>
+                <input
+                  type="date"
+                  value={formData.dueDate}
+                  onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0f4d39]/20 focus:border-[#0f4d39]"
+                />
+              </div>
+            </div>
+
+            {/* PIC Sales Dropdown + Text Input */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1 flex items-center justify-between">
+                <span>Pilih PIC Sales</span>
+                {salesPics.length > 0 && (
+                  <span className="text-[10px] text-primary-700 font-medium">Auto-fill No HP</span>
+                )}
+              </label>
+              {salesPics.length > 0 ? (
+                <select
+                  value={formData.pic}
+                  onChange={(e) => handleSelectPic(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
+                >
+                  <option value="">-- Pilih PIC Sales --</option>
+                  {salesPics.map((p, idx) => (
+                    <option key={idx} value={p.name}>
+                      {p.name} {p.email ? `(${p.email})` : p.phone ? `(${p.phone})` : ""}
+                    </option>
+                  ))}
+                  {formData.pic &&
+                    formData.pic !== "CUSTOM" &&
+                    !salesPics.some((p) => p.name.toLowerCase() === formData.pic.toLowerCase()) && (
+                      <option value={formData.pic}>{formData.pic}</option>
                     )}
-                  </label>
-                  {salesPics.length > 0 ? (
-                    <select
-                      value={formData.salesPerson}
-                      onChange={(e) => handleSelectPic(e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0f4d39]/20 focus:border-[#0f4d39] bg-white"
-                    >
-                      <option value="">-- Pilih PIC Sales --</option>
-                      {salesPics.map((p, idx) => (
-                        <option key={idx} value={p.name}>
-                          {p.name} {p.email ? `(${p.email})` : p.phone ? `(${p.phone})` : ""}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <input
-                      type="text"
-                      placeholder="Nama Sales PIC"
-                      value={formData.salesPerson}
-                      onChange={(e) => setFormData({ ...formData, salesPerson: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0f4d39]/20 focus:border-[#0f4d39]"
-                    />
-                  )}
-
-                  {/* Locked Sales Account Email Badge */}
-                  {formData.salesPerson && (
-                    <div className="mt-1.5 flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50/80 border border-emerald-200/80 rounded-lg text-[11px] text-emerald-900 font-medium">
-                      <Lock size={12} className="text-emerald-700 shrink-0" />
-                      <span>Email Account Sales Terkunci:</span>
-                      <strong className="font-mono text-emerald-800">
-                        {salesPics.find((p) => p.name.toLowerCase() === formData.salesPerson.toLowerCase())?.email ||
-                          `${formData.salesPerson.toLowerCase().replace(/\s+/g, "")}@thelodgegroup.id`}
-                      </strong>
-                    </div>
-                  )}
-                </div>
-
-                {/* Company Name */}
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Nama Perusahaan / Instansi / Event <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Contoh: PT Telkom Indonesia / Reuni Akbar SMA 1"
-                    value={formData.company}
-                    onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0f4d39]/20 focus:border-[#0f4d39]"
-                  />
-                </div>
-
-                {/* Contact Person */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Contact Person (Nama Client)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Contoh: Bpk. Hendra"
-                    value={formData.contactPerson}
-                    onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0f4d39]/20 focus:border-[#0f4d39]"
-                  />
-                </div>
-
-                {/* Phone / Email */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    No. HP / WhatsApp / Email
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Contoh: 081234567890"
-                    value={formData.phoneEmail}
-                    onChange={(e) => setFormData({ ...formData, phoneEmail: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0f4d39]/20 focus:border-[#0f4d39]"
-                  />
-                </div>
-
-                {/* Lead Source */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Sumber Lead (Lead Source)
-                  </label>
-                  <select
-                    value={formData.leadSource}
-                    onChange={(e) => setFormData({ ...formData, leadSource: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0f4d39]/20 focus:border-[#0f4d39] bg-white"
-                  >
-                    {LEAD_SOURCES.map((src) => (
-                      <option key={src} value={src}>{src}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Segment */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Segment Market
-                  </label>
-                  <select
-                    value={formData.segment}
-                    onChange={(e) => setFormData({ ...formData, segment: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0f4d39]/20 focus:border-[#0f4d39] bg-white"
-                  >
-                    {SEGMENTS.map((seg) => (
-                      <option key={seg} value={seg}>{seg}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Event Type / Product */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Jenis Acara / Produk
-                  </label>
-                  <select
-                    value={formData.eventType}
-                    onChange={(e) => setFormData({ ...formData, eventType: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0f4d39]/20 focus:border-[#0f4d39] bg-white"
-                  >
-                    {EVENT_TYPES.map((evt) => (
-                      <option key={evt} value={evt}>{evt}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Proposed Event Date */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Tanggal Pelaksanaan / Event
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.proposedEventDate}
-                    onChange={(e) => setFormData({ ...formData, proposedEventDate: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0f4d39]/20 focus:border-[#0f4d39]"
-                  />
-                </div>
-
-                {/* Room / Venue / Unit */}
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Room / Tenda / Venue / Package Area
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Contoh: Villa Pine / Glamping Deluxe / Pine Forest Venue"
-                    value={formData.room}
-                    onChange={(e) => setFormData({ ...formData, room: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0f4d39]/20 focus:border-[#0f4d39]"
-                  />
-                </div>
-
-                {/* Perhitungan Revenue Card */}
-                <div className="md:col-span-2 bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-slate-800">
-                      Metode Estimasi Nilai Potential Deal
-                    </label>
-                    <div className="flex gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => handleRateTypeSwitch("PER_PAX")}
-                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all border ${
-                          rateType === "PER_PAX"
-                            ? "bg-[#0f4d39] text-white border-[#0f4d39]"
-                            : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
-                        }`}
-                      >
-                        Per Pax (Rate x Pax)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleRateTypeSwitch("TOTAL_DIRECT")}
-                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all border ${
-                          rateType === "TOTAL_DIRECT"
-                            ? "bg-[#0f4d39] text-white border-[#0f4d39]"
-                            : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
-                        }`}
-                      >
-                        Total Langsung
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div>
-                      <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                        Jumlah Pax (Orang)
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={formData.pax}
-                        onChange={(e) => handlePaxChange(parseInt(e.target.value) || 0)}
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0f4d39]/20 focus:border-[#0f4d39]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                        {rateType === "PER_PAX" ? "Rate per Pax (Rp)" : "Estimasi Rate / Pax"}
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        placeholder="0"
-                        value={formData.rate}
-                        readOnly={rateType === "TOTAL_DIRECT" && formData.pax > 0}
-                        onChange={(e) => handleRateChange(parseFloat(e.target.value) || 0)}
-                        className={`w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0f4d39]/20 focus:border-[#0f4d39] ${
-                          rateType === "TOTAL_DIRECT" && formData.pax > 0 ? "bg-slate-100 text-slate-500" : "bg-white"
-                        }`}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                        Total Estimasi Revenue (Rp)
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={formData.total}
-                        readOnly={rateType === "PER_PAX"}
-                        onChange={(e) => handleTotalChange(parseFloat(e.target.value) || 0)}
-                        className={`w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold font-mono text-emerald-800 focus:outline-none focus:ring-2 focus:ring-[#0f4d39]/20 focus:border-[#0f4d39] ${
-                          rateType === "PER_PAX" ? "bg-slate-100 text-slate-700" : "bg-white"
-                        }`}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
+                  <option value="CUSTOM">+ Tulis Manual Nama PIC Baru...</option>
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  placeholder="Nama PIC Sales"
+                  value={formData.pic}
+                  onChange={(e) => setFormData({ ...formData, pic: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                />
+              )}
             </div>
-          )}
 
-          {/* STAGE 2: FOLLOW-UP LOG */}
-          {activeTab === "STAGE2" && (
-            <div className="space-y-4 animate-fadeIn">
-              <div className="bg-indigo-50/70 border border-indigo-200/80 rounded-xl p-3 text-xs text-indigo-800 flex items-center gap-2">
-                <span className="font-bold">Info:</span>
-                <span>Pencatatan interaksi & follow-up perkembangan prospect client.</span>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Lead Status Dropdown */}
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Status Tahapan Lead (Pipeline Stage) <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={formData.leadStatus}
-                    onChange={(e) => handleLeadStatusChange(e.target.value)}
-                    className="w-full px-3.5 py-2.5 border border-indigo-200 rounded-xl text-xs font-bold text-indigo-900 bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
-                  >
-                    {LEAD_STATUSES.map((st) => (
-                      <option key={st} value={st}>
-                        {st} ({LEAD_STATUS_PROBABILITIES[st] ?? 10}% Closing Prob)
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* First Response Date */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Tanggal Respon Pertama (First Response)
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.firstResponseDate}
-                    onChange={(e) => setFormData({ ...formData, firstResponseDate: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  />
-                </div>
-
-                {/* Last Follow-Up Date */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Tanggal Follow-Up Terakhir
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.lastFollowUpDate}
-                    onChange={(e) => setFormData({ ...formData, lastFollowUpDate: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  />
-                </div>
-
-                {/* Latest Client Response */}
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Respon Terakhir Client (Client Feedback)
-                  </label>
-                  <textarea
-                    rows={2}
-                    placeholder="Contoh: Client minta revisi penawaran harga untuk 100 pax, pertimbangkan diskon 5%"
-                    value={formData.latestClientResponse}
-                    onChange={(e) => setFormData({ ...formData, latestClientResponse: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  />
-                </div>
-
-                {/* Next Action */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Next Action (Tindakan Selanjutnya)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Contoh: Kirimkan proposal revisi & telfon ulang"
-                    value={formData.nextAction}
-                    onChange={(e) => setFormData({ ...formData, nextAction: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  />
-                </div>
-
-                {/* Next Action Due Date */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Jatuh Tempo Next Action
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.nextActionDueDate}
-                    onChange={(e) => setFormData({ ...formData, nextActionDueDate: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  />
-                </div>
-              </div>
+            {/* Manual PIC Name input if CUSTOM selected or typed */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">
+                No. HP WhatsApp PIC Sales
+              </label>
+              <input
+                type="text"
+                placeholder="Contoh: 08123456789"
+                value={formData.picPhone}
+                onChange={(e) => setFormData({ ...formData, picPhone: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
             </div>
-          )}
 
-          {/* STAGE 3: CLOSING & DP */}
-          {activeTab === "STAGE3" && (
-            <div className="space-y-4 animate-fadeIn">
-              <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-xl p-3 text-xs text-emerald-800 flex items-center gap-2">
-                <span className="font-bold">Info:</span>
-                <span>Proyeksi probabilitas closing, nilai deal akhir, & status pelunasan DP.</span>
+            {/* Park specific: Segment */}
+            {unit === "PARK" && (
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">
+                  Segment
+                </label>
+                <input
+                  type="text"
+                  placeholder="Contoh: Corporate, Govt, TA, Direct"
+                  value={formData.segment}
+                  onChange={(e) => setFormData({ ...formData, segment: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                />
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Closing Probability */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1 flex justify-between">
-                    <span>Probabilitas Closing (%)</span>
-                    <span className="text-emerald-700 font-bold">{formData.closingProbability}%</span>
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={formData.closingProbability}
-                    onChange={(e) => setFormData({ ...formData, closingProbability: Math.min(100, Math.max(0, parseInt(e.target.value) || 0)) })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
-                  />
-                </div>
-
-                {/* Final Deal Value */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Nilai Deal Akhir (Final Value) Rp
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.finalDealValue}
-                    onChange={(e) => setFormData({ ...formData, finalDealValue: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold font-mono text-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
-                  />
-                </div>
-
-                {/* Reason for Loss / Hold */}
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Alasan Loss / Pending / On Hold (Jika Tidak Deal)
-                  </label>
-                  <select
-                    value={formData.reasonForLossHold}
-                    onChange={(e) => setFormData({ ...formData, reasonForLossHold: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 bg-white"
-                  >
-                    <option value="">-- Pilih Alasan Jika Hold/Loss --</option>
-                    {REASONS_LOSS_HOLD.map((rsn) => (
-                      <option key={rsn} value={rsn}>{rsn}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Tracking DP Section */}
-                <div className="md:col-span-2 bg-slate-50 p-3.5 rounded-xl border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Status Pembayaran DP
-                    </label>
-                    <select
-                      value={formData.dpStatus}
-                      onChange={(e) => handleDpStatusChange(e.target.value as ForecastDpStatusType)}
-                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0f4d39]/20 focus:border-[#0f4d39]"
-                    >
-                      <option value="BELUM_DP">Belum DP</option>
-                      <option value="DP_30">DP 30%</option>
-                      <option value="DP_50">DP 50%</option>
-                      <option value="DP_CUSTOM">Sudah DP (Nominal Custom)</option>
-                      <option value="LUNAS">Lunas</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Nominal DP (Rp)
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={formData.dpAmount}
-                      onChange={(e) => {
-                        const val = parseFloat(e.target.value) || 0;
-                        setFormData((prev) => ({
-                          ...prev,
-                          dpAmount: val,
-                          dpStatus: prev.dpStatus === "BELUM_DP" && val > 0 ? "DP_CUSTOM" : prev.dpStatus,
-                        }));
-                      }}
-                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0f4d39]/20 focus:border-[#0f4d39]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Jatuh Tempo Pelunasan
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.dueDate}
-                      onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0f4d39]/20 focus:border-[#0f4d39]"
-                    />
-                  </div>
-                </div>
-
-                {/* Main Status & Remarks */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Status Utama Booking
-                  </label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) => handleMainStatusChange(e.target.value as ForecastStatusType)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0f4d39]/20 focus:border-[#0f4d39]"
-                  >
-                    <option value="TENTATIVE">Tentative (Kuning)</option>
-                    <option value="CONFIRM">Confirm (Hijau)</option>
-                    <option value="CANCEL">Cancel (Merah)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Remarks / Catatan Khusus
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Catatan internal..."
-                    value={formData.remarks}
-                    onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0f4d39]/20 focus:border-[#0f4d39]"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-        </form>
-
-        {/* Footer */}
-        <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
-          <div className="flex gap-2">
-            {activeTab !== "STAGE1" && (
-              <button
-                type="button"
-                onClick={() => setActiveTab(activeTab === "STAGE3" ? "STAGE2" : "STAGE1")}
-                className="px-3 py-1.5 text-xs font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 rounded-xl transition-all"
-              >
-                &larr; Prev Stage
-              </button>
             )}
-            {activeTab !== "STAGE3" && (
-              <button
-                type="button"
-                onClick={() => setActiveTab(activeTab === "STAGE1" ? "STAGE2" : "STAGE3")}
-                className="px-3 py-1.5 text-xs font-bold text-[#0f4d39] bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 rounded-xl transition-all"
-              >
-                Next Stage &rarr;
-              </button>
-            )}
+
+            {/* Source */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">
+                Source / Sumber Booking
+              </label>
+              <input
+                type="text"
+                placeholder="Contoh: WhatsApp / Direct / Agency"
+                value={formData.source}
+                onChange={(e) => setFormData({ ...formData, source: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+
+            {/* Remarks */}
+            <div className="md:col-span-2">
+              <label className="block text-xs font-semibold text-slate-600 mb-1">
+                Remarks / Catatan
+              </label>
+              <textarea
+                rows={2}
+                placeholder="Catatan tambahan..."
+                value={formData.remarks}
+                onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Footer Buttons */}
+          <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-200/60 rounded-xl transition-colors"
+              className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
             >
               Batal
             </button>
             <button
-              type="button"
-              onClick={handleSubmit}
+              type="submit"
               disabled={loading}
-              className="flex items-center gap-2 px-5 py-2 bg-[#0f4d39] hover:bg-emerald-900 text-white rounded-xl text-xs font-bold transition-all shadow-md hover:shadow-lg disabled:opacity-50"
+              className="flex items-center gap-2 px-5 py-2 bg-primary-700 hover:bg-primary-800 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm disabled:opacity-50"
             >
               {loading ? (
                 <>
@@ -1091,7 +697,7 @@ export default function ForecastModal({
               )}
             </button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );
