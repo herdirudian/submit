@@ -5,7 +5,8 @@ import { sendPushToAllAdmins } from "@/lib/push";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 
-const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN;
+const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || "the-lodge-verify-token-2026";
+const FORWARD_URL = process.env.FORWARD_WHATSAPP_WEBHOOK_URL || "https://family.thelodgegroup.id/api/webhooks/whatsapp";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -19,9 +20,9 @@ export async function GET(req: NextRequest) {
   console.log("Token expected:", VERIFY_TOKEN);
   console.log("Challenge:", challenge);
 
-  if (mode === "subscribe" && token === VERIFY_TOKEN) {
+  if (mode === "subscribe" && (token === VERIFY_TOKEN || token === "the-lodge-verify-token-2026")) {
     console.log("[WEBHOOK] Verification successful!");
-    return new Response(challenge, {
+    return new Response(challenge || "", {
       status: 200,
       headers: { "Content-Type": "text/plain" },
     });
@@ -37,11 +38,11 @@ export async function POST(req: NextRequest) {
   console.log(`=== [WEBHOOK] INCOMING POST REQUEST ===`);
   console.log(`[WEBHOOK] Time: ${new Date().toISOString()}`);
   console.log(`[WEBHOOK] CF-Ray: ${cfRay}`);
-  
+
   try {
     const rawBody = await req.text();
     console.log(`[WEBHOOK] Raw Body Length: ${rawBody.length}`);
-    
+
     if (!rawBody) {
       console.warn("[WEBHOOK] Empty body received");
       return new NextResponse("Empty body", { status: 200 });
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
 
         for (const change of entry.changes) {
           const value = change.value;
-          
+
           console.log(`[WEBHOOK] Processing field: ${change.field}`);
 
           // 1. Handle message status updates (sent, delivered, read, failed)
@@ -92,9 +93,9 @@ export async function POST(req: NextRequest) {
               const rawWaId = message.from; // Sender's phone number
               const messageId = message.id;
               const timestamp = new Date(parseInt(message.timestamp) * 1000);
-              
+
               console.log(`[WEBHOOK] New Message from: ${rawWaId}, ID: ${messageId}, Type: ${message.type}`);
-              
+
               let bodyContent = "";
               let type: any = "TEXT";
               let mediaId = "";
@@ -136,32 +137,51 @@ export async function POST(req: NextRequest) {
                 bodyContent = `[Pesan ${message.type}]`;
               }
 
+              // Normalisasi waId (Hanya angka, format 628...)
+              let cleanWaId = rawWaId.replace(/\D/g, "");
+              if (cleanWaId.startsWith("0")) {
+                cleanWaId = "62" + cleanWaId.substring(1);
+              }
+
+              // --- INBOUND MESSAGE RELAY (FORWARD TO CONNECT SYSTEM) ---
+              // Asynchronous non-blocking forward to target server Connect
+              if (FORWARD_URL) {
+                fetch(FORWARD_URL, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    from: cleanWaId,
+                    message: bodyContent,
+                    raw: body,
+                  }),
+                })
+                  .then((res) => console.log(`[WEBHOOK RELAY] Status ${res.status} forwarded to ${FORWARD_URL}`))
+                  .catch((err) => console.error(`[WEBHOOK RELAY ERROR] Failed forwarding to ${FORWARD_URL}:`, err?.message || err));
+              }
+
               // Fetch media URL if it's a media message
               let mediaUrl = null;
               if (mediaId) {
                 const mediaRes = await getWaMediaUrl(mediaId);
                 if (mediaRes.success && mediaRes.url) {
-                  // Download and save locally because Meta URLs require Auth headers
                   const buffer = await downloadWaMedia(mediaRes.url);
                   if (buffer) {
                     const ext = type === 'IMAGE' ? '.jpg' : type === 'VIDEO' ? '.mp4' : type === 'AUDIO' ? '.ogg' : '.pdf';
                     const filename = `wa-${mediaId}${ext}`;
                     const uploadDir = path.join(process.cwd(), "public", "uploads");
-                    
+
                     await mkdir(uploadDir, { recursive: true });
                     await writeFile(path.join(uploadDir, filename), buffer);
-                    
-                    // Use relative URL for local storage
+
                     mediaUrl = `/uploads/${filename}`;
                   }
                 }
               }
 
-              // Normalisasi waId (Hanya angka, biasanya 628...)
-              const cleanWaId = rawWaId.replace(/\D/g, "");
-
               try {
-                // Find or create chat
+                // Find or create chat in WA CRM DB
                 let chat = await prisma.waChat.findUnique({
                   where: { waId: cleanWaId },
                 });
@@ -170,7 +190,6 @@ export async function POST(req: NextRequest) {
                 if (!chat) {
                   console.log(`[WEBHOOK] Creating new chat record for ${cleanWaId}`);
                   isNewChat = true;
-                  // Try to link with existing contact
                   const contact = await prisma.contact.findFirst({
                     where: { OR: [{ phone: cleanWaId }, { waNumber: cleanWaId }] },
                   });
@@ -184,7 +203,6 @@ export async function POST(req: NextRequest) {
                     },
                   });
                 } else {
-                  // Update existing chat
                   await prisma.waChat.update({
                     where: { id: chat.id },
                     data: {
@@ -194,7 +212,7 @@ export async function POST(req: NextRequest) {
                   });
                 }
 
-                // Check if message already exists to prevent duplicates (Meta sometimes retries)
+                // Check if message already exists to prevent duplicates
                 const existingMsg = await prisma.waMessage.findUnique({
                   where: { waMessageId: messageId }
                 });
@@ -229,7 +247,7 @@ export async function POST(req: NextRequest) {
                 // --- START CHATBOT FAQ LOGIC ---
                 try {
                   const settings = await prisma.appSettings.findUnique({ where: { id: "singleton" } });
-                  
+
                   if (settings?.waChatbotEnabled) {
                     const faqs = await prisma.waFaq.findMany({
                       where: { isActive: true },
@@ -240,7 +258,6 @@ export async function POST(req: NextRequest) {
                     const matchedFaq = faqs.find(f => f.keyword.toLowerCase() === incomingText);
 
                     if (matchedFaq) {
-                      // Send the answer for the matched keyword
                       const sendResult = await sendWaText(cleanWaId, matchedFaq.answer);
                       if (sendResult.success) {
                         await prisma.waMessage.create({
@@ -254,9 +271,8 @@ export async function POST(req: NextRequest) {
                         });
                       }
                     } else if (isNewChat || incomingText === 'menu' || incomingText === 'bantuan') {
-                      // Send Welcome Message + Menu List
                       let menuText = settings.waChatbotWelcomeMsg || "Halo! Ada yang bisa kami bantu?\n\nSilakan pilih menu di bawah ini dengan mengetikkan nomornya:\n";
-                      
+
                       faqs.forEach(faq => {
                         menuText += `\n*${faq.keyword}*. ${faq.question}`;
                       });
@@ -283,27 +299,23 @@ export async function POST(req: NextRequest) {
                 // Dynamic Auto-reply logic (Existing)
                 try {
                   const settings = await prisma.appSettings.findUnique({ where: { id: "singleton" } });
-                  
+
                   if (settings?.waAutoReplyEnabled && settings.waAutoReplyMessage) {
                     const now = new Date();
-                    // Meta sends timestamp, but let's use server time for operational hours check
-                    // Adjust to Asia/Bangkok if needed, but new Date() follows server time
-                    
-                    const day = now.getDay() === 0 ? 7 : now.getDay(); // 1=Mon, 7=Sun
+                    const day = now.getDay() === 0 ? 7 : now.getDay();
                     const timeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
-                    
+
                     const workingDays = settings.waWorkingDays?.split(',') || [];
                     const isWorkingDay = workingDays.includes(day.toString());
-                    
-                    const isWithinHours = 
-                      timeStr >= (settings.waWorkingHoursStart || "08:00") && 
+
+                    const isWithinHours =
+                      timeStr >= (settings.waWorkingHoursStart || "08:00") &&
                       timeStr <= (settings.waWorkingHoursEnd || "17:00");
 
-                    // Trigger if it's NOT a working day OR NOT within working hours
                     if (isNewChat && (!isWorkingDay || !isWithinHours)) {
                       console.log(`[WEBHOOK] Triggering dynamic off-hours auto-reply`);
                       const autoMsg = settings.waAutoReplyMessage;
-                      
+
                       const sendResult = await sendWaText(cleanWaId, autoMsg);
                       if (sendResult.success) {
                         await prisma.waMessage.create({
