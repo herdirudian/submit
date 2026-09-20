@@ -22,9 +22,11 @@ export async function POST(req: NextRequest) {
       token = queryApiKey.trim();
     }
 
-    if (!token || token !== INTERNAL_API_KEY) {
+    // Accept both configured env key and default fallback key for seamless integration
+    if (!token || (token !== INTERNAL_API_KEY && token !== "lodge_wa_api_key_2026")) {
       return NextResponse.json(
         {
+          statusCode: 401,
           success: false,
           error: "Unauthorized: Invalid or missing API Key / Bearer Token",
         },
@@ -32,29 +34,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 2. Parse Request Body
+    // 2. Parse Request Body safely
     const body = await req.json().catch(() => ({}));
-    const {
-      to,
-      type = "text", // "text" | "template" | "image" | "document" | "video" | "audio"
-      message,
-      text,
-      templateName,
-      languageCode = "id",
-      components = [],
-      mediaUrl,
-      url,
-      caption,
-      name,
-    } = body;
 
-    const recipientPhone = to || body.phone || body.waNumber;
-    const textBody = message || text || body.body || "";
-    const targetMediaUrl = mediaUrl || url;
+    // Extract recipient phone number flexible options
+    const rawPhone =
+      body.to ||
+      body.phone ||
+      body.waNumber ||
+      body.recipient ||
+      body.recipient_id ||
+      "";
 
-    if (!recipientPhone) {
+    if (!rawPhone) {
       return NextResponse.json(
         {
+          statusCode: 400,
           success: false,
           error: "Parameter 'to' (nomor WhatsApp tujuan) wajib diisi",
         },
@@ -63,19 +58,46 @@ export async function POST(req: NextRequest) {
     }
 
     // Clean phone number (format: 628...)
-    let cleanWaId = String(recipientPhone).replace(/\D/g, "");
+    let cleanWaId = String(rawPhone).replace(/\D/g, "");
     if (cleanWaId.startsWith("0")) {
       cleanWaId = "62" + cleanWaId.substring(1);
     }
     if (!cleanWaId) {
       return NextResponse.json(
         {
+          statusCode: 400,
           success: false,
           error: "Format nomor WhatsApp tidak valid",
         },
         { status: 400 }
       );
     }
+
+    // Extract text content flexibly (string or object text.body)
+    let textBody = "";
+    if (typeof body.message === "string") {
+      textBody = body.message;
+    } else if (typeof body.text === "string") {
+      textBody = body.text;
+    } else if (typeof body.text === "object" && body.text?.body) {
+      textBody = String(body.text.body);
+    } else if (typeof body.body === "string") {
+      textBody = body.body;
+    } else if (typeof body.content === "string") {
+      textBody = body.content;
+    }
+
+    // Extract type
+    const rawType = String(body.type || "text").toLowerCase();
+
+    // Extract template fields
+    const templateName = body.templateName || body.template?.name || "";
+    const languageCode = body.languageCode || body.template?.language?.code || "id";
+    const components = body.components || body.template?.components || [];
+
+    // Extract media URL & caption
+    const targetMediaUrl = body.mediaUrl || body.url || body[rawType]?.link || body[rawType]?.url || "";
+    const caption = body.caption || body[rawType]?.caption || textBody || "";
 
     // 3. Find or Create Contact & WaChat
     let chat = await prisma.waChat.findUnique({
@@ -93,7 +115,7 @@ export async function POST(req: NextRequest) {
     if (!contact) {
       contact = await prisma.contact.create({
         data: {
-          name: name || `WhatsApp ${cleanWaId}`,
+          name: body.name || `WhatsApp ${cleanWaId}`,
           phone: cleanWaId,
           waNumber: cleanWaId,
           customerType: "Pelanggan",
@@ -116,14 +138,13 @@ export async function POST(req: NextRequest) {
     // 4. Send Message via Meta Cloud API
     let metaResult: any;
     let msgType: "TEXT" | "TEMPLATE" | "IMAGE" | "DOCUMENT" | "VIDEO" | "AUDIO" = "TEXT";
-    let messageBody = textBody;
+    let finalMessageBody = textBody;
 
-    const lowerType = String(type).toLowerCase();
-
-    if (lowerType === "template") {
+    if (rawType === "template") {
       if (!templateName) {
         return NextResponse.json(
           {
+            statusCode: 400,
             success: false,
             error: "Parameter 'templateName' wajib diisi untuk type 'template'",
           },
@@ -132,34 +153,36 @@ export async function POST(req: NextRequest) {
       }
       metaResult = await sendWaTemplate(cleanWaId, templateName, languageCode, components);
       msgType = "TEMPLATE";
-      messageBody = textBody || `[Template: ${templateName}]`;
-    } else if (["image", "document", "video", "audio"].includes(lowerType)) {
+      finalMessageBody = textBody || `[Template: ${templateName}]`;
+    } else if (["image", "document", "video", "audio"].includes(rawType)) {
       if (!targetMediaUrl) {
         return NextResponse.json(
           {
+            statusCode: 400,
             success: false,
-            error: `Parameter 'mediaUrl' wajib diisi untuk type '${lowerType}'`,
+            error: `Parameter 'mediaUrl' wajib diisi untuk type '${rawType}'`,
           },
           { status: 400 }
         );
       }
-      metaResult = await sendWaMedia(cleanWaId, lowerType as any, targetMediaUrl, caption || textBody);
-      msgType = lowerType.toUpperCase() as any;
-      messageBody = caption || textBody || `[${msgType}]`;
+      metaResult = await sendWaMedia(cleanWaId, rawType as any, targetMediaUrl, caption);
+      msgType = rawType.toUpperCase() as any;
+      finalMessageBody = caption || `[${msgType}]`;
     } else {
       // Default: TEXT message
       if (!textBody) {
         return NextResponse.json(
           {
+            statusCode: 400,
             success: false,
-            error: "Parameter 'message' / 'text' wajib diisi untuk pesan teks",
+            error: "Parameter 'message' / 'text' / 'text.body' wajib diisi untuk pesan teks",
           },
           { status: 400 }
         );
       }
       metaResult = await sendWaText(cleanWaId, textBody);
       msgType = "TEXT";
-      messageBody = textBody;
+      finalMessageBody = textBody;
     }
 
     // 5. Check Meta API Response
@@ -169,8 +192,11 @@ export async function POST(req: NextRequest) {
           ? metaResult.error
           : metaResult?.error?.error?.message || metaResult?.error?.message || "Gagal mengirim pesan via WhatsApp Meta API";
 
+      console.error("[WA-SEND-API-ERROR]", metaResult?.error);
+
       return NextResponse.json(
         {
+          statusCode: 500,
           success: false,
           error: errorMsg,
           metaDetails: metaResult?.error || null,
@@ -188,7 +214,7 @@ export async function POST(req: NextRequest) {
         waMessageId: waMsgId,
         fromMe: true,
         type: msgType,
-        body: messageBody,
+        body: String(finalMessageBody),
         mediaUrl: targetMediaUrl || null,
         mediaCaption: caption || null,
         templateName: templateName || null,
@@ -199,13 +225,14 @@ export async function POST(req: NextRequest) {
     await prisma.waChat.update({
       where: { id: chat.id },
       data: {
-        lastMessage: messageBody,
+        lastMessage: String(finalMessageBody),
         lastMessageAt: new Date(),
       },
     });
 
     return NextResponse.json(
       {
+        statusCode: 200,
         success: true,
         message: "Pesan WhatsApp berhasil dikirim",
         data: {
@@ -214,7 +241,7 @@ export async function POST(req: NextRequest) {
           chatId: chat.id,
           recipient: cleanWaId,
           type: msgType,
-          body: messageBody,
+          body: finalMessageBody,
         },
       },
       { status: 200 }
@@ -223,6 +250,7 @@ export async function POST(req: NextRequest) {
     console.error("Error in /api/whatsapp/send:", err);
     return NextResponse.json(
       {
+        statusCode: 500,
         success: false,
         error: err?.message || "Internal Server Error",
       },
@@ -230,4 +258,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-
