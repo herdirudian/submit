@@ -354,24 +354,18 @@ export async function updateForecastItem(
 }
 
 export async function deleteForecastItem(id: string) {
-  const session = await getServerSession(authOptions);
-  if (!session || !session.user) throw new Error("Unauthorized");
   try {
     const session = await getServerSession(authOptions);
     if (!session || !session.user) {
       return { success: false, error: "Unauthorized: Session login telah berakhir." };
     }
 
-  await prisma.forecastItem.delete({
-    where: { id },
-  });
     const role = (session.user as any).role;
     if (role !== "ADMIN" && role !== "SUPER_ADMIN") {
       return { success: false, error: "Akses ditolak: Hanya Super Admin / Admin yang dapat menghapus data forecast." };
     }
 
-  revalidatePath("/forecast");
-    await prisma.forecastItem.delete({
+    await prisma.forecastItem.deleteMany({
       where: { id },
     });
 
