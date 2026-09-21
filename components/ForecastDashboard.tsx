@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import {
   TrendingUp,
   Plus,
@@ -64,6 +65,10 @@ const MONTHS = [
 ];
 
 export default function ForecastDashboard() {
+  const { data: session } = useSession();
+  const userRole = (session?.user as any)?.role;
+  const isAdmin = userRole === "ADMIN" || userRole === "SUPER_ADMIN";
+
   const currentDate = new Date();
   const [selectedUnit, setSelectedUnit] = useState<ForecastUnitType>("ALL");
   const [stageView, setStageView] = useState<"ALL" | "STAGE1" | "STAGE2" | "STAGE3">("ALL");
@@ -172,13 +177,21 @@ export default function ForecastDashboard() {
   }, [fetchData]);
 
   const handleDelete = async (id: string) => {
+    if (!isAdmin) {
+      alert("Akses ditolak: Hanya Super Admin / Admin yang dapat menghapus data forecast.");
+      return;
+    }
     if (!confirm("Apakah Anda yakin ingin menghapus data forecast ini?")) return;
     try {
-      await deleteForecastItem(id);
+      const res = await deleteForecastItem(id);
+      if (res && (res as any).error) {
+        alert((res as any).error);
+        return;
+      }
       fetchData();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error deleting forecast item:", err);
-      alert("Gagal menghapus data");
+      alert(err?.message || "Gagal menghapus data");
     }
   };
 
@@ -1584,6 +1597,15 @@ export default function ForecastDashboard() {
                           >
                             <Trash2 size={15} />
                           </button>
+                          {isAdmin && (
+                            <button
+                              onClick={() => handleDelete(item.id)}
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                              title="Hapus"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
