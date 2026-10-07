@@ -82,6 +82,8 @@ export default function ForecastDashboard() {
   // Column-level Filters State
   const [showColFilters, setShowColFilters] = useState(true);
   const [colCompany, setColCompany] = useState("");
+  const [colDateReceived, setColDateReceived] = useState("");
+  const [colProposedEventDate, setColProposedEventDate] = useState("");
   const [colEventType, setColEventType] = useState("ALL");
   const [colPipelineStage, setColPipelineStage] = useState("ALL");
   const [colDpStatus, setColDpStatus] = useState("ALL");
@@ -316,6 +318,8 @@ export default function ForecastDashboard() {
 
   const activeColFilterCount = [
     colCompany.trim() !== "",
+    colDateReceived !== "",
+    colProposedEventDate !== "",
     colEventType !== "ALL",
     colPipelineStage !== "ALL",
     colDpStatus !== "ALL",
@@ -327,6 +331,8 @@ export default function ForecastDashboard() {
 
   const resetColFilters = () => {
     setColCompany("");
+    setColDateReceived("");
+    setColProposedEventDate("");
     setColEventType("ALL");
     setColPipelineStage("ALL");
     setColDpStatus("ALL");
@@ -336,10 +342,32 @@ export default function ForecastDashboard() {
     setColSegment("ALL");
   };
 
+  const formatDateToYMD = (dateVal: any) => {
+    if (!dateVal) return "";
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return "";
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   // Filtered dataset based on column filters
   const filteredItems = items.filter((item) => {
     if (colCompany.trim() && !item.company?.toLowerCase().includes(colCompany.trim().toLowerCase())) {
       return false;
+    }
+    if (colDateReceived) {
+      const itemDate = formatDateToYMD(item.dateReceived || item.reservationDate);
+      if (itemDate !== colDateReceived) {
+        return false;
+      }
+    }
+    if (colProposedEventDate) {
+      const itemEvtDate = formatDateToYMD(item.proposedEventDate || item.eventDate || item.checkIn);
+      if (itemEvtDate !== colProposedEventDate) {
+        return false;
+      }
     }
     if (colEventType !== "ALL" && item.eventType !== colEventType) {
       return false;
@@ -969,8 +997,24 @@ export default function ForecastDashboard() {
                       className="w-full text-[11px] px-2 py-1 border border-slate-200 rounded-lg bg-white text-slate-800 font-normal focus:outline-none focus:ring-1 focus:ring-[#0f4d39]"
                     />
                   </td>
-                  <td className="py-1.5 px-1 text-center text-slate-300">-</td>
-                  <td className="py-1.5 px-1 text-center text-slate-300">-</td>
+                  <td className="py-1.5 px-1">
+                    <input
+                      type="date"
+                      title="Filter Tanggal Terima Lead"
+                      value={colDateReceived}
+                      onChange={(e) => setColDateReceived(e.target.value)}
+                      className="w-full text-[11px] px-1 py-1 border border-slate-200 rounded-lg bg-white text-slate-800 font-normal focus:outline-none focus:ring-1 focus:ring-[#0f4d39] cursor-pointer"
+                    />
+                  </td>
+                  <td className="py-1.5 px-1">
+                    <input
+                      type="date"
+                      title="Filter Tanggal Event"
+                      value={colProposedEventDate}
+                      onChange={(e) => setColProposedEventDate(e.target.value)}
+                      className="w-full text-[11px] px-1 py-1 border border-slate-200 rounded-lg bg-white text-slate-800 font-normal focus:outline-none focus:ring-1 focus:ring-[#0f4d39] cursor-pointer"
+                    />
+                  </td>
                   <td className="py-1.5 px-1.5">
                     <select
                       value={colEventType}
@@ -1100,7 +1144,15 @@ export default function ForecastDashboard() {
                   <td className="py-1.5 px-1 text-center font-normal text-amber-400">
                     <Filter size={12} className="inline-block text-amber-600" />
                   </td>
-                  <td className="py-1.5 px-1 text-center text-amber-300">-</td>
+                  <td className="py-1.5 px-1">
+                    <input
+                      type="date"
+                      title="Filter Tanggal Terima Lead"
+                      value={colDateReceived}
+                      onChange={(e) => setColDateReceived(e.target.value)}
+                      className="w-full text-[11px] px-1 py-1 border border-amber-200 rounded-lg bg-white text-slate-800 font-normal focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer"
+                    />
+                  </td>
                   <td className="py-1.5 px-1.5">
                     <input
                       type="text"
@@ -1148,7 +1200,15 @@ export default function ForecastDashboard() {
                       ))}
                     </select>
                   </td>
-                  <td className="py-1.5 px-1 text-center text-amber-300">-</td>
+                  <td className="py-1.5 px-1">
+                    <input
+                      type="date"
+                      title="Filter Plan Tanggal Event"
+                      value={colProposedEventDate}
+                      onChange={(e) => setColProposedEventDate(e.target.value)}
+                      className="w-full text-[11px] px-1 py-1 border border-amber-200 rounded-lg bg-white text-slate-800 font-normal focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer"
+                    />
+                  </td>
                   <td className="py-1.5 px-1 text-center text-amber-300">-</td>
                   <td className="py-1.5 px-1 text-center text-amber-300">-</td>
                   <td className="py-1.5 px-1 text-center text-amber-300">-</td>
