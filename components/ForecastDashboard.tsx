@@ -502,18 +502,18 @@ export default function ForecastDashboard() {
   };
 
   return (
-    <div className="w-full max-w-[1700px] mx-auto space-y-5 pb-12 font-sans overflow-x-hidden px-2 sm:px-4">
+    <div className="w-full max-w-[1700px] mx-auto space-y-5 pb-12 font-sans min-w-0 px-2 sm:px-4">
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pt-2">
-        <div>
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 pt-2">
+        <div className="min-w-0">
           <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium mb-1">
             <Link href="/dashboard" className="hover:text-slate-700 transition-colors">
               Dashboard
             </Link>
-            <ChevronRight size={12} className="text-slate-300" />
-            <span className="text-slate-600 font-semibold">Consolidated 3-Stage Sales Pipeline & Forecast</span>
+            <ChevronRight size={12} className="text-slate-300 shrink-0" />
+            <span className="text-slate-600 font-semibold truncate">Consolidated 3-Stage Sales Pipeline & Forecast</span>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight font-judul">
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight font-judul">
             Sales Pipeline & Forecast System
           </h1>
           <p className="text-slate-500 text-xs mt-0.5 font-subjudul">
@@ -522,11 +522,11 @@ export default function ForecastDashboard() {
         </div>
 
         {/* Action Header Buttons */}
-        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto shrink-0">
+        <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto shrink-0">
           <button
             onClick={() => fetchData()}
             disabled={loading}
-            className="p-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl transition-all shadow-xs active:scale-95"
+            className="p-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl transition-all shadow-xs active:scale-95 shrink-0"
             title="Refresh Data"
           >
             <RefreshCw size={16} className={loading ? "animate-spin text-[#0f4d39]" : ""} />
@@ -534,7 +534,7 @@ export default function ForecastDashboard() {
 
           <button
             onClick={exportToCSV}
-            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-3 py-2 rounded-xl text-xs font-semibold transition-all shadow-xs"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-3 py-2 rounded-xl text-xs font-semibold transition-all shadow-xs shrink-0"
           >
             <Download size={14} />
             <span>Export CSV</span>
@@ -543,7 +543,7 @@ export default function ForecastDashboard() {
           <button
             onClick={handleExportPdf}
             disabled={pdfLoading}
-            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-rose-50 hover:bg-rose-100/80 text-rose-700 border border-rose-200 px-3 py-2 rounded-xl text-xs font-semibold transition-all shadow-xs disabled:opacity-50"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-rose-50 hover:bg-rose-100/80 text-rose-700 border border-rose-200 px-3 py-2 rounded-xl text-xs font-semibold transition-all shadow-xs disabled:opacity-50 shrink-0"
             title="Cetak Laporan PDF Executive Summary"
           >
             {pdfLoading ? (
@@ -556,7 +556,7 @@ export default function ForecastDashboard() {
 
           <button
             onClick={() => setShowAnalytics(!showAnalytics)}
-            className={`flex-1 md:flex-none flex items-center justify-center gap-2 border px-3.5 py-2 rounded-xl text-xs font-semibold transition-all shadow-xs ${
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 border px-3.5 py-2 rounded-xl text-xs font-semibold transition-all shadow-xs shrink-0 ${
               showAnalytics
                 ? "bg-[#0f4d39] text-white border-[#0f4d39]"
                 : "bg-white text-slate-700 hover:bg-slate-50 border-slate-200"
@@ -572,7 +572,7 @@ export default function ForecastDashboard() {
               setEditingItem(null);
               setIsModalOpen(true);
             }}
-            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-[#0f4d39] hover:bg-[#0b3c2c] text-white px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-xs hover:shadow-md active:scale-[0.98]"
+            className="w-full sm:w-auto flex items-center justify-center gap-1.5 bg-[#0f4d39] hover:bg-[#0b3c2c] text-white px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-xs hover:shadow-md active:scale-[0.98] shrink-0"
           >
             <Plus size={16} />
             <span>Tambah Lead / Forecast</span>
@@ -581,12 +581,12 @@ export default function ForecastDashboard() {
       </div>
 
       {/* Segmented Unit & Stage Controls */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-2.5 rounded-2xl border border-slate-200 shadow-xs">
+      <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3 bg-white p-2.5 rounded-2xl border border-slate-200 shadow-xs min-w-0">
         {/* Unit Selector */}
-        <div className="inline-flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200/80">
+        <div className="flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200/80 overflow-x-auto no-scrollbar max-w-full">
           <button
             onClick={() => setSelectedUnit("ALL")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap shrink-0 ${
               selectedUnit === "ALL"
                 ? "bg-white text-[#0f4d39] shadow-xs border border-slate-200"
                 : "text-slate-500 hover:text-slate-900"
@@ -597,7 +597,7 @@ export default function ForecastDashboard() {
           </button>
           <button
             onClick={() => setSelectedUnit("CAMP_VILLAGE")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap shrink-0 ${
               selectedUnit === "CAMP_VILLAGE"
                 ? "bg-white text-[#0f4d39] shadow-xs border border-slate-200"
                 : "text-slate-500 hover:text-slate-900"
@@ -608,7 +608,7 @@ export default function ForecastDashboard() {
           </button>
           <button
             onClick={() => setSelectedUnit("PARK")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap shrink-0 ${
               selectedUnit === "PARK"
                 ? "bg-white text-[#0f4d39] shadow-xs border border-slate-200"
                 : "text-slate-500 hover:text-slate-900"
@@ -620,10 +620,10 @@ export default function ForecastDashboard() {
         </div>
 
         {/* 3-Stage Pipeline View Filter */}
-        <div className="inline-flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200/80">
+        <div className="flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200/80 overflow-x-auto no-scrollbar max-w-full">
           <button
             onClick={() => setStageView("ALL")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap shrink-0 ${
               stageView === "ALL"
                 ? "bg-white text-slate-900 shadow-xs border border-slate-200"
                 : "text-slate-500 hover:text-slate-900"
@@ -634,7 +634,7 @@ export default function ForecastDashboard() {
           </button>
           <button
             onClick={() => setStageView("STAGE1")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap shrink-0 ${
               stageView === "STAGE1"
                 ? "bg-amber-500 text-white shadow-xs"
                 : "text-amber-800 hover:bg-amber-100/60"
@@ -644,7 +644,7 @@ export default function ForecastDashboard() {
           </button>
           <button
             onClick={() => setStageView("STAGE2")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap shrink-0 ${
               stageView === "STAGE2"
                 ? "bg-indigo-600 text-white shadow-xs"
                 : "text-indigo-800 hover:bg-indigo-100/60"
@@ -654,7 +654,7 @@ export default function ForecastDashboard() {
           </button>
           <button
             onClick={() => setStageView("STAGE3")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap shrink-0 ${
               stageView === "STAGE3"
                 ? "bg-emerald-600 text-white shadow-xs"
                 : "text-emerald-800 hover:bg-emerald-100/60"
@@ -958,37 +958,61 @@ export default function ForecastDashboard() {
       </div>
 
       {/* Main Data Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden w-full">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden w-full min-w-0">
+        {/* Table Toolbar / Scroll Indicator */}
+        <div className="px-3 sm:px-4 py-2.5 bg-slate-50/80 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-2 text-slate-600">
+            <span className="font-bold text-slate-800">
+              {filteredItems.length} Data Reservasi
+            </span>
+            {activeColFilterCount > 0 && (
+              <span className="text-[11px] text-[#0f4d39] font-medium bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                {activeColFilterCount} filter aktif
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium bg-white px-2.5 py-1 rounded-lg border border-slate-200 shadow-2xs">
+            <span className="hidden sm:inline">Tabel responsif:</span>
+            <span>← Geser horizontal untuk melihat seluruh kolom pipeline →</span>
+          </div>
+        </div>
+
         <div className="overflow-x-auto w-full custom-scrollbar">
-          <table className="w-full text-xs text-left border-collapse min-w-[1200px]">
+          <table className="w-full text-xs text-left border-separate border-spacing-0 min-w-[1250px]">
             {/* STAGE-BASED TABLE HEADERS */}
-            <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 text-[11px] uppercase tracking-wider">
+            <thead className="bg-slate-50 text-slate-600 font-bold text-[11px] uppercase tracking-wider">
               {stageView === "ALL" && (
                 <tr>
-                  <th className="py-3 px-2.5 border-r border-slate-200 text-center w-10 font-bold text-slate-400">No</th>
-                  <th className="py-3 px-3 border-r border-slate-200 min-w-[170px]">Company / Instansi</th>
-                  <th className="py-3 px-2.5 border-r border-slate-200 min-w-[95px]">Terima Lead</th>
-                  <th className="py-3 px-2.5 border-r border-slate-200 min-w-[95px]">Tanggal Event</th>
-                  <th className="py-3 px-2.5 border-r border-slate-200 min-w-[110px]">Jenis Acara</th>
-                  <th className="py-3 px-2 text-center w-14">Pax</th>
-                  <th className="py-3 px-2.5 border-r border-slate-200 text-right min-w-[100px]">Rate (Rp)</th>
-                  <th className="py-3 px-2.5 border-r border-slate-200 text-right bg-emerald-50/60 text-emerald-800 min-w-[110px]">Confirm (Rp)</th>
-                  <th className="py-3 px-2.5 border-r border-slate-200 text-right bg-amber-50/60 text-amber-800 min-w-[110px]">Tentative (Rp)</th>
-                  <th className="py-3 px-2.5 border-r border-slate-200 text-right bg-rose-50/60 text-rose-800 min-w-[110px]">Cancel (Rp)</th>
-                  <th className="py-3 px-2.5 border-r border-slate-200 text-center min-w-[120px]">Pipeline Stage</th>
-                  <th className="py-3 px-2.5 border-r border-slate-200 text-center min-w-[110px]">Status DP</th>
-                  <th className="py-3 px-2.5 border-r border-slate-200 min-w-[85px]">PIC Sales</th>
-                  <th className="py-3 px-2.5 text-center min-w-[90px]">Aksi</th>
+                  <th className="sticky left-0 z-20 bg-slate-50 py-3 px-2 text-center w-12 min-w-[48px] max-w-[48px] font-bold text-slate-400 border-r border-b border-slate-200">
+                    No
+                  </th>
+                  <th className="sticky left-12 z-20 bg-slate-50 py-3 px-3 min-w-[170px] max-w-[220px] border-r border-b border-slate-200 shadow-[3px_0_5px_-2px_rgba(0,0,0,0.06)]">
+                    Company / Instansi
+                  </th>
+                  <th className="py-3 px-2.5 border-r border-b border-slate-200 min-w-[95px]">Terima Lead</th>
+                  <th className="py-3 px-2.5 border-r border-b border-slate-200 min-w-[95px]">Tanggal Event</th>
+                  <th className="py-3 px-2.5 border-r border-b border-slate-200 min-w-[110px]">Jenis Acara</th>
+                  <th className="py-3 px-2 text-center w-14 border-r border-b border-slate-200">Pax</th>
+                  <th className="py-3 px-2.5 border-r border-b border-slate-200 text-right min-w-[100px]">Rate (Rp)</th>
+                  <th className="py-3 px-2.5 border-r border-b border-slate-200 text-right bg-emerald-50/60 text-emerald-800 min-w-[110px]">Confirm (Rp)</th>
+                  <th className="py-3 px-2.5 border-r border-b border-slate-200 text-right bg-amber-50/60 text-amber-800 min-w-[110px]">Tentative (Rp)</th>
+                  <th className="py-3 px-2.5 border-r border-b border-slate-200 text-right bg-rose-50/60 text-rose-800 min-w-[110px]">Cancel (Rp)</th>
+                  <th className="py-3 px-2.5 border-r border-b border-slate-200 text-center min-w-[120px]">Pipeline Stage</th>
+                  <th className="py-3 px-2.5 border-r border-b border-slate-200 text-center min-w-[110px]">Status DP</th>
+                  <th className="py-3 px-2.5 border-r border-b border-slate-200 min-w-[85px]">PIC Sales</th>
+                  <th className="sticky right-0 z-20 bg-slate-50 py-3 px-2.5 text-center min-w-[90px] border-l border-b border-slate-200 shadow-[-3px_0_5px_-2px_rgba(0,0,0,0.06)]">
+                    Aksi
+                  </th>
                 </tr>
               )}
 
               {/* SUB-HEADER FILTER ROW FOR CONSOLIDATED ALL VIEW */}
               {stageView === "ALL" && showColFilters && (
-                <tr className="bg-slate-100/90 border-b border-slate-200">
-                  <td className="py-1.5 px-1 text-center font-normal text-slate-400">
+                <tr className="bg-slate-100/90">
+                  <td className="sticky left-0 z-20 bg-slate-100 py-1.5 px-1 text-center font-normal text-slate-400 border-r border-b border-slate-200 w-12 min-w-[48px] max-w-[48px]">
                     <Filter size={12} className="inline-block text-slate-400" />
                   </td>
-                  <td className="py-1.5 px-1.5">
+                  <td className="sticky left-12 z-20 bg-slate-100 py-1.5 px-1.5 border-r border-b border-slate-200 min-w-[170px] max-w-[220px] shadow-[3px_0_5px_-2px_rgba(0,0,0,0.06)]">
                     <input
                       type="text"
                       placeholder="Filter Company..."
@@ -997,7 +1021,7 @@ export default function ForecastDashboard() {
                       className="w-full text-[11px] px-2 py-1 border border-slate-200 rounded-lg bg-white text-slate-800 font-normal focus:outline-none focus:ring-1 focus:ring-[#0f4d39]"
                     />
                   </td>
-                  <td className="py-1.5 px-1">
+                  <td className="py-1.5 px-1 border-r border-b border-slate-200">
                     <input
                       type="date"
                       title="Filter Tanggal Terima Lead"
@@ -1006,7 +1030,7 @@ export default function ForecastDashboard() {
                       className="w-full text-[11px] px-1 py-1 border border-slate-200 rounded-lg bg-white text-slate-800 font-normal focus:outline-none focus:ring-1 focus:ring-[#0f4d39] cursor-pointer"
                     />
                   </td>
-                  <td className="py-1.5 px-1">
+                  <td className="py-1.5 px-1 border-r border-b border-slate-200">
                     <input
                       type="date"
                       title="Filter Tanggal Event"
@@ -1015,7 +1039,7 @@ export default function ForecastDashboard() {
                       className="w-full text-[11px] px-1 py-1 border border-slate-200 rounded-lg bg-white text-slate-800 font-normal focus:outline-none focus:ring-1 focus:ring-[#0f4d39] cursor-pointer"
                     />
                   </td>
-                  <td className="py-1.5 px-1.5">
+                  <td className="py-1.5 px-1.5 border-r border-b border-slate-200">
                     <select
                       value={colEventType}
                       onChange={(e) => setColEventType(e.target.value)}
@@ -1027,9 +1051,9 @@ export default function ForecastDashboard() {
                       ))}
                     </select>
                   </td>
-                  <td className="py-1.5 px-1 text-center text-slate-300">-</td>
-                  <td className="py-1.5 px-1 text-center text-slate-300">-</td>
-                  <td className="py-1.5 px-1.5 bg-emerald-50/40 text-center">
+                  <td className="py-1.5 px-1 text-center text-slate-300 border-r border-b border-slate-200">-</td>
+                  <td className="py-1.5 px-1 text-center text-slate-300 border-r border-b border-slate-200">-</td>
+                  <td className="py-1.5 px-1.5 bg-emerald-50/40 text-center border-r border-b border-slate-200">
                     <button
                       onClick={() => setColStatus(colStatus === "CONFIRM" ? "ALL" : "CONFIRM")}
                       className={`w-full text-[10px] font-bold px-1.5 py-1 rounded-md border transition-all ${
@@ -1041,7 +1065,7 @@ export default function ForecastDashboard() {
                       {colStatus === "CONFIRM" ? "✓ Confirm" : "Confirm"}
                     </button>
                   </td>
-                  <td className="py-1.5 px-1.5 bg-amber-50/40 text-center">
+                  <td className="py-1.5 px-1.5 bg-amber-50/40 text-center border-r border-b border-slate-200">
                     <button
                       onClick={() => setColStatus(colStatus === "TENTATIVE" ? "ALL" : "TENTATIVE")}
                       className={`w-full text-[10px] font-bold px-1.5 py-1 rounded-md border transition-all ${
@@ -1053,7 +1077,7 @@ export default function ForecastDashboard() {
                       {colStatus === "TENTATIVE" ? "✓ Tentative" : "Tentative"}
                     </button>
                   </td>
-                  <td className="py-1.5 px-1.5 bg-rose-50/40 text-center">
+                  <td className="py-1.5 px-1.5 bg-rose-50/40 text-center border-r border-b border-slate-200">
                     <button
                       onClick={() => setColStatus(colStatus === "CANCEL" ? "ALL" : "CANCEL")}
                       className={`w-full text-[10px] font-bold px-1.5 py-1 rounded-md border transition-all ${
@@ -1065,7 +1089,7 @@ export default function ForecastDashboard() {
                       {colStatus === "CANCEL" ? "✓ Cancel" : "Cancel"}
                     </button>
                   </td>
-                  <td className="py-1.5 px-1.5">
+                  <td className="py-1.5 px-1.5 border-r border-b border-slate-200">
                     <select
                       value={colPipelineStage}
                       onChange={(e) => setColPipelineStage(e.target.value)}
@@ -1077,7 +1101,7 @@ export default function ForecastDashboard() {
                       ))}
                     </select>
                   </td>
-                  <td className="py-1.5 px-1.5">
+                  <td className="py-1.5 px-1.5 border-r border-b border-slate-200">
                     <select
                       value={colDpStatus}
                       onChange={(e) => setColDpStatus(e.target.value as any)}
@@ -1091,7 +1115,7 @@ export default function ForecastDashboard() {
                       <option value="LUNAS">Lunas</option>
                     </select>
                   </td>
-                  <td className="py-1.5 px-1.5">
+                  <td className="py-1.5 px-1.5 border-r border-b border-slate-200">
                     <select
                       value={colPicSales}
                       onChange={(e) => setColPicSales(e.target.value)}
@@ -1103,7 +1127,7 @@ export default function ForecastDashboard() {
                       ))}
                     </select>
                   </td>
-                  <td className="py-1.5 px-1 text-center">
+                  <td className="sticky right-0 z-20 bg-slate-100 py-1.5 px-1 text-center border-l border-b border-slate-200 shadow-[-3px_0_5px_-2px_rgba(0,0,0,0.06)]">
                     {activeColFilterCount > 0 ? (
                       <button
                         onClick={resetColFilters}
@@ -1121,39 +1145,30 @@ export default function ForecastDashboard() {
 
               {stageView === "STAGE1" && (
                 <tr className="bg-amber-50/80 text-amber-900">
-                  <th className="py-3 px-2.5 border-r border-amber-200/80 text-center w-10">No</th>
-                  <th className="py-3 px-2.5 border-r border-amber-200/80 min-w-[95px]">Tgl Terima</th>
-                  <th className="py-3 px-3 border-r border-amber-200/80 min-w-[160px]">Company / Instansi</th>
-                  <th className="py-3 px-2.5 border-r border-amber-200/80 min-w-[120px]">Contact Person</th>
-                  <th className="py-3 px-2.5 border-r border-amber-200/80 min-w-[120px]">HP / Email</th>
-                  <th className="py-3 px-2.5 border-r border-amber-200/80 min-w-[100px]">Sumber Lead</th>
-                  <th className="py-3 px-2.5 border-r border-amber-200/80 min-w-[100px]">Segment</th>
-                  <th className="py-3 px-2.5 border-r border-amber-200/80 min-w-[120px]">Jenis Acara</th>
-                  <th className="py-3 px-2.5 border-r border-amber-200/80 min-w-[95px]">Tgl Event</th>
-                  <th className="py-3 px-2 text-center w-14">Pax</th>
-                  <th className="py-3 px-2.5 border-r border-amber-200/80 text-right min-w-[90px]">Rate</th>
-                  <th className="py-3 px-2.5 border-r border-amber-200/80 text-right font-bold min-w-[110px]">Total Rev</th>
-                  <th className="py-3 px-2.5 border-r border-amber-200/80 min-w-[90px]">Sales PIC</th>
-                  <th className="py-3 px-2.5 text-center min-w-[90px]">Aksi</th>
+                  <th className="sticky left-0 z-20 bg-amber-50 text-amber-900 py-3 px-2 text-center w-12 min-w-[48px] max-w-[48px] border-r border-b border-amber-200 font-bold">No</th>
+                  <th className="sticky left-12 z-20 bg-amber-50 text-amber-900 py-3 px-3 min-w-[170px] max-w-[220px] border-r border-b border-amber-200 shadow-[3px_0_5px_-2px_rgba(0,0,0,0.06)]">Company / Instansi</th>
+                  <th className="py-3 px-2.5 border-r border-b border-amber-200 min-w-[95px]">Tgl Terima</th>
+                  <th className="py-3 px-2.5 border-r border-b border-amber-200 min-w-[120px]">Contact Person</th>
+                  <th className="py-3 px-2.5 border-r border-b border-amber-200 min-w-[120px]">HP / Email</th>
+                  <th className="py-3 px-2.5 border-r border-b border-amber-200 min-w-[100px]">Sumber Lead</th>
+                  <th className="py-3 px-2.5 border-r border-b border-amber-200 min-w-[100px]">Segment</th>
+                  <th className="py-3 px-2.5 border-r border-b border-amber-200 min-w-[120px]">Jenis Acara</th>
+                  <th className="py-3 px-2.5 border-r border-b border-amber-200 min-w-[95px]">Tgl Event</th>
+                  <th className="py-3 px-2 text-center w-14 border-r border-b border-amber-200">Pax</th>
+                  <th className="py-3 px-2.5 border-r border-b border-amber-200 text-right min-w-[90px]">Rate</th>
+                  <th className="py-3 px-2.5 border-r border-b border-amber-200 text-right font-bold min-w-[110px]">Total Rev</th>
+                  <th className="py-3 px-2.5 border-r border-b border-amber-200 min-w-[90px]">Sales PIC</th>
+                  <th className="sticky right-0 z-20 bg-amber-50 text-amber-900 py-3 px-2.5 text-center min-w-[90px] border-l border-b border-amber-200 shadow-[-3px_0_5px_-2px_rgba(0,0,0,0.06)]">Aksi</th>
                 </tr>
               )}
 
               {/* SUB-HEADER FILTER ROW FOR STAGE 1 */}
               {stageView === "STAGE1" && showColFilters && (
-                <tr className="bg-amber-100/60 border-b border-amber-200">
-                  <td className="py-1.5 px-1 text-center font-normal text-amber-400">
+                <tr className="bg-amber-100/60">
+                  <td className="sticky left-0 z-20 bg-amber-100/90 py-1.5 px-1 text-center font-normal text-amber-600 border-r border-b border-amber-200 w-12 min-w-[48px] max-w-[48px]">
                     <Filter size={12} className="inline-block text-amber-600" />
                   </td>
-                  <td className="py-1.5 px-1">
-                    <input
-                      type="date"
-                      title="Filter Tanggal Terima Lead"
-                      value={colDateReceived}
-                      onChange={(e) => setColDateReceived(e.target.value)}
-                      className="w-full text-[11px] px-1 py-1 border border-amber-200 rounded-lg bg-white text-slate-800 font-normal focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer"
-                    />
-                  </td>
-                  <td className="py-1.5 px-1.5">
+                  <td className="sticky left-12 z-20 bg-amber-100/90 py-1.5 px-1.5 border-r border-b border-amber-200 min-w-[170px] max-w-[220px] shadow-[3px_0_5px_-2px_rgba(0,0,0,0.06)]">
                     <input
                       type="text"
                       placeholder="Filter Company..."
@@ -1162,9 +1177,18 @@ export default function ForecastDashboard() {
                       className="w-full text-[11px] px-2 py-1 border border-amber-200 rounded-lg bg-white text-slate-800 font-normal focus:outline-none focus:ring-1 focus:ring-amber-500"
                     />
                   </td>
-                  <td className="py-1.5 px-1 text-center text-amber-300">-</td>
-                  <td className="py-1.5 px-1 text-center text-amber-300">-</td>
-                  <td className="py-1.5 px-1.5">
+                  <td className="py-1.5 px-1 border-r border-b border-amber-200">
+                    <input
+                      type="date"
+                      title="Filter Tanggal Terima Lead"
+                      value={colDateReceived}
+                      onChange={(e) => setColDateReceived(e.target.value)}
+                      className="w-full text-[11px] px-1 py-1 border border-amber-200 rounded-lg bg-white text-slate-800 font-normal focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer"
+                    />
+                  </td>
+                  <td className="py-1.5 px-1 text-center text-amber-300 border-r border-b border-amber-200">-</td>
+                  <td className="py-1.5 px-1 text-center text-amber-300 border-r border-b border-amber-200">-</td>
+                  <td className="py-1.5 px-1.5 border-r border-b border-amber-200">
                     <select
                       value={colLeadSource}
                       onChange={(e) => setColLeadSource(e.target.value)}
@@ -1176,7 +1200,7 @@ export default function ForecastDashboard() {
                       ))}
                     </select>
                   </td>
-                  <td className="py-1.5 px-1.5">
+                  <td className="py-1.5 px-1.5 border-r border-b border-amber-200">
                     <select
                       value={colSegment}
                       onChange={(e) => setColSegment(e.target.value)}
@@ -1188,7 +1212,7 @@ export default function ForecastDashboard() {
                       ))}
                     </select>
                   </td>
-                  <td className="py-1.5 px-1.5">
+                  <td className="py-1.5 px-1.5 border-r border-b border-amber-200">
                     <select
                       value={colEventType}
                       onChange={(e) => setColEventType(e.target.value)}
@@ -1200,7 +1224,7 @@ export default function ForecastDashboard() {
                       ))}
                     </select>
                   </td>
-                  <td className="py-1.5 px-1">
+                  <td className="py-1.5 px-1 border-r border-b border-amber-200">
                     <input
                       type="date"
                       title="Filter Plan Tanggal Event"
@@ -1209,10 +1233,10 @@ export default function ForecastDashboard() {
                       className="w-full text-[11px] px-1 py-1 border border-amber-200 rounded-lg bg-white text-slate-800 font-normal focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer"
                     />
                   </td>
-                  <td className="py-1.5 px-1 text-center text-amber-300">-</td>
-                  <td className="py-1.5 px-1 text-center text-amber-300">-</td>
-                  <td className="py-1.5 px-1 text-center text-amber-300">-</td>
-                  <td className="py-1.5 px-1.5">
+                  <td className="py-1.5 px-1 text-center text-amber-300 border-r border-b border-amber-200">-</td>
+                  <td className="py-1.5 px-1 text-center text-amber-300 border-r border-b border-amber-200">-</td>
+                  <td className="py-1.5 px-1 text-center text-amber-300 border-r border-b border-amber-200">-</td>
+                  <td className="py-1.5 px-1.5 border-r border-b border-amber-200">
                     <select
                       value={colPicSales}
                       onChange={(e) => setColPicSales(e.target.value)}
@@ -1224,7 +1248,7 @@ export default function ForecastDashboard() {
                       ))}
                     </select>
                   </td>
-                  <td className="py-1.5 px-1 text-center">
+                  <td className="sticky right-0 z-20 bg-amber-100/90 py-1.5 px-1 text-center border-l border-b border-amber-200 shadow-[-3px_0_5px_-2px_rgba(0,0,0,0.06)]">
                     {activeColFilterCount > 0 && (
                       <button onClick={resetColFilters} className="text-[10px] font-bold text-rose-600 hover:text-rose-800 underline">Reset</button>
                     )}
@@ -1234,26 +1258,26 @@ export default function ForecastDashboard() {
 
               {stageView === "STAGE2" && (
                 <tr className="bg-indigo-50/80 text-indigo-900">
-                  <th className="py-3 px-2.5 border-r border-indigo-200/80 text-center w-10">No</th>
-                  <th className="py-3 px-3 border-r border-indigo-200/80 min-w-[170px]">Company / Instansi</th>
-                  <th className="py-3 px-2.5 border-r border-indigo-200/80 min-w-[90px]">Sales PIC</th>
-                  <th className="py-3 px-2.5 border-r border-indigo-200/80 min-w-[95px]">First Response</th>
-                  <th className="py-3 px-2.5 border-r border-indigo-200/80 min-w-[95px]">Last Follow-Up</th>
-                  <th className="py-3 px-3 border-r border-indigo-200/80 min-w-[200px]">Respon Terakhir Client</th>
-                  <th className="py-3 px-3 border-r border-indigo-200/80 min-w-[170px]">Next Action</th>
-                  <th className="py-3 px-2.5 border-r border-indigo-200/80 min-w-[95px]">Due Next Action</th>
-                  <th className="py-3 px-2.5 border-r border-indigo-200/80 text-center min-w-[130px]">Pipeline Stage</th>
-                  <th className="py-3 px-2.5 text-center min-w-[90px]">Aksi</th>
+                  <th className="sticky left-0 z-20 bg-indigo-50 text-indigo-900 py-3 px-2 text-center w-12 min-w-[48px] max-w-[48px] border-r border-b border-indigo-200 font-bold">No</th>
+                  <th className="sticky left-12 z-20 bg-indigo-50 text-indigo-900 py-3 px-3 min-w-[170px] max-w-[220px] border-r border-b border-indigo-200 shadow-[3px_0_5px_-2px_rgba(0,0,0,0.06)]">Company / Instansi</th>
+                  <th className="py-3 px-2.5 border-r border-b border-indigo-200 min-w-[90px]">Sales PIC</th>
+                  <th className="py-3 px-2.5 border-r border-b border-indigo-200 min-w-[95px]">First Response</th>
+                  <th className="py-3 px-2.5 border-r border-b border-indigo-200 min-w-[95px]">Last Follow-Up</th>
+                  <th className="py-3 px-3 border-r border-b border-indigo-200 min-w-[200px]">Respon Terakhir Client</th>
+                  <th className="py-3 px-3 border-r border-b border-indigo-200 min-w-[170px]">Next Action</th>
+                  <th className="py-3 px-2.5 border-r border-b border-indigo-200 min-w-[95px]">Due Next Action</th>
+                  <th className="py-3 px-2.5 border-r border-b border-indigo-200 text-center min-w-[130px]">Pipeline Stage</th>
+                  <th className="sticky right-0 z-20 bg-indigo-50 text-indigo-900 py-3 px-2.5 text-center min-w-[90px] border-l border-b border-indigo-200 shadow-[-3px_0_5px_-2px_rgba(0,0,0,0.06)]">Aksi</th>
                 </tr>
               )}
 
               {/* SUB-HEADER FILTER ROW FOR STAGE 2 */}
               {stageView === "STAGE2" && showColFilters && (
-                <tr className="bg-indigo-100/60 border-b border-indigo-200">
-                  <td className="py-1.5 px-1 text-center font-normal text-indigo-400">
+                <tr className="bg-indigo-100/60">
+                  <td className="sticky left-0 z-20 bg-indigo-100/90 py-1.5 px-1 text-center font-normal text-indigo-600 border-r border-b border-indigo-200 w-12 min-w-[48px] max-w-[48px]">
                     <Filter size={12} className="inline-block text-indigo-600" />
                   </td>
-                  <td className="py-1.5 px-1.5">
+                  <td className="sticky left-12 z-20 bg-indigo-100/90 py-1.5 px-1.5 border-r border-b border-indigo-200 min-w-[170px] max-w-[220px] shadow-[3px_0_5px_-2px_rgba(0,0,0,0.06)]">
                     <input
                       type="text"
                       placeholder="Filter Company..."
@@ -1262,7 +1286,7 @@ export default function ForecastDashboard() {
                       className="w-full text-[11px] px-2 py-1 border border-indigo-200 rounded-lg bg-white text-slate-800 font-normal focus:outline-none focus:ring-1 focus:ring-indigo-500"
                     />
                   </td>
-                  <td className="py-1.5 px-1.5">
+                  <td className="py-1.5 px-1.5 border-r border-b border-indigo-200">
                     <select
                       value={colPicSales}
                       onChange={(e) => setColPicSales(e.target.value)}
@@ -1274,12 +1298,12 @@ export default function ForecastDashboard() {
                       ))}
                     </select>
                   </td>
-                  <td className="py-1.5 px-1 text-center text-indigo-300">-</td>
-                  <td className="py-1.5 px-1 text-center text-indigo-300">-</td>
-                  <td className="py-1.5 px-1 text-center text-indigo-300">-</td>
-                  <td className="py-1.5 px-1 text-center text-indigo-300">-</td>
-                  <td className="py-1.5 px-1 text-center text-indigo-300">-</td>
-                  <td className="py-1.5 px-1.5">
+                  <td className="py-1.5 px-1 text-center text-indigo-300 border-r border-b border-indigo-200">-</td>
+                  <td className="py-1.5 px-1 text-center text-indigo-300 border-r border-b border-indigo-200">-</td>
+                  <td className="py-1.5 px-1 text-center text-indigo-300 border-r border-b border-indigo-200">-</td>
+                  <td className="py-1.5 px-1 text-center text-indigo-300 border-r border-b border-indigo-200">-</td>
+                  <td className="py-1.5 px-1 text-center text-indigo-300 border-r border-b border-indigo-200">-</td>
+                  <td className="py-1.5 px-1.5 border-r border-b border-indigo-200">
                     <select
                       value={colPipelineStage}
                       onChange={(e) => setColPipelineStage(e.target.value)}
@@ -1291,7 +1315,7 @@ export default function ForecastDashboard() {
                       ))}
                     </select>
                   </td>
-                  <td className="py-1.5 px-1 text-center">
+                  <td className="sticky right-0 z-20 bg-indigo-100/90 py-1.5 px-1 text-center border-l border-b border-indigo-200 shadow-[-3px_0_5px_-2px_rgba(0,0,0,0.06)]">
                     {activeColFilterCount > 0 && (
                       <button onClick={resetColFilters} className="text-[10px] font-bold text-rose-600 hover:text-rose-800 underline">Reset</button>
                     )}
@@ -1301,27 +1325,27 @@ export default function ForecastDashboard() {
 
               {stageView === "STAGE3" && (
                 <tr className="bg-emerald-50/80 text-emerald-900">
-                  <th className="py-3 px-2.5 border-r border-emerald-200/80 text-center w-10">No</th>
-                  <th className="py-3 px-3 border-r border-emerald-200/80 min-w-[170px]">Company / Instansi</th>
-                  <th className="py-3 px-2.5 border-r border-emerald-200/80 min-w-[90px]">Sales PIC</th>
-                  <th className="py-3 px-2.5 border-r border-emerald-200/80 text-center min-w-[130px]">Pipeline Stage</th>
-                  <th className="py-3 px-2 text-center w-16">Closing %</th>
-                  <th className="py-3 px-2.5 border-r border-emerald-200/80 text-right min-w-[110px]">Potential Rev</th>
-                  <th className="py-3 px-2.5 border-r border-emerald-200/80 text-right font-bold min-w-[110px]">Nilai Deal Akhir</th>
-                  <th className="py-3 px-2.5 border-r border-emerald-200/80 text-center min-w-[120px]">Status DP & Nominal</th>
-                  <th className="py-3 px-2.5 border-r border-emerald-200/80 text-center min-w-[115px]">Jatuh Tempo</th>
-                  <th className="py-3 px-2.5 border-r border-emerald-200/80 min-w-[130px]">Alasan Hold / Loss</th>
-                  <th className="py-3 px-2.5 text-center min-w-[90px]">Aksi</th>
+                  <th className="sticky left-0 z-20 bg-emerald-50 text-emerald-900 py-3 px-2 text-center w-12 min-w-[48px] max-w-[48px] border-r border-b border-emerald-200 font-bold">No</th>
+                  <th className="sticky left-12 z-20 bg-emerald-50 text-emerald-900 py-3 px-3 min-w-[170px] max-w-[220px] border-r border-b border-emerald-200 shadow-[3px_0_5px_-2px_rgba(0,0,0,0.06)]">Company / Instansi</th>
+                  <th className="py-3 px-2.5 border-r border-b border-emerald-200 min-w-[90px]">Sales PIC</th>
+                  <th className="py-3 px-2.5 border-r border-b border-emerald-200 text-center min-w-[130px]">Pipeline Stage</th>
+                  <th className="py-3 px-2 text-center w-16 border-r border-b border-emerald-200">Closing %</th>
+                  <th className="py-3 px-2.5 border-r border-b border-emerald-200 text-right min-w-[110px]">Potential Rev</th>
+                  <th className="py-3 px-2.5 border-r border-b border-emerald-200 text-right font-bold min-w-[110px]">Nilai Deal Akhir</th>
+                  <th className="py-3 px-2.5 border-r border-b border-emerald-200 text-center min-w-[120px]">Status DP & Nominal</th>
+                  <th className="py-3 px-2.5 border-r border-b border-emerald-200 text-center min-w-[115px]">Jatuh Tempo</th>
+                  <th className="py-3 px-2.5 border-r border-b border-emerald-200 min-w-[130px]">Alasan Hold / Loss</th>
+                  <th className="sticky right-0 z-20 bg-emerald-50 text-emerald-900 py-3 px-2.5 text-center min-w-[90px] border-l border-b border-emerald-200 shadow-[-3px_0_5px_-2px_rgba(0,0,0,0.06)]">Aksi</th>
                 </tr>
               )}
 
               {/* SUB-HEADER FILTER ROW FOR STAGE 3 */}
               {stageView === "STAGE3" && showColFilters && (
-                <tr className="bg-emerald-100/60 border-b border-emerald-200">
-                  <td className="py-1.5 px-1 text-center font-normal text-emerald-400">
+                <tr className="bg-emerald-100/60">
+                  <td className="sticky left-0 z-20 bg-emerald-100/90 py-1.5 px-1 text-center font-normal text-emerald-600 border-r border-b border-emerald-200 w-12 min-w-[48px] max-w-[48px]">
                     <Filter size={12} className="inline-block text-emerald-600" />
                   </td>
-                  <td className="py-1.5 px-1.5">
+                  <td className="sticky left-12 z-20 bg-emerald-100/90 py-1.5 px-1.5 border-r border-b border-emerald-200 min-w-[170px] max-w-[220px] shadow-[3px_0_5px_-2px_rgba(0,0,0,0.06)]">
                     <input
                       type="text"
                       placeholder="Filter Company..."
@@ -1330,7 +1354,7 @@ export default function ForecastDashboard() {
                       className="w-full text-[11px] px-2 py-1 border border-emerald-200 rounded-lg bg-white text-slate-800 font-normal focus:outline-none focus:ring-1 focus:ring-emerald-500"
                     />
                   </td>
-                  <td className="py-1.5 px-1.5">
+                  <td className="py-1.5 px-1.5 border-r border-b border-emerald-200">
                     <select
                       value={colPicSales}
                       onChange={(e) => setColPicSales(e.target.value)}
@@ -1342,7 +1366,7 @@ export default function ForecastDashboard() {
                       ))}
                     </select>
                   </td>
-                  <td className="py-1.5 px-1.5">
+                  <td className="py-1.5 px-1.5 border-r border-b border-emerald-200">
                     <select
                       value={colPipelineStage}
                       onChange={(e) => setColPipelineStage(e.target.value)}
@@ -1354,10 +1378,10 @@ export default function ForecastDashboard() {
                       ))}
                     </select>
                   </td>
-                  <td className="py-1.5 px-1 text-center text-emerald-300">-</td>
-                  <td className="py-1.5 px-1 text-center text-emerald-300">-</td>
-                  <td className="py-1.5 px-1 text-center text-emerald-300">-</td>
-                  <td className="py-1.5 px-1.5">
+                  <td className="py-1.5 px-1 text-center text-emerald-300 border-r border-b border-emerald-200">-</td>
+                  <td className="py-1.5 px-1 text-center text-emerald-300 border-r border-b border-emerald-200">-</td>
+                  <td className="py-1.5 px-1 text-center text-emerald-300 border-r border-b border-emerald-200">-</td>
+                  <td className="py-1.5 px-1.5 border-r border-b border-emerald-200">
                     <select
                       value={colDpStatus}
                       onChange={(e) => setColDpStatus(e.target.value as any)}
@@ -1371,9 +1395,9 @@ export default function ForecastDashboard() {
                       <option value="LUNAS">Lunas</option>
                     </select>
                   </td>
-                  <td className="py-1.5 px-1 text-center text-emerald-300">-</td>
-                  <td className="py-1.5 px-1 text-center text-emerald-300">-</td>
-                  <td className="py-1.5 px-1 text-center">
+                  <td className="py-1.5 px-1 text-center text-emerald-300 border-r border-b border-emerald-200">-</td>
+                  <td className="py-1.5 px-1 text-center text-emerald-300 border-r border-b border-emerald-200">-</td>
+                  <td className="sticky right-0 z-20 bg-emerald-100/90 py-1.5 px-1 text-center border-l border-b border-emerald-200 shadow-[-3px_0_5px_-2px_rgba(0,0,0,0.06)]">
                     {activeColFilterCount > 0 && (
                       <button onClick={resetColFilters} className="text-[10px] font-bold text-rose-600 hover:text-rose-800 underline">Reset</button>
                     )}
@@ -1413,28 +1437,27 @@ export default function ForecastDashboard() {
                   const isTentative = item.status === "TENTATIVE";
                   const isCancel = item.status === "CANCEL";
                   const urgency = getItemUrgency(item);
+                  const rowBg = urgency?.level === "URGENT"
+                    ? "bg-rose-50/30 group-hover:bg-rose-50/60"
+                    : urgency?.level === "WARNING"
+                    ? "bg-amber-50/30 group-hover:bg-amber-50/60"
+                    : "bg-white group-hover:bg-slate-50";
 
                   return (
                     <tr
                       key={item.id}
-                      className={`hover:bg-slate-50/90 transition-colors font-sans ${
-                        urgency?.level === "URGENT"
-                          ? "bg-rose-50/20"
-                          : urgency?.level === "WARNING"
-                          ? "bg-amber-50/20"
-                          : ""
-                      }`}
+                      className="group hover:bg-slate-50 transition-colors font-sans"
                     >
-                      <td className="py-3 px-2.5 border-r border-slate-100 text-center font-medium text-slate-400">
+                      <td className={`sticky left-0 z-10 ${rowBg} py-3 px-2 border-r border-b border-slate-100 text-center font-medium text-slate-400 w-12 min-w-[48px] max-w-[48px]`}>
                         {index + 1}
                       </td>
 
                       {/* CONSOLIDATED / ALL VIEW ROWS */}
                       {stageView === "ALL" && (
                         <>
-                          <td className="py-3 px-3 border-r border-slate-100 font-semibold text-slate-900">
+                          <td className={`sticky left-12 z-10 ${rowBg} py-3 px-3 border-r border-b border-slate-100 font-semibold text-slate-900 min-w-[170px] max-w-[220px] shadow-[3px_0_5px_-2px_rgba(0,0,0,0.06)]`}>
                             <div className="flex flex-col gap-1">
-                              <span>{item.company}</span>
+                              <span className="truncate" title={item.company}>{item.company}</span>
                               {urgency && (
                                 <span
                                   className={`w-fit font-bold text-[10px] px-2 py-0.5 rounded-full ${
@@ -1448,24 +1471,24 @@ export default function ForecastDashboard() {
                               )}
                             </div>
                           </td>
-                          <td className="py-3 px-2.5 border-r border-slate-100 whitespace-nowrap text-slate-600">
+                          <td className="py-3 px-2.5 border-r border-b border-slate-100 whitespace-nowrap text-slate-600">
                             {formatDateStr(item.dateReceived || item.reservationDate)}
                           </td>
-                          <td className="py-3 px-2.5 border-r border-slate-100 whitespace-nowrap text-slate-600">
+                          <td className="py-3 px-2.5 border-r border-b border-slate-100 whitespace-nowrap text-slate-600">
                             {formatDateStr(item.proposedEventDate || item.eventDate || item.checkIn)}
                           </td>
-                          <td className="py-3 px-2.5 border-r border-slate-100 text-slate-600">
+                          <td className="py-3 px-2.5 border-r border-b border-slate-100 text-slate-600">
                             {item.eventType || "-"}
                           </td>
-                          <td className="py-3 px-2 text-center font-semibold text-slate-900">
+                          <td className="py-3 px-2 text-center font-semibold text-slate-900 border-r border-b border-slate-100">
                             {item.pax || 0}
                           </td>
-                          <td className="py-3 px-2.5 border-r border-slate-100 text-right whitespace-nowrap font-mono text-slate-600">
+                          <td className="py-3 px-2.5 border-r border-b border-slate-100 text-right whitespace-nowrap font-mono text-slate-600">
                             {formatCurrency(item.rate)}
                           </td>
 
                           {/* Confirm */}
-                          <td className="py-3 px-2.5 border-r border-slate-100 text-right whitespace-nowrap">
+                          <td className="py-3 px-2.5 border-r border-b border-slate-100 text-right whitespace-nowrap">
                             {isConfirm ? (
                               <span className="inline-block bg-emerald-50 text-emerald-800 font-mono font-bold px-2 py-0.5 rounded-md border border-emerald-200/60">
                                 {formatCurrency(item.total)}
@@ -1476,7 +1499,7 @@ export default function ForecastDashboard() {
                           </td>
 
                           {/* Tentative */}
-                          <td className="py-3 px-2.5 border-r border-slate-100 text-right whitespace-nowrap">
+                          <td className="py-3 px-2.5 border-r border-b border-slate-100 text-right whitespace-nowrap">
                             {isTentative ? (
                               <span className="inline-block bg-amber-50 text-amber-800 font-mono font-bold px-2 py-0.5 rounded-md border border-amber-200/60">
                                 {formatCurrency(item.total)}
@@ -1487,7 +1510,7 @@ export default function ForecastDashboard() {
                           </td>
 
                           {/* Cancel */}
-                          <td className="py-3 px-2.5 border-r border-slate-100 text-right whitespace-nowrap">
+                          <td className="py-3 px-2.5 border-r border-b border-slate-100 text-right whitespace-nowrap">
                             {isCancel ? (
                               <span className="inline-block bg-rose-50 text-rose-800 font-mono font-bold px-2 py-0.5 rounded-md border border-rose-200/60">
                                 {formatCurrency(item.total)}
@@ -1498,7 +1521,7 @@ export default function ForecastDashboard() {
                           </td>
 
                           {/* Pipeline Stage */}
-                          <td className="py-3 px-2.5 border-r border-slate-100 text-center whitespace-nowrap">
+                          <td className="py-3 px-2.5 border-r border-b border-slate-100 text-center whitespace-nowrap">
                             <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-800 border border-indigo-200">
                               <span>{item.leadStatus || "New Lead"}</span>
                               <span className="text-[9px] font-mono text-indigo-600">({item.closingProbability || 10}%)</span>
@@ -1506,11 +1529,11 @@ export default function ForecastDashboard() {
                           </td>
 
                           {/* DP Status */}
-                          <td className="py-3 px-2.5 border-r border-slate-100 text-center whitespace-nowrap">
+                          <td className="py-3 px-2.5 border-r border-b border-slate-100 text-center whitespace-nowrap">
                             {renderDpBadge(item.dpStatus, item.dpAmount)}
                           </td>
 
-                          <td className="py-3 px-2.5 border-r border-slate-100 font-medium text-slate-700">
+                          <td className="py-3 px-2.5 border-r border-b border-slate-100 font-medium text-slate-700">
                             {item.salesPerson || item.pic || "-"}
                           </td>
                         </>
@@ -1519,42 +1542,42 @@ export default function ForecastDashboard() {
                       {/* STAGE 1 VIEW ROWS */}
                       {stageView === "STAGE1" && (
                         <>
-                          <td className="py-3 px-2.5 border-r border-slate-100 whitespace-nowrap text-slate-600">
+                          <td className={`sticky left-12 z-10 ${rowBg} py-3 px-3 border-r border-b border-slate-100 font-semibold text-slate-900 min-w-[170px] max-w-[220px] shadow-[3px_0_5px_-2px_rgba(0,0,0,0.06)]`}>
+                            <span className="truncate block" title={item.company}>{item.company}</span>
+                          </td>
+                          <td className="py-3 px-2.5 border-r border-b border-slate-100 whitespace-nowrap text-slate-600">
                             {formatDateStr(item.dateReceived || item.reservationDate)}
                           </td>
-                          <td className="py-3 px-3 border-r border-slate-100 font-semibold text-slate-900">
-                            {item.company}
-                          </td>
-                          <td className="py-3 px-2.5 border-r border-slate-100 text-slate-700">
+                          <td className="py-3 px-2.5 border-r border-b border-slate-100 text-slate-700">
                             {item.contactPerson || "-"}
                           </td>
-                          <td className="py-3 px-2.5 border-r border-slate-100 text-slate-600 font-mono">
+                          <td className="py-3 px-2.5 border-r border-b border-slate-100 text-slate-600 font-mono">
                             {item.phoneEmail || item.picPhone || "-"}
                           </td>
-                          <td className="py-3 px-2.5 border-r border-slate-100 text-slate-600">
+                          <td className="py-3 px-2.5 border-r border-b border-slate-100 text-slate-600">
                             <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md font-medium text-[11px]">
                               {item.leadSource || item.source || "-"}
                             </span>
                           </td>
-                          <td className="py-3 px-2.5 border-r border-slate-100 text-slate-600">
+                          <td className="py-3 px-2.5 border-r border-b border-slate-100 text-slate-600">
                             {item.segment || "-"}
                           </td>
-                          <td className="py-3 px-2.5 border-r border-slate-100 text-slate-600">
+                          <td className="py-3 px-2.5 border-r border-b border-slate-100 text-slate-600">
                             {item.eventType || "-"}
                           </td>
-                          <td className="py-3 px-2.5 border-r border-slate-100 whitespace-nowrap text-slate-600">
+                          <td className="py-3 px-2.5 border-r border-b border-slate-100 whitespace-nowrap text-slate-600">
                             {formatDateStr(item.proposedEventDate || item.eventDate || item.checkIn)}
                           </td>
-                          <td className="py-3 px-2 text-center font-bold text-slate-800">
+                          <td className="py-3 px-2 text-center font-bold text-slate-800 border-r border-b border-slate-100">
                             {item.pax || 0}
                           </td>
-                          <td className="py-3 px-2.5 border-r border-slate-100 text-right font-mono text-slate-600">
+                          <td className="py-3 px-2.5 border-r border-b border-slate-100 text-right font-mono text-slate-600">
                             {formatCurrency(item.rate)}
                           </td>
-                          <td className="py-3 px-2.5 border-r border-slate-100 text-right font-mono font-bold text-emerald-800">
+                          <td className="py-3 px-2.5 border-r border-b border-slate-100 text-right font-mono font-bold text-emerald-800">
                             {formatCurrency(item.total)}
                           </td>
-                          <td className="py-3 px-2.5 border-r border-slate-100 font-medium text-slate-700">
+                          <td className="py-3 px-2.5 border-r border-b border-slate-100 font-medium text-slate-700">
                             {item.salesPerson || item.pic || "-"}
                           </td>
                         </>
@@ -1563,28 +1586,28 @@ export default function ForecastDashboard() {
                       {/* STAGE 2 VIEW ROWS */}
                       {stageView === "STAGE2" && (
                         <>
-                          <td className="py-3 px-3 border-r border-slate-100 font-semibold text-slate-900">
-                            {item.company}
+                          <td className={`sticky left-12 z-10 ${rowBg} py-3 px-3 border-r border-b border-slate-100 font-semibold text-slate-900 min-w-[170px] max-w-[220px] shadow-[3px_0_5px_-2px_rgba(0,0,0,0.06)]`}>
+                            <span className="truncate block" title={item.company}>{item.company}</span>
                           </td>
-                          <td className="py-3 px-2.5 border-r border-slate-100 font-medium text-slate-700">
+                          <td className="py-3 px-2.5 border-r border-b border-slate-100 font-medium text-slate-700">
                             {item.salesPerson || item.pic || "-"}
                           </td>
-                          <td className="py-3 px-2.5 border-r border-slate-100 whitespace-nowrap text-slate-600">
+                          <td className="py-3 px-2.5 border-r border-b border-slate-100 whitespace-nowrap text-slate-600">
                             {formatDateStr(item.firstResponseDate)}
                           </td>
-                          <td className="py-3 px-2.5 border-r border-slate-100 whitespace-nowrap text-slate-600 font-semibold text-indigo-900">
+                          <td className="py-3 px-2.5 border-r border-b border-slate-100 whitespace-nowrap text-slate-600 font-semibold text-indigo-900">
                             {formatDateStr(item.lastFollowUpDate)}
                           </td>
-                          <td className="py-3 px-3 border-r border-slate-100 text-slate-600 max-w-[220px] truncate" title={item.latestClientResponse}>
+                          <td className="py-3 px-3 border-r border-b border-slate-100 text-slate-600 max-w-[220px] truncate" title={item.latestClientResponse}>
                             {item.latestClientResponse || "-"}
                           </td>
-                          <td className="py-3 px-3 border-r border-slate-100 text-slate-800 font-medium max-w-[180px] truncate" title={item.nextAction}>
+                          <td className="py-3 px-3 border-r border-b border-slate-100 text-slate-800 font-medium max-w-[180px] truncate" title={item.nextAction}>
                             {item.nextAction || "-"}
                           </td>
-                          <td className="py-3 px-2.5 border-r border-slate-100 text-center whitespace-nowrap">
+                          <td className="py-3 px-2.5 border-r border-b border-slate-100 text-center whitespace-nowrap">
                             {renderDueDateCell(item.nextActionDueDate)}
                           </td>
-                          <td className="py-3 px-2.5 border-r border-slate-100 text-center whitespace-nowrap">
+                          <td className="py-3 px-2.5 border-r border-b border-slate-100 text-center whitespace-nowrap">
                             <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-800 border border-indigo-200">
                               <span>{item.leadStatus || "New Lead"}</span>
                             </span>
@@ -1595,40 +1618,40 @@ export default function ForecastDashboard() {
                       {/* STAGE 3 VIEW ROWS */}
                       {stageView === "STAGE3" && (
                         <>
-                          <td className="py-3 px-3 border-r border-slate-100 font-semibold text-slate-900">
-                            {item.company}
+                          <td className={`sticky left-12 z-10 ${rowBg} py-3 px-3 border-r border-b border-slate-100 font-semibold text-slate-900 min-w-[170px] max-w-[220px] shadow-[3px_0_5px_-2px_rgba(0,0,0,0.06)]`}>
+                            <span className="truncate block" title={item.company}>{item.company}</span>
                           </td>
-                          <td className="py-3 px-2.5 border-r border-slate-100 font-medium text-slate-700">
+                          <td className="py-3 px-2.5 border-r border-b border-slate-100 font-medium text-slate-700">
                             {item.salesPerson || item.pic || "-"}
                           </td>
-                          <td className="py-3 px-2.5 border-r border-slate-100 text-center whitespace-nowrap">
+                          <td className="py-3 px-2.5 border-r border-b border-slate-100 text-center whitespace-nowrap">
                             <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
                               <span>{item.leadStatus || "New Lead"}</span>
                             </span>
                           </td>
-                          <td className="py-3 px-2 text-center font-bold text-emerald-700">
+                          <td className="py-3 px-2 text-center font-bold text-emerald-700 border-r border-b border-slate-100">
                             {item.closingProbability || 10}%
                           </td>
-                          <td className="py-3 px-2.5 border-r border-slate-100 text-right font-mono text-slate-600">
+                          <td className="py-3 px-2.5 border-r border-b border-slate-100 text-right font-mono text-slate-600">
                             {formatCurrency(item.total)}
                           </td>
-                          <td className="py-3 px-2.5 border-r border-slate-100 text-right font-mono font-bold text-emerald-800">
+                          <td className="py-3 px-2.5 border-r border-b border-slate-100 text-right font-mono font-bold text-emerald-800">
                             {formatCurrency(item.finalDealValue || (item.status === "CONFIRM" ? item.total : 0))}
                           </td>
-                          <td className="py-3 px-2.5 border-r border-slate-100 text-center whitespace-nowrap">
+                          <td className="py-3 px-2.5 border-r border-b border-slate-100 text-center whitespace-nowrap">
                             {renderDpBadge(item.dpStatus, item.dpAmount)}
                           </td>
-                          <td className="py-3 px-2.5 border-r border-slate-100 text-center whitespace-nowrap">
+                          <td className="py-3 px-2.5 border-r border-b border-slate-100 text-center whitespace-nowrap">
                             {renderDueDateCell(item.dueDate)}
                           </td>
-                          <td className="py-3 px-2.5 border-r border-slate-100 text-slate-500 text-[11px] max-w-[150px] truncate" title={item.reasonForLossHold}>
+                          <td className="py-3 px-2.5 border-r border-b border-slate-100 text-slate-500 text-[11px] max-w-[150px] truncate" title={item.reasonForLossHold}>
                             {item.reasonForLossHold || "-"}
                           </td>
                         </>
                       )}
 
                       {/* Actions Column */}
-                      <td className="py-3 px-2.5 text-center whitespace-nowrap">
+                      <td className={`sticky right-0 z-10 ${rowBg} py-3 px-2.5 text-center whitespace-nowrap border-l border-b border-slate-100 shadow-[-3px_0_5px_-2px_rgba(0,0,0,0.06)]`}>
                         <div className="flex items-center justify-center gap-1">
                           <button
                             onClick={() => {
@@ -1650,13 +1673,6 @@ export default function ForecastDashboard() {
                           >
                             <Edit2 size={15} />
                           </button>
-                          <button
-                            onClick={() => handleDelete(item.id)}
-                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                            title="Hapus"
-                          >
-                            <Trash2 size={15} />
-                          </button>
                           {isAdmin && (
                             <button
                               onClick={() => handleDelete(item.id)}
@@ -1677,25 +1693,69 @@ export default function ForecastDashboard() {
             {/* Table Footer Totals */}
             {!loading && items.length > 0 && (
               <tfoot>
-                <tr className="bg-slate-50/90 text-slate-800 font-bold text-xs border-t-2 border-slate-200">
-                  <td colSpan={3} className="py-3.5 px-3 text-right uppercase tracking-wider text-slate-500 font-bold">
-                    Total Pipeline Forecast {activeColFilterCount > 0 ? "(Terfilter)" : ""}:
-                  </td>
-                  <td className="py-3.5 px-3 text-center text-slate-900 font-bold">
-                    {filteredTotalPax} Pax
-                  </td>
-                  <td colSpan={stageView === "ALL" ? 3 : 2}></td>
-                  <td className="py-3.5 px-3 text-right bg-emerald-50/80 text-emerald-900 font-mono font-bold">
-                    {formatCurrency(filteredConfirmTotal)}
-                  </td>
-                  <td className="py-3.5 px-3 text-right bg-amber-50/80 text-amber-900 font-mono font-bold">
-                    {formatCurrency(filteredTentativeTotal)}
-                  </td>
-                  <td className="py-3.5 px-3 text-right bg-rose-50/80 text-rose-900 font-mono font-bold">
-                    {formatCurrency(filteredCancelTotal)}
-                  </td>
-                  <td colSpan={6} className="py-3.5 px-3"></td>
-                </tr>
+                {stageView === "ALL" && (
+                  <tr className="bg-slate-50 text-slate-800 font-bold text-xs border-t-2 border-slate-200">
+                    <td colSpan={5} className="py-3.5 px-3 text-right uppercase tracking-wider text-slate-500 font-bold border-r border-slate-200">
+                      Total Pipeline Forecast {activeColFilterCount > 0 ? "(Terfilter)" : ""}:
+                    </td>
+                    <td className="py-3.5 px-2 text-center text-slate-900 font-bold border-r border-slate-200">
+                      {filteredTotalPax} Pax
+                    </td>
+                    <td className="py-3.5 px-2.5 border-r border-slate-200"></td>
+                    <td className="py-3.5 px-2.5 text-right bg-emerald-50/80 text-emerald-900 font-mono font-bold border-r border-slate-200">
+                      {formatCurrency(filteredConfirmTotal)}
+                    </td>
+                    <td className="py-3.5 px-2.5 text-right bg-amber-50/80 text-amber-900 font-mono font-bold border-r border-slate-200">
+                      {formatCurrency(filteredTentativeTotal)}
+                    </td>
+                    <td className="py-3.5 px-2.5 text-right bg-rose-50/80 text-rose-900 font-mono font-bold border-r border-slate-200">
+                      {formatCurrency(filteredCancelTotal)}
+                    </td>
+                    <td colSpan={4} className="py-3.5 px-3"></td>
+                  </tr>
+                )}
+
+                {stageView === "STAGE1" && (
+                  <tr className="bg-slate-50 text-slate-800 font-bold text-xs border-t-2 border-slate-200">
+                    <td colSpan={9} className="py-3.5 px-3 text-right uppercase tracking-wider text-slate-500 font-bold border-r border-slate-200">
+                      Total Leads {activeColFilterCount > 0 ? "(Terfilter)" : ""}:
+                    </td>
+                    <td className="py-3.5 px-2 text-center text-slate-900 font-bold border-r border-slate-200">
+                      {filteredTotalPax} Pax
+                    </td>
+                    <td className="py-3.5 px-2.5 border-r border-slate-200"></td>
+                    <td className="py-3.5 px-2.5 text-right font-mono font-bold text-emerald-900 bg-emerald-50/80 border-r border-slate-200">
+                      {formatCurrency(filteredConfirmTotal + filteredTentativeTotal)}
+                    </td>
+                    <td colSpan={2} className="py-3.5 px-3"></td>
+                  </tr>
+                )}
+
+                {stageView === "STAGE2" && (
+                  <tr className="bg-slate-50 text-slate-800 font-bold text-xs border-t-2 border-slate-200">
+                    <td colSpan={2} className="py-3.5 px-3 text-right uppercase tracking-wider text-slate-500 font-bold border-r border-slate-200">
+                      Total Follow-Up {activeColFilterCount > 0 ? "(Terfilter)" : ""}:
+                    </td>
+                    <td colSpan={8} className="py-3.5 px-3 text-slate-800 font-semibold">
+                      {filteredItems.length} Leads dalam proses follow-up
+                    </td>
+                  </tr>
+                )}
+
+                {stageView === "STAGE3" && (
+                  <tr className="bg-slate-50 text-slate-800 font-bold text-xs border-t-2 border-slate-200">
+                    <td colSpan={5} className="py-3.5 px-3 text-right uppercase tracking-wider text-slate-500 font-bold border-r border-slate-200">
+                      Total Closing {activeColFilterCount > 0 ? "(Terfilter)" : ""}:
+                    </td>
+                    <td className="py-3.5 px-2.5 text-right font-mono font-bold text-slate-700 border-r border-slate-200">
+                      {formatCurrency(filteredItems.reduce((acc, i) => acc + (i.total || 0), 0))}
+                    </td>
+                    <td className="py-3.5 px-2.5 text-right font-mono font-bold text-emerald-900 bg-emerald-50/80 border-r border-slate-200">
+                      {formatCurrency(filteredItems.reduce((acc, i) => acc + (i.finalDealValue || (i.status === "CONFIRM" ? i.total : 0)), 0))}
+                    </td>
+                    <td colSpan={4} className="py-3.5 px-3"></td>
+                  </tr>
+                )}
               </tfoot>
             )}
           </table>
