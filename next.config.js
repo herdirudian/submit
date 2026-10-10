@@ -14,6 +14,12 @@ const withPWA = require("@ducanh2912/next-pwa").default({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   poweredByHeader: false,
+  images: {
+    // Mitigasi CVE-2026-27980: batasi varian ukuran untuk mencegah unbounded disk cache growth
+    deviceSizes: [640, 750, 1080, 1920],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256],
+    formats: ['image/webp'],
+  },
   async headers() {
     return [
       {
